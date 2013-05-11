@@ -143,8 +143,9 @@ class Relation(object):
         for p in uap:
             group_coord = self.get_groups(p)
             v = self.data[p]
-            cur_ss = self.suffstats[group_coord]
-            self.suffstats[group_coord] = self.model.rem_ss(cur_ss, self.hps,v)
+            if -1 not in group_coord: # FIXME is this the correct way? 
+                cur_ss = self.suffstats[group_coord]
+                self.suffstats[group_coord] = self.model.ss_rem(cur_ss, self.hps,v)
 
         self.group_assignments[type_name][entity_pos] = -1
         

@@ -37,7 +37,7 @@ class AccumModel(object):
         return np.float32
 
     def ss_add(self, ss, hp, datum):
-        print "adding", datum, "to ", ss
+
         s = ss['sum'] + datum
         ss_new = self.create_ss()
         ss_new['sum'] = s
