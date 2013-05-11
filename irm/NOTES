@@ -1,0 +1,43 @@
+1. Get simple binary T1xT1 working
+2. Extend to generic types
+3. Extend to T1xT2, arbitrary relations
+4. posterior enumeration-style tests (for T1xT1 there are small number)
+5. Hyperparameter inference
+
+We do this with a constant array of suffstats, that sometimes
+is too big and so therefor we might have to resize. Oops. 
+
+T1 = create_type(OBJN)
+init_type(T1)
+
+type IDs are always contiguous integers
+
+rel = create_relation((T1, T1, T1), 'boolean')
+rel.add_data(val, t1_a, t1_b, t1_c)
+
+1. now you can imagine just wanting to perform gibbs sampling
+or something like that on the individual types; that is
+T1.create_group() passes through to each connected relation
+
+
+Key of collapsed gibbs sampling
+
+for this type: 
+    for every row: 
+        Remove the row from the group, and thus the dependent relations
+        if the group is empty, keep it around, otherwise, create new empty one
+        
+        map post_pred across each possible group
+        
+        Gibbs
+        assign
+        
+        good
+
+a relation can then have the following options on it
+
+
+                  
+    
+
+
