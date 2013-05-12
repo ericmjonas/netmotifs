@@ -38,6 +38,8 @@ a relation can then have the following options on it
 
 
                   
+IRM:
+for type in types:
+    gibbs_sample(type)
+    hp_inference(type)
     
-
-

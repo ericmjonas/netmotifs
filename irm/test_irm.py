@@ -1,8 +1,10 @@
 from nose.tools import * 
 import numpy as np
+from numpy.testing import assert_approx_equal, assert_array_equal
+
 import models
 import irm
-
+import util
 
 """
 Cases to worry about
@@ -120,3 +122,61 @@ def test_relation_T1T1_allone():
     np.testing.assert_approx_equal(s, np.sum(data) + 0.3*T1_N*T1_N)
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
+
+
+def test_type_if_rel():
+    """
+    Test if transactions on the type interface propagate 
+    correctly to relations and preserve invariants
+    """
+    
+    T1_N = 4
+    T2_N = 6
+
+    data = np.arange(T1_N * T2_N)
+    data.shape = T1_N, T2_N
+
+
+    model =  models.VarModel()
+    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
+                     data,model)
+    hps = model.create_hps()
+    hps['offset'] = 0.3
+
+    r.set_hps(hps)
+
+    tf_1 = irm.TypeInterface(T1_N, [('T1', r)])
+    tf_1.set_hps(1.0)
+    tf_2 = irm.TypeInterface(T2_N, [('T2', r)])
+    tf_2.set_hps(1.0)
+
+    assert_array_equal(tf_1.get_assignments(), np.ones(T1_N)*irm.NOT_ASSIGNED)
+
+
+    ### put all T2 into one group, T1 in singletons
+    t2_g1 = tf_2.create_group()
+    assert_equal(len(r.get_all_groups('T2')), 1)
+    for i in range(T2_N):
+        tf_2.add_entity_to_group(t2_g1, i)
+    
+    t1_grps= [tf_1.create_group() for _ in range(T1_N)]
+    [tf_1.add_entity_to_group(g, i) for g, i in zip(t1_grps, range(T1_N))]
+    
+    # total score 
+    assert_approx_equal(r.total_score(), 
+                        np.sum(np.var(data, axis=1)) + np.sum(np.mean(data, axis=1)) + 0.3*T1_N)
+
+    #Now remove the last entity from the last group in T1 and compute
+    #post pred
+    tf_1.remove_entity_from_group(T1_N -1)
+    for g_i, g in enumerate(t1_grps[:-1]):
+        print "-"*70
+        score = tf_1.post_pred(g, T1_N-1)
+        est_score_old = np.var(data[g_i, :]) + np.mean(data[g_i, :]) 
+
+        dp = np.hstack([data[g_i, :], data[T1_N -1, :]])
+        print dp
+        est_score_new = np.var(dp) + np.mean(dp) 
+        score_delta = est_score_new- est_score_old + util.crp_post_pred(1, T1_N, 1.0)
+        assert_approx_equal(score_delta, score)
+

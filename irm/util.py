@@ -1,4 +1,5 @@
 import itertools
+import numpy as np
 
 def cart_prod(list_of_objs):
     """
@@ -25,4 +26,39 @@ def unique_axes_pos(axis_pos, val, axes_possible_vals):
     return set(a)
 
 
-            
+def crp_post_pred(mk, N, alpha):
+    """
+    Prob of adding a customer to the table which currently seats
+    mk people.
+    N is total number of people INCLUDING current to-sit person
+    """
+    if mk == 0:
+        return np.log(alpha / (N - 1 + alpha))
+    else:
+        return np.log(mk / (N -1 + alpha))
+
+def assign_to_counts(assign_vect):
+    """
+    non-canonical assignment vector -> table sizes
+    """
+    d = {}
+    for v in assign_vect:
+        if v not in d:
+            d[v] = 0
+        d[v] +=1
+    counts = np.zeros(len(d), dtype=np.uint32)
+    for ki, k in enumerate(d.keys()):
+        counts[ki] = d[k]
+    return counts
+        
+def crp_score(counts, alpha):
+    """
+    Total crp score of a count vector
+    """
+    score = 0
+    i = 0
+    for table in counts:
+        for customer in range(table):
+            score += crp_post_pred(customer, i + 1, alpha)
+            i += 1
+    return score
