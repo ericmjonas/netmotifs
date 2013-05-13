@@ -62,3 +62,25 @@ def crp_score(counts, alpha):
             score += crp_post_pred(customer, i + 1, alpha)
             i += 1
     return score
+
+def die_roll(v):
+    """
+    Take in a vector of probs and roll
+    """
+    x = np.cumsum(v)
+    r = np.random.rand()
+    return np.searchsorted(x, r)
+
+def scores_to_prob(x):
+    """
+    Take in a vector of scores
+    normalize, log-sumpadd, and return
+    
+    """
+    xn = x - np.max(x)
+    a = np.logaddexp.accumulate(xn)[-1]
+    xn = xn - a
+    return np.exp(xn)
+
+def sample_from_scores(scores):
+    return die_roll(scores_to_prob(scores))

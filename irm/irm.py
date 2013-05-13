@@ -163,13 +163,10 @@ class Relation(object):
         
 
         # what's the right way to do this? FIXME
-        print "before"
         oldscore = self.total_score()
-        print "after" 
         self.add_entity_to_group(type_name, group_id, entity_pos)
         newscore = self.total_score()
         self.remove_entity_from_group(type_name, group_id, entity_pos)
-        print "post_pred", newscore, oldscore, group_id, entity_pos
         return newscore - oldscore
 
     def total_score(self):
@@ -204,8 +201,14 @@ class TypeInterface(object):
         self.assignments = np.ones(ENT_N, dtype=np.int)
         self.assignments[:] = NOT_ASSIGNED
 
+    def entity_count(self):
+        return len(self.assignments)
+
     def set_hps(self, alpha):
         self.alpha = alpha
+
+    def get_groups(self):
+        return self.gid_mapping.keys()
 
     def create_group(self):
         """
@@ -217,7 +220,8 @@ class TypeInterface(object):
         self.g_pos += 1
         self.gid_mapping[new_gid] = tuple(rel_groupid)
         return new_gid
-    def _group_size(self, gid):
+    
+    def group_size(self, gid):
         """
         How many entities in this group
         """
@@ -252,6 +256,7 @@ class TypeInterface(object):
             self.relations)]
 
         self.assignments[entity_pos] = NOT_ASSIGNED
+        return group_id
 
     def get_prior_score(self):
         count_vect = util.assign_to_counts(self.assignments)
@@ -268,7 +273,7 @@ class TypeInterface(object):
         rel_groupid = self.gid_mapping[group_id]
         scores = [r.post_pred(t, g, entity_pos) for g, (t, r) in zip(rel_groupid, 
                                                                     self.relations)]
-        gc = self._group_size(group_id)
+        gc = self.group_size(group_id)
         assigned_entity_N = self._assigned_entity_count()
         
         prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
