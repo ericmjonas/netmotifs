@@ -55,7 +55,8 @@ def test_gibbs_simple():
         
 def test_gibbs_beta_bernoulli():
     """
-    Test with real beta-bernoulli data
+    Test with real beta-bernoulli data. Should find the two class x two class
+    grouping
 
     """
 
@@ -109,16 +110,19 @@ def test_gibbs_beta_bernoulli():
         print tf_1.get_assignments()
         print tf_2.get_assignments()
 
-        
-    pylab.subplot(1, 2, 1)
-    pylab.imshow(data, interpolation='nearest', 
-                 cmap=pylab.cm.gray)
-    t1_idx = np.argsort(tf_1.get_assignments()).flatten()
-    t2_idx = np.argsort(tf_2.get_assignments()).flatten()
-    im_srt = data[t1_idx]
-    im_srt = im_srt[:, t2_idx]
-    pylab.subplot(1, 2, 2)
-    pylab.imshow(im_srt, interpolation='nearest', 
-                 cmap=pylab.cm.gray)
-    pylab.show()
+    assert_equal(len(np.unique(tf_1.get_assignments())), 2)
+    assert_equal(len(np.unique(tf_2.get_assignments())), 2)
+    # pylab.subplot(1, 2, 1)
+    # pylab.imshow(data, interpolation='nearest', 
+    #              cmap=pylab.cm.gray)
+    # t1_idx = np.argsort(tf_1.get_assignments()).flatten()
+    # t2_idx = np.argsort(tf_2.get_assignments()).flatten()
+    # im_srt = data[t1_idx]
+    # im_srt = im_srt[:, t2_idx]
+    # pylab.subplot(1, 2, 2)
+    # pylab.imshow(im_srt, interpolation='nearest', 
+    #              cmap=pylab.cm.gray)
+    # pylab.show()
                 
+if __name__ == "__main__":
+    test_gibbs_beta_bernoulli()

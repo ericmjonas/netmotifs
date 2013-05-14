@@ -84,3 +84,9 @@ def scores_to_prob(x):
 
 def sample_from_scores(scores):
     return die_roll(scores_to_prob(scores))
+
+def kl(p, q):
+    idx = p > 0
+    
+    a = np.log(p[idx]) - np.log(q[idx])
+    return np.sum(a * p[idx])

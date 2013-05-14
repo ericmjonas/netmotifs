@@ -56,7 +56,7 @@ def test_relation_T1T2_allone_singleton():
         r.remove_entity_from_group('T2', t2_grp, i)
 
     s = r.total_score()
-    assert_equal(s, 0.3)
+    assert_equal(s, 0.0)
     
     #### DELETE THE GROUPS
     r.delete_group('T1', t1_grp)
@@ -107,7 +107,7 @@ def test_relation_T1T1_allone():
         r.remove_entity_from_group('T1', t1_grp, i)
 
     s = r.total_score()
-    assert_equal(s, 0.3)
+    assert_equal(s, 0.0)
     
     #### DELETE THE GROUPS
     r.delete_group('T1', t1_grp)

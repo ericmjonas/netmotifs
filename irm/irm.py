@@ -279,3 +279,20 @@ class TypeInterface(object):
         prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
         
         return np.sum(scores) + prior_score
+
+class IRM(object):
+    def __init__(self, types, relations):
+        """
+        both types and relations are name->object mappings
+        """
+        self.types = types
+        self.relations = relations
+    
+    def total_score(self):
+        score = 0
+        for t in self.types.values():
+            score += t.get_prior_score()
+        for r in self.relations.values():
+            score += r.total_score()
+        return score
+
