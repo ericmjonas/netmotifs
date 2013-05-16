@@ -6,6 +6,7 @@ from matplotlib import pylab
 
 import models
 import irm
+import relation
 import util
 import gibbs
 
@@ -25,7 +26,7 @@ def test_gibbs_simple():
     data.shape = T1_N, T2_N
 
     model =  models.NegVarModel()
-    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -81,7 +82,7 @@ def test_gibbs_beta_bernoulli():
     data = data[:, np.random.permutation(T2_N)]
 
     model =  models.BetaBernoulli()
-    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
 
@@ -103,7 +104,7 @@ def test_gibbs_beta_bernoulli():
         tf_2.add_entity_to_group(t2_g1, i)
 
     
-    ITERS = 50
+    ITERS = 100
     for i in range(ITERS):
         gibbs.gibbs_sample_type(tf_1)
         gibbs.gibbs_sample_type(tf_2)

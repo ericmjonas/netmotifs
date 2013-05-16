@@ -4,6 +4,7 @@ from numpy.testing import assert_approx_equal, assert_array_equal
 
 import models
 import irm
+import relation
 import util
 
 """
@@ -26,7 +27,7 @@ def test_relation_T1T2_allone_singleton():
     data.shape = T1_N, T2_N
 
     model =  models.AccumModel()
-    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -85,7 +86,7 @@ def test_relation_T1T1_allone():
     data.shape = T1_N, T1_N
 
     model =  models.AccumModel()
-    r = irm.Relation([('T1', T1_N), ('T1', T1_N)], 
+    r = relation.Relation([('T1', T1_N), ('T1', T1_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -138,7 +139,7 @@ def test_type_if_rel():
 
 
     model =  models.VarModel()
-    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3

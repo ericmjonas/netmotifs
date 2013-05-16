@@ -59,9 +59,9 @@ class BetaBernoulli(object):
         den = np.log(alpha+beta + heads + tails)
 
         if datum:
-            return np.log(heads + alpha) - denom
+            return np.log(heads + alpha) - den
         else:
-            return np.log(tails + beta) - denom
+            return np.log(tails + beta) - den
 
 class AccumModel(object):
     def create_hps(self):
