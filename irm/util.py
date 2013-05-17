@@ -1,6 +1,7 @@
 import itertools
 import numpy as np
 
+
 def cart_prod(list_of_objs):
     """
     Return the cartesian product of items. Does not
@@ -90,3 +91,14 @@ def kl(p, q):
     
     a = np.log(p[idx]) - np.log(q[idx])
     return np.sum(a * p[idx])
+
+def count(x):
+    """
+    count the number of each item in x
+    """
+    v = {}
+    for q in x:
+        if q not in v:
+            v[q] = 0
+        v[q] +=1
+    return v

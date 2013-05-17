@@ -8,6 +8,7 @@ import irm
 import models
 import gibbs
 import util
+import irmio
 
 
 def addelement(partlist, e):
@@ -146,54 +147,12 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
 
     pickle.dump(config, open(outputfile, 'w'))
 
-def model_from_config(configfile):
-    config = pickle.load(open(configfile, 'r'))
-    types_config = config['types']
-    relations_config = config['relations']
-    data_config = config['data']
-
-    # build the model
-    relations = {}
-    types_to_relations = {}
-    for t in types_config:
-        types_to_relations[t] = []
-
-    for rel_name, rel_config in config['relations'].iteritems():
-        typedef = [(tn, types_config[tn]['N']) for tn in rel_config['relation']]
-        if rel_config['model'] == "BetaBernoulli":
-            model = models.BetaBernoulli()
-        else:
-            raise NotImplementedError()
-        relation = irm.Relation(typedef, data_config[rel_name], 
-                                model)
-        relation.set_hps(rel_config['hps'])
-
-        relations[rel_name] = relation
-        # set because we only want to add each relation once to a type
-        for tn in set(rel_config['relation']):
-            types_to_relations[tn].append((tn, relation))
-    type_interfaces = {}
-    for t_name, t_config in types_config.iteritems():
-        T_N = t_config['N'] 
-        ti = irm.TypeInterface(T_N, types_to_relations[t_name])
-        ti.set_hps(t_config['hps'])
-        type_interfaces[t_name] = ti
-
-    irm_model = irm.IRM(type_interfaces, relations)
-
-    # now initialize all to 1
-    for tn, ti in type_interfaces.iteritems():
-        g = ti.create_group()
-        for j in range(ti.entity_count()):
-            ti.add_entity_to_group(g, j)
-    
-    return irm_model
 
 @transform([create_data_t1t2, create_data_t1t1], 
            suffix(".pickle"), ".samples.pickle")
 def run_samples(infile, outfile):
 
-    irm_model = model_from_config(infile)
+    irm_model = irmio.model_from_config_file(infile)
 
     # pick what the T1 is that we're going to use
     t1_name = sorted(irm_model.types.keys())[0]
