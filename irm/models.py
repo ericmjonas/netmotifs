@@ -68,7 +68,8 @@ class AccumModel(object):
         return {'offset': 0.0}
 
     def create_ss(self):
-        return {'sum' : 0}
+        return {'sum' : 0, 
+                'count' : 0}
 
     def data_dtype(self):
         return np.float32
@@ -78,12 +79,16 @@ class AccumModel(object):
         s = ss['sum'] + datum
         ss_new = self.create_ss()
         ss_new['sum'] = s
+        ss_new['count'] = ss['count'] + 1
         return ss_new
     
     def ss_rem(self, ss, hp, datum):
         s = ss['sum'] - datum
         ss_new = self.create_ss()
         ss_new['sum'] = s
+        ss_new['count'] = ss['count'] - 1
+        assert ss_new['count'] >= 0
+
         return ss_new
 
     def ss_score(self, ss, hp):
@@ -129,8 +134,8 @@ class VarModel(object):
     def post_pred(self, ss, hp, datum):
         s = list(ss['dp'])
         s.append(datum)
-        
-        return np.var(ss) - np.var(ss['dp']) + np.mean(ss) - np.mean(ss['dp'])
+        print "post_pred", s, ss, hp, datum
+        return np.var(s) - np.var(ss['dp']) + np.mean(s) - np.mean(ss['dp'])
 
 class NegVarModel(VarModel):
     def ss_score(self, ss, hp):

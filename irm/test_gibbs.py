@@ -53,8 +53,13 @@ def test_gibbs_simple():
         gibbs.gibbs_sample_type(tf_1)
     assert_equal(len(np.unique(tf_1.get_assignments())), 10)
 
-        
 def test_gibbs_beta_bernoulli():
+    gibbs_beta_bernoulli(relation.Relation)
+
+def test_gibbs_beta_bernoulli_fast():
+    gibbs_beta_bernoulli(relation.FastRelation)
+
+def gibbs_beta_bernoulli(relation_class):
     """
     Test with real beta-bernoulli data. Should find the two class x two class
     grouping
@@ -62,8 +67,8 @@ def test_gibbs_beta_bernoulli():
     """
 
     
-    T1_N = 20
-    T2_N = 20
+    T1_N = 40
+    T2_N = 40
     np.random.seed(0)
 
     data = np.zeros((T1_N, T2_N) , dtype=np.bool)
@@ -82,7 +87,7 @@ def test_gibbs_beta_bernoulli():
     data = data[:, np.random.permutation(T2_N)]
 
     model =  models.BetaBernoulli()
-    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation_class([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
 

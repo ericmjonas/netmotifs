@@ -18,8 +18,13 @@ T1 x T1 x T2
 T1 x T1 x T2 x T2
 
 """
+def test_relation_T1T2_allone_singleton_default():
+    relation_T1T2_allone_singleton(relation.Relation)
 
-def test_relation_T1T2_allone_singleton():
+def test_relation_T1T2_allone_singleton_default():
+    relation_T1T2_allone_singleton(relation.FastRelation)
+
+def relation_T1T2_allone_singleton(relation_class):
     T1_N = 3
     T2_N = 4
 
@@ -27,7 +32,7 @@ def test_relation_T1T2_allone_singleton():
     data.shape = T1_N, T2_N
 
     model =  models.AccumModel()
-    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
+    r = relation_class([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -73,20 +78,25 @@ def test_relation_T1T2_allone_singleton():
         r.add_entity_to_group('T2', t2_grps[i], i)
     
     s = r.total_score()
-    assert_equal(s, np.sum(data) + 0.3*T1_N*T2_N)
+    assert_approx_equal(s, np.sum(data) + 0.3*T1_N*T2_N)
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
     
         
+def test_relation_T1T1_allone_slow():
+    relation_T1T1_allone(relation.Relation)
+
+def test_relation_T1T1_allone_fast():
+    relation_T1T1_allone(relation.FastRelation)
         
-def test_relation_T1T1_allone():
+def relation_T1T1_allone(relation_class):
     T1_N = 10
 
     data = np.arange(T1_N * T1_N)
     data.shape = T1_N, T1_N
 
     model =  models.AccumModel()
-    r = relation.Relation([('T1', T1_N), ('T1', T1_N)], 
+    r = relation_class([('T1', T1_N), ('T1', T1_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -96,10 +106,11 @@ def test_relation_T1T1_allone():
     t1_grp = r.create_group('T1')
 
     for i in range(T1_N):
+        print "Test for T1 adding", t1_grp, i
         r.add_entity_to_group('T1', t1_grp, i)
     
     s = r.total_score()
-    assert_equal(s, np.sum(data) + 0.3)
+    assert_approx_equal(s, np.sum(data) + 0.3)
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
     
@@ -113,10 +124,12 @@ def test_relation_T1T1_allone():
     #### DELETE THE GROUPS
     r.delete_group('T1', t1_grp)
 
+    print "SINGLETON TEST", "="*50
     #### ADD TO SINGLETONS
     t1_grps = [r.create_group('T1') for _ in range(T1_N)]
-
+    
     for i in range(T1_N):
+        print "TEST adding entity", i, "to group",  t1_grps[i], 
         r.add_entity_to_group('T1', t1_grps[i], i)
     
     s = r.total_score()
@@ -124,22 +137,27 @@ def test_relation_T1T1_allone():
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
 
-
 def test_type_if_rel():
+    type_if_rel(relation.Relation)
+
+def test_type_if_rel_fast():
+    type_if_rel(relation.FastRelation)
+
+def type_if_rel(relation_class):
     """
     Test if transactions on the type interface propagate 
     correctly to relations and preserve invariants
     """
     
-    T1_N = 4
-    T2_N = 6
+    T1_N = 2
+    T2_N = 2
 
     data = np.arange(T1_N * T2_N)
     data.shape = T1_N, T2_N
 
 
-    model =  models.VarModel()
-    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
+    model =  models.AccumModel()
+    r = relation_class([('T1', T1_N), ('T2', T2_N)], 
                      data,model)
     hps = model.create_hps()
     hps['offset'] = 0.3
@@ -165,7 +183,7 @@ def test_type_if_rel():
     
     # total score 
     assert_approx_equal(r.total_score(), 
-                        np.sum(np.var(data, axis=1)) + np.sum(np.mean(data, axis=1)) + 0.3*T1_N)
+                        np.sum(np.sum(data, axis=1)) + 0.3*T1_N)
 
     #Now remove the last entity from the last group in T1 and compute
     #post pred
@@ -173,11 +191,11 @@ def test_type_if_rel():
     for g_i, g in enumerate(t1_grps[:-1]):
         print "-"*70
         score = tf_1.post_pred(g, T1_N-1)
-        est_score_old = np.var(data[g_i, :]) + np.mean(data[g_i, :]) 
+        est_score_old = np.sum(data[g_i, :]) 
 
         dp = np.hstack([data[g_i, :], data[T1_N -1, :]])
         print dp
-        est_score_new = np.var(dp) + np.mean(dp) 
+        est_score_new = np.sum(dp) 
         score_delta = est_score_new- est_score_old + util.crp_post_pred(1, T1_N, 1.0)
         assert_approx_equal(score_delta, score)
 
