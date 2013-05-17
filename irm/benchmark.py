@@ -4,12 +4,17 @@ import util
 import gibbs
 import relation
 import synthdata
+import pyximport; 
+pyximport.install(setup_args={
+                              "include_dirs":np.get_include()},
+                  reload_support=True)
+import fastrelation
 
 def benchmark():
     import irmio
 
-    T1_N = 100
-    T2_N = 100
+    T1_N = 300
+    T2_N = 300
 
     T1_C = 10
     T2_C = 10

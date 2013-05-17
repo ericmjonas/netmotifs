@@ -1,4 +1,6 @@
 import util
+import numpy as np
+cimport numpy as np
 
 
 NOT_ASSIGNED = -1
