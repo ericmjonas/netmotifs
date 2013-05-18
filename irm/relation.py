@@ -143,6 +143,8 @@ class FastRelation(object):
         It might be the case that a given datapoint is ALRADY at the 
         group
         """
+        axispos_for_domain = self._get_axispos_for_domain(domain_name)
+
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             value = self._get_data_value(dp)
             current_group_coords = self._get_dp_group_coords(dp)
@@ -150,7 +152,7 @@ class FastRelation(object):
             new_group_coords = list(current_group_coords)
             dp_entity_pos = self._get_dp_entity_coords(dp)
             
-            for axis_pos in self._get_axispos_for_domain(domain_name):
+            for axis_pos in axispos_for_domain:
                 if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
 
@@ -164,6 +166,7 @@ class FastRelation(object):
     def remove_entity_from_group(self, domain_name, group_id, entity_pos):
         """
         """
+        axispos_for_domain = self._get_axispos_for_domain(domain_name)
 
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             value = self._get_data_value(dp)
@@ -173,7 +176,7 @@ class FastRelation(object):
                 self.components[tuple(group_coords)] = self.model.ss_rem(self.components[tuple(group_coords)], self.hps, value)
                 self.components_dp_count[tuple(group_coords)] -= 1
 
-            for axis_pos in self._get_axispos_for_domain(domain_name):
+            for axis_pos in axispos_for_domain:
                 group_coords[axis_pos] = NOT_ASSIGNED
             self._set_dp_group_coords(dp, group_coords)
         self._set_entity_group(domain_name, entity_pos, NOT_ASSIGNED)
@@ -181,13 +184,16 @@ class FastRelation(object):
 
     def post_pred(self, domain_name, group_id, entity_pos):
         score = 0.0
+
+        axispos_for_domain = self._get_axispos_for_domain(domain_name)
+
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             data_value = self._get_data_value(dp)
             current_group_coords = self._get_dp_group_coords(dp)
             new_group_coords = list(current_group_coords)
             dp_entity_pos = self._get_dp_entity_coords(dp)
             
-            for axis_pos in self._get_axispos_for_domain(domain_name):
+            for axis_pos in axispos_for_domain:
                 if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
             ss = self.components[tuple(new_group_coords)]

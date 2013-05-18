@@ -5,6 +5,11 @@ cimport numpy as np
 
 NOT_ASSIGNED = -1
 
+DEF MAX_AXES = 10
+
+ctypedef int * entity_coords_t 
+ctypedef int * group_coords_t 
+
 cdef class FastRelation:
     """
     Low-level implementaiton of a relation, optimized for performance
@@ -76,6 +81,10 @@ cdef class FastRelation:
                 self.entity_to_dp[ax_name][entity_id].add(pos)
             self.datapoint_entity_index[pos] = dp_coord
             pos += 1
+        # convert back to ndarray
+        for d in self.domains:
+            for ei, dps in self.entity_to_dp[d].iteritems():
+                self.entity_to_dp[d][ei] = np.array(list(dps), dtype=np.uint32)
 
     def assert_unassigned(self):
         """
@@ -87,29 +96,29 @@ cdef class FastRelation:
             assert (self.domain_entity_assignment[d] == NOT_ASSIGNED).all()
         assert (self.datapoint_groups[:] == NOT_ASSIGNED).all()
         
-    cdef _get_axispos_for_domain(self, domain_name):
+    cdef inline _get_axispos_for_domain(self, domain_name):
         return self.domain_to_axispos[domain_name]
 
-    cdef _datapoints_for_entity(self, domain_name, size_t entity_pos):
+    cdef inline np.ndarray _datapoints_for_entity(self, domain_name, size_t entity_pos):
         return self.entity_to_dp[domain_name][entity_pos]
 
-    cdef _get_dp_entity_coords(self, size_t dp):
+    cdef inline _get_dp_entity_coords(self, size_t dp):
         return self.datapoint_entity_index[dp]
 
-    cdef _get_dp_group_coords(self, size_t dp):
+    cdef inline np.ndarray _get_dp_group_coords(self, size_t dp):
 
         return self.datapoint_groups[dp]
 
-    cdef _set_dp_group_coords(self, size_t dp, group_coords):
+    cdef inline _set_dp_group_coords(self, size_t dp, group_coords):
         self.datapoint_groups[dp] = group_coords
 
-    cdef _set_entity_group(self, domain_name, size_t entity_pos, group_id):
+    cdef inline _set_entity_group(self, domain_name, size_t entity_pos, group_id):
         self.domain_entity_assignment[domain_name][entity_pos] = group_id
 
-    cdef _get_entity_group(self, domain_name, size_t entity_pos):
+    cdef inline _get_entity_group(self, domain_name, size_t entity_pos):
         return self.domain_entity_assignment[domain_name][entity_pos]
 
-    def _get_data_value(self, dp):
+    cdef inline _get_data_value(self, dp):
         return self.data[dp]
 
     def create_group(self, domain_name):
@@ -192,15 +201,22 @@ cdef class FastRelation:
         self._set_entity_group(domain_name, entity_pos, NOT_ASSIGNED)
 
 
-    def post_pred(self, domain_name, group_id, entity_pos):
-        score = 0.0
+    cdef _post_pred(self, domain_name, int group_id, int entity_pos):
+        cdef:
+            float score = 0.0
+            float inc_score = 0.0
+            group_coords_t current_group_coords2[MAX_AXES]
+            int dp
+
+        domain_axispos = self._get_axispos_for_domain(domain_name)
+
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             data_value = self._get_data_value(dp)
             current_group_coords = self._get_dp_group_coords(dp)
             new_group_coords = list(current_group_coords)
             dp_entity_pos = self._get_dp_entity_coords(dp)
             
-            for axis_pos in self._get_axispos_for_domain(domain_name):
+            for axis_pos in domain_axispos:
                 if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
             ss = self.components[tuple(new_group_coords)]
@@ -209,6 +225,10 @@ cdef class FastRelation:
                                              self.hps, data_value)
             score += inc_score
         return score
+
+    def post_pred(self, domain_name, group_id, entity_pos):
+
+        return self._post_pred(domain_name, group_id, entity_pos)
         
     def total_score(self):
         score = 0
