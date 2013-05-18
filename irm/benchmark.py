@@ -9,15 +9,17 @@ pyximport.install(setup_args={
                               "include_dirs":np.get_include()},
                   reload_support=True)
 import fastrelation
+import irmio
+
 
 def benchmark():
-    import irmio
+    np.random.seed(0)
 
-    T1_N = 300
-    T2_N = 300
+    T1_N = 200
+    T2_N = 200
 
-    T1_C = 10
-    T2_C = 10
+    T1_C = 20
+    T2_C = 20
 
     t1_assign, t2_assign, data, latent_class_matrix = synthdata.create_T1T2_bb(T1_N, T2_N, T1_C, T2_C)
 

@@ -5,7 +5,7 @@ cimport numpy as np
 
 NOT_ASSIGNED = -1
 
-class FastRelation(object):
+cdef class FastRelation:
     """
     Low-level implementaiton of a relation, optimized for performance
     
@@ -18,7 +18,21 @@ class FastRelation(object):
     Right now we assume data is fully dense
     
     """
-    
+    cdef np.ndarray data
+    cdef model 
+    cdef axes
+    cdef domains
+    cdef domain_to_axispos
+    cdef components
+    cdef components_dp_count
+    cdef size_t group_id
+    cdef domain_entity_assignment 
+    cdef domain_groups
+    cdef np.ndarray datapoint_groups
+    cdef np.ndarray datapoint_entity_index
+    cdef entity_to_dp
+    cdef hps
+
     def __init__(self, domain_def, data, modeltype = None):
 
         assert len(domain_def) > 1
@@ -73,25 +87,26 @@ class FastRelation(object):
             assert (self.domain_entity_assignment[d] == NOT_ASSIGNED).all()
         assert (self.datapoint_groups[:] == NOT_ASSIGNED).all()
         
-    def _get_axispos_for_domain(self, domain_name):
+    cdef _get_axispos_for_domain(self, domain_name):
         return self.domain_to_axispos[domain_name]
 
-    def _datapoints_for_entity(self, domain_name, entity_pos):
+    cdef _datapoints_for_entity(self, domain_name, size_t entity_pos):
         return self.entity_to_dp[domain_name][entity_pos]
 
-    def _get_dp_entity_coords(self, dp):
+    cdef _get_dp_entity_coords(self, size_t dp):
         return self.datapoint_entity_index[dp]
-    def _get_dp_group_coords(self, dp):
+
+    cdef _get_dp_group_coords(self, size_t dp):
 
         return self.datapoint_groups[dp]
 
-    def _set_dp_group_coords(self, dp, group_coords):
+    cdef _set_dp_group_coords(self, size_t dp, group_coords):
         self.datapoint_groups[dp] = group_coords
 
-    def _set_entity_group(self, domain_name, entity_pos, group_id):
+    cdef _set_entity_group(self, domain_name, size_t entity_pos, group_id):
         self.domain_entity_assignment[domain_name][entity_pos] = group_id
 
-    def _get_entity_group(self, domain_name, entity_pos):
+    cdef _get_entity_group(self, domain_name, size_t entity_pos):
         return self.domain_entity_assignment[domain_name][entity_pos]
 
     def _get_data_value(self, dp):
