@@ -102,3 +102,7 @@ def count(x):
             v[q] = 0
         v[q] +=1
     return v
+
+def log_bernoulli(heads, tails, p):
+    pass
+

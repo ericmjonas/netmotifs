@@ -10,6 +10,9 @@ import gibbs
 import util
 import irmio
 
+import relation
+
+RELATION_CLASS = relation.FastRelation
 
 def addelement(partlist, e):
     newpartlist = []
@@ -151,8 +154,56 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
 @transform([create_data_t1t2, create_data_t1t1], 
            suffix(".pickle"), ".samples.pickle")
 def run_samples(infile, outfile):
+    config = pickle.load(open(infile))
+    irm_model = irmio.model_from_config(config, relation_class = RELATION_CLASS)
 
-    irm_model = irmio.model_from_config_file(infile)
+    # pick what the T1 is that we're going to use
+    t1_name = sorted(irm_model.types.keys())[0]
+    t1_obj = irm_model.types[t1_name]
+    T1_N = t1_obj.entity_count()
+    print "RUNNING FOR", t1_name
+
+    # create dataset
+    parts, assignments = enumerate_canonical_partitions(T1_N)
+    
+    scores = np.zeros(len(assignments))
+    ca_to_pos = {}
+    for ai, a in enumerate(assignments):
+        type_to_assign_vect(t1_obj, a)
+        scores[ai]  = irm_model.total_score()
+        ca_to_pos[tuple(a)] = ai
+
+    true_probs = util.scores_to_prob(scores)
+    SAMPLE_SETS = 10
+    SAMPLES_N = 100
+    ITERS_PER_SAMPLE = 10
+    bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
+    print "SAMPLING"
+    for samp_set in range(SAMPLE_SETS):
+        print "Samp_set", samp_set
+        for s in range(SAMPLES_N):
+            for i in range(ITERS_PER_SAMPLE):
+                gibbs.gibbs_sample_type(t1_obj)
+            a = t1_obj.get_assignments()
+            ca = canonicalize_assignment(a)
+            pi = ca_to_pos[tuple(ca)]
+            bins[samp_set, pi] += 1
+    print "DONE"
+    
+    pickle.dump({'bins' : bins, 
+                 'true_probs' : true_probs, 
+                 'infile' : infile}, 
+                open(outfile, 'w'))
+
+@transform([create_data_t1t2, create_data_t1t1], 
+           suffix(".pickle"), ".samples.nonconj.pickle")
+def run_samples_nonconj(infile, outfile):
+    config = pickle.load(open(infile))
+    
+    irm_model = irmio.model_from_config(config, relation_class=RELATION_CLASS)
+    config['relations']['R1']['model'] = "BetaBernoulliNonConj"
+
+    irm_model_nonconj = irmio.model_from_config(config, relation_class=RELATION_CLASS)
 
     # pick what the T1 is that we're going to use
     t1_name = sorted(irm_model.types.keys())[0]
@@ -176,12 +227,15 @@ def run_samples(infile, outfile):
     ITERS_PER_SAMPLE = 10
     bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
     print "SAMPLING"
+    t1_obj_nonconj = irm_model.types[t1_name]
+    
+    M = 10
     for samp_set in range(SAMPLE_SETS):
         print "Samp_set", samp_set
         for s in range(SAMPLES_N):
             for i in range(ITERS_PER_SAMPLE):
-                gibbs.gibbs_sample_type(t1_obj)
-            a = t1_obj.get_assignments()
+                gibbs.gibbs_sample_type_nonconj(t1_obj_nonconj, M)
+            a = t1_obj_nonconj.get_assignments()
             ca = canonicalize_assignment(a)
             pi = ca_to_pos[tuple(ca)]
             bins[samp_set, pi] += 1
@@ -222,4 +276,5 @@ def summarize(infiles, summary_file):
     pylab.savefig(summary_file)
 
 if __name__ == "__main__":
-    pipeline_run([create_data_t1t2, run_samples, summarize], multiprocess=4)
+    pipeline_run([create_data_t1t2, run_samples, #  run_samples_nonconj, 
+                  summarize], multiprocess=4)

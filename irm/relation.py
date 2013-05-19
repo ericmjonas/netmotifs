@@ -75,6 +75,16 @@ class FastRelation(object):
             assert (self.domain_entity_assignment[d] == NOT_ASSIGNED).all()
         assert (self.datapoint_groups[:] == NOT_ASSIGNED).all()
         
+    def assert_assigned(self):
+        """
+        Sanity check to make sure everything is assigned
+        """
+        assert len(self.components) > 0 
+        assert len(self.components_dp_count) > 0 
+        for d in self.domains:
+            assert (self.domain_entity_assignment[d] != NOT_ASSIGNED).all()
+        assert (self.datapoint_groups[:] != NOT_ASSIGNED).any()
+
     def _get_axispos_for_domain(self, domain_name):
         return self.domain_to_axispos[domain_name]
 
@@ -155,12 +165,12 @@ class FastRelation(object):
             for axis_pos in axispos_for_domain:
                 if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
-
+            ngc = tuple(new_group_coords)
             if NOT_ASSIGNED in current_group_coords and NOT_ASSIGNED not in new_group_coords:
-                self.components[tuple(new_group_coords)] = self.model.ss_add(self.components[tuple(new_group_coords)], self.hps, value)
-                self.components_dp_count[tuple(new_group_coords)] += 1
+                self.components[ngc] = self.model.ss_add(self.components[ngc], self.hps, value)
+                self.components_dp_count[ngc] += 1
 
-            self._set_dp_group_coords(dp, new_group_coords)
+            self._set_dp_group_coords(dp, ngc)
         self._set_entity_group(domain_name, entity_pos, group_id)
 
     def remove_entity_from_group(self, domain_name, group_id, entity_pos):
@@ -171,43 +181,59 @@ class FastRelation(object):
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             value = self._get_data_value(dp)
             group_coords = self._get_dp_group_coords(dp)
-            if NOT_ASSIGNED not in group_coords:
-
-                self.components[tuple(group_coords)] = self.model.ss_rem(self.components[tuple(group_coords)], self.hps, value)
-                self.components_dp_count[tuple(group_coords)] -= 1
+            new_group_coords = list(group_coords)
 
             for axis_pos in axispos_for_domain:
-                group_coords[axis_pos] = NOT_ASSIGNED
-            self._set_dp_group_coords(dp, group_coords)
+                new_group_coords[axis_pos] = NOT_ASSIGNED
+            gc = tuple(group_coords)
+            ngc = tuple(new_group_coords)
+            if NOT_ASSIGNED not in group_coords:
+
+                self.components[gc] = self.model.ss_rem(self.components[gc], self.hps, value)
+                self.components_dp_count[gc] -= 1
+
+            self._set_dp_group_coords(dp, ngc)
         self._set_entity_group(domain_name, entity_pos, NOT_ASSIGNED)
 
 
     def post_pred(self, domain_name, group_id, entity_pos):
+        """
+        Well crap. This can't be a mutation-free operation. Damn. 
+        """
+
         score = 0.0
+        cached_comps = {}
 
         axispos_for_domain = self._get_axispos_for_domain(domain_name)
-
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
             data_value = self._get_data_value(dp)
             current_group_coords = self._get_dp_group_coords(dp)
             new_group_coords = list(current_group_coords)
             dp_entity_pos = self._get_dp_entity_coords(dp)
+            assert NOT_ASSIGNED in current_group_coords
             
             for axis_pos in axispos_for_domain:
                 if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
-            ss = self.components[tuple(new_group_coords)]
-                                 
-            inc_score = self.model.post_pred(ss, 
-                                             self.hps, data_value)
-            score += inc_score
+            new_group_coords = tuple(new_group_coords)
+            if NOT_ASSIGNED not in new_group_coords:
+
+                if new_group_coords in cached_comps:
+                    ss = cached_comps[new_group_coords]
+                else:
+                    ss = self.components[new_group_coords]
+
+
+                inc_score = self.model.post_pred(ss, 
+                                                self.hps, data_value)
+                cached_comps[new_group_coords] = self.model.ss_add(ss, self.hps, data_value)
+
+                score += inc_score
         return score
         
     def total_score(self):
         score = 0
-        pos = 0
         for k in self.components_dp_count.keys():
-            pos += 1
             if self.components_dp_count[k] > 0:
                 ss = self.components[k]
                 score += self.model.ss_score(ss, self.hps)

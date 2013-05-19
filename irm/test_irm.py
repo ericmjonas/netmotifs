@@ -21,7 +21,7 @@ T1 x T1 x T2 x T2
 def test_relation_T1T2_allone_singleton_default():
     relation_T1T2_allone_singleton(relation.Relation)
 
-def test_relation_T1T2_allone_singleton_default():
+def test_relation_T1T2_allone_singleton_default_fast():
     relation_T1T2_allone_singleton(relation.FastRelation)
 
 def relation_T1T2_allone_singleton(relation_class):
@@ -82,6 +82,89 @@ def relation_T1T2_allone_singleton(relation_class):
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
     
+
+def test_relation_T1T2_postpred():
+    relation_T1T2_postpred(relation.Relation)
+
+def test_relation_T1T2_postpred_fast():
+    relation_T1T2_postpred(relation.FastRelation)
+    
+def relation_T1T2_postpred(relation_class):
+    """
+    Perform a series of mutations and check that post-pred + actually
+    performing mutation == total score delta
+    """
+    T1_N = 4
+    T2_N = 3
+    np.random.seed(0)
+    data = np.random.rand(T1_N, T2_N) > 0.5
+
+    model =  models.BetaBernoulli()
+    r = relation_class([('T1', T1_N), ('T2', T2_N)], 
+                     data,model)
+    hps = model.create_hps()
+
+    r.set_hps(hps)
+    
+    t1_grp = r.create_group('T1')
+    t2_grp = r.create_group('T2')
+
+    for i in range(T1_N):
+        r.add_entity_to_group('T1', t1_grp, i)
+
+    for i in range(T2_N):
+        r.add_entity_to_group('T2', t2_grp, i)
+    
+    print "getting orig score"
+    orig_score = r.total_score()
+
+    TGT = 2
+    r.remove_entity_from_group('T1', t1_grp, TGT)
+    print "getting smaller score"
+    s1 = r.total_score()
+    s_pp = r.post_pred('T1', t1_grp, TGT)
+    r.add_entity_to_group('T1', t1_grp, TGT)
+    new_score = r.total_score()
+    assert_approx_equal(orig_score, new_score)
+    assert_approx_equal(s1 + s_pp, orig_score)
+
+    # # remove everything
+    for i in range(T1_N):
+        r.remove_entity_from_group('T1', t1_grp, i)
+    for i in range(T2_N):
+        r.remove_entity_from_group('T2', t2_grp, i)
+
+    s = r.total_score()
+    assert_equal(s, 0.0)
+    
+    #### DELETE THE GROUPS
+    r.delete_group('T1', t1_grp)
+    r.delete_group('T2', t2_grp)
+
+    #### ADD TO SINGLETONS
+    t1_grps = [r.create_group('T1') for _ in range(T1_N)]
+    t2_grps = [r.create_group('T2') for _ in range(T2_N)]
+
+
+    for i in range(T2_N):
+        r.add_entity_to_group('T2', t2_grps[i], i)
+    orig_score = r.total_score()
+    pp_score = 0
+    for i in range(T1_N):
+        pp_score += r.post_pred('T1', t1_grps[i], i)
+        r.add_entity_to_group('T1', t1_grps[i], i)    
+        
+    new_score = r.total_score()
+    assert_approx_equal(orig_score + pp_score, new_score)
+
+    r.remove_entity_from_group('T1', t1_grps[TGT], TGT)
+    s1 = r.total_score()
+    s_pp = r.post_pred('T1', t1_grps[TGT], TGT)
+    r.add_entity_to_group('T1', t1_grps[TGT], TGT)
+    new_score = r.total_score()
+    
+    assert_approx_equal(s1 + s_pp, new_score)
+
         
 def test_relation_T1T1_allone_slow():
     relation_T1T1_allone(relation.Relation)

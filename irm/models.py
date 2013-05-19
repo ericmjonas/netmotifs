@@ -150,7 +150,7 @@ class NegVarModel(VarModel):
         return -(np.var(ss) - np.var(ss['dp']))
 
 
-class NonConjBetaBernoulli(object):
+class BetaBernoulliNonConj(object):
     """
     A non-conjugate instantaition of the beta-bernoulli conjugate
     model where we explicitly represent the P
@@ -162,6 +162,9 @@ class NonConjBetaBernoulli(object):
         Return a hypers obj
         """
         return {'alpha' : 1.0, 'beta': 1.0}
+
+    def sample_from_prior(self, hps):
+        return np.random.beta(hps['alpha'], hps['beta'])
 
     def create_ss(self, hps):
         """
@@ -201,22 +204,28 @@ class NonConjBetaBernoulli(object):
         return new_ss
 
     def ss_score(self, ss, hp):
+        """
+        This should include all sorts of stuff right? 
+        """
+        
         heads = ss['heads']
         tails = ss['tails']
+        p = ss['p']
         alpha = hp['alpha']
         beta = hp['beta']
         logbeta_a_b = betaln(alpha, beta)
+        lp = np.log(p)
+        lmop = np.log(1-p)
+        p_score = -logbeta_a_b + (alpha-1)*lp + (beta-1)*lmop
+        
+        # should this be a beta or a bernoulli
+        #d_score = util.log_bernoulli(heads, tails, p)
 
-        return betaln(alpha+heads,beta+tails) - logbeta_a_b; 
+        return p_score + d_score
 
     def post_pred(self, ss, hp, datum):
-        heads = ss['heads']
-        tails = ss['tails']
-        alpha = hp['alpha']
-        beta = hp['beta']
-        den = np.log(alpha+beta + heads + tails)
-
+        p = ss['p']
         if datum:
-            return np.log(heads + alpha) - den
+            return np.log(p)
         else:
-            return np.log(tails + beta) - den
+            return np.log(1-p)
