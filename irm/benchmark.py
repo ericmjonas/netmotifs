@@ -10,6 +10,7 @@ pyximport.install(setup_args={
                   reload_support=True)
 import fastrelation
 import irmio
+import time
 
 
 def benchmark():
@@ -38,11 +39,15 @@ def benchmark():
     t1_obj = irm_model.types['t1']
     t2_obj = irm_model.types['t2']
 
-    SAMPLES_N = 5
+    SAMPLES_N = 50
     for s in range(SAMPLES_N):
         print s
+        t1 = time.time()
         gibbs.gibbs_sample_type(t1_obj)
         gibbs.gibbs_sample_type(t2_obj)
+        t2 = time.time()
+
+        print "sample", s, "took", t2-t1, "secs"
         print util.count(t1_obj.get_assignments()).values()
         print util.count(t2_obj.get_assignments()).values()
 

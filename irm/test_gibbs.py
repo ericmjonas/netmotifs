@@ -109,7 +109,7 @@ def gibbs_beta_bernoulli(relation_class):
         tf_2.add_entity_to_group(t2_g1, i)
 
     
-    ITERS = 100
+    ITERS = 10
     for i in range(ITERS):
         gibbs.gibbs_sample_type(tf_1)
         gibbs.gibbs_sample_type(tf_2)

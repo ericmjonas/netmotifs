@@ -112,7 +112,7 @@ class FastRelation(object):
                                     [self.domain_groups[dn] for dn in self.axes])
                        
         for g in group_coords:
-            self.components[g] = self.model.create_ss()
+            self.components[g] = self.model.create_ss(self.hps)
             self.components_dp_count[g] = 0
         self.group_id += 1
         return new_gid
@@ -291,7 +291,7 @@ class Relation(object):
         new_ss = set(util.cart_prod(grp_list)) - set(self.suffstats.keys()) 
         # create all of them
         for k in new_ss:
-            self.suffstats[k] = self.model.create_ss()
+            self.suffstats[k] = self.model.create_ss(self.hps)
             self.component_dp_count[k] = 0
         return grp_id
 
