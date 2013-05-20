@@ -14,6 +14,10 @@ import relation
 
 RELATION_CLASS = relation.FastRelation
 
+SAMPLE_SETS = 20
+SAMPLES_N = 100
+ITERS_PER_SAMPLE = 10
+
 def addelement(partlist, e):
     newpartlist = []
     for part in partlist:
@@ -104,8 +108,8 @@ def type_to_assign_vect(type_intf, av):
         type_intf.add_entity_to_group(id_to_gid[a], ei)
     
 def t1_t2_datasets():
-    T1_N = 6
-    T2_N = 3
+    T1_N = 10
+    T2_N = 8
     for seed in range(4):
         output_filename = "irm.t1xt2.%d.%d.%d.pickle" % (T1_N, T2_N, seed)
         yield None, output_filename, T1_N, T2_N, seed
@@ -129,7 +133,7 @@ def create_data_t1t2(inputfile, outputfile, T1_N, T2_N, seed):
     pickle.dump(config, open(outputfile, 'w'))
 
 def t1_t1_datasets():
-    T1_N = 6
+    T1_N = 8
     for seed in range(4):
         output_filename = "irm.t1xt1.%d.%d.pickle" % (T1_N, seed)
         yield None, output_filename, T1_N,  seed
@@ -174,9 +178,7 @@ def run_samples(infile, outfile):
         ca_to_pos[tuple(a)] = ai
 
     true_probs = util.scores_to_prob(scores)
-    SAMPLE_SETS = 10
-    SAMPLES_N = 100
-    ITERS_PER_SAMPLE = 10
+
     bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
     print "SAMPLING"
     for samp_set in range(SAMPLE_SETS):
@@ -196,7 +198,7 @@ def run_samples(infile, outfile):
                 open(outfile, 'w'))
 
 @transform([create_data_t1t2, create_data_t1t1], 
-           suffix(".pickle"), ".samples.nonconj.pickle")
+           suffix(".pickle"), ".nonconj.samples.pickle")
 def run_samples_nonconj(infile, outfile):
     config = pickle.load(open(infile))
     
@@ -222,9 +224,6 @@ def run_samples_nonconj(infile, outfile):
         ca_to_pos[tuple(a)] = ai
 
     true_probs = util.scores_to_prob(scores)
-    SAMPLE_SETS = 100
-    SAMPLES_N = 100
-    ITERS_PER_SAMPLE = 10
     bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
     print "SAMPLING"
     t1_obj_nonconj = irm_model.types[t1_name]
@@ -246,9 +245,10 @@ def run_samples_nonconj(infile, outfile):
                  'infile' : infile}, 
                 open(outfile, 'w'))
 
-@collate(run_samples, regex(r"\.(.+).\d+.samples.pickle$"),  r'\1.kl.pdf')
+@collate([run_samples, run_samples_nonconj],
+         regex(r"\.(.+).\d+.(.*)samples.pickle$"),  r'\1.\2kl.pdf')
 def summarize(infiles, summary_file):
-    PLOT_N = 40
+    PLOT_N = 80
 
     KLs = np.zeros((len(infiles), 1000))
     for infile_i, infile in enumerate(infiles):
@@ -276,5 +276,5 @@ def summarize(infiles, summary_file):
     pylab.savefig(summary_file)
 
 if __name__ == "__main__":
-    pipeline_run([create_data_t1t2, run_samples, #  run_samples_nonconj, 
+    pipeline_run([create_data_t1t2, run_samples, run_samples_nonconj, 
                   summarize], multiprocess=4)
