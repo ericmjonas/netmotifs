@@ -74,7 +74,8 @@ class FastRelation(object):
         for d in self.domains:
             assert (self.domain_entity_assignment[d] == NOT_ASSIGNED).all()
         assert (self.datapoint_groups[:] == NOT_ASSIGNED).all()
-        
+
+
     def assert_assigned(self):
         """
         Sanity check to make sure everything is assigned
@@ -84,6 +85,12 @@ class FastRelation(object):
         for d in self.domains:
             assert (self.domain_entity_assignment[d] != NOT_ASSIGNED).all()
         assert (self.datapoint_groups[:] != NOT_ASSIGNED).any()
+
+        DPCOUNT = len(self.data)
+        assert  DPCOUNT == self.assigned_dp_count()
+
+    def assigned_dp_count(self):
+        return np.sum(self.components_dp_count.values())
 
     def _get_axispos_for_domain(self, domain_name):
         return self.domain_to_axispos[domain_name]
@@ -153,6 +160,7 @@ class FastRelation(object):
         It might be the case that a given datapoint is ALRADY at the 
         group
         """
+
         axispos_for_domain = self._get_axispos_for_domain(domain_name)
 
         for dp in self._datapoints_for_entity(domain_name, entity_pos):
@@ -163,7 +171,7 @@ class FastRelation(object):
             dp_entity_pos = self._get_dp_entity_coords(dp)
             
             for axis_pos in axispos_for_domain:
-                if dp_entity_pos[axis_pos] == dp_entity_pos[axis_pos]:
+                if dp_entity_pos[axis_pos] == entity_pos:
                     new_group_coords[axis_pos] = group_id
             ngc = tuple(new_group_coords)
             if NOT_ASSIGNED in current_group_coords and NOT_ASSIGNED not in ngc:
@@ -182,9 +190,11 @@ class FastRelation(object):
             value = self._get_data_value(dp)
             group_coords = self._get_dp_group_coords(dp)
             new_group_coords = list(group_coords)
+            dp_entity_pos = self._get_dp_entity_coords(dp)
 
             for axis_pos in axispos_for_domain:
-                new_group_coords[axis_pos] = NOT_ASSIGNED
+                if dp_entity_pos[axis_pos] == entity_pos:
+                    new_group_coords[axis_pos] = NOT_ASSIGNED
             gc = tuple(group_coords)
             ngc = tuple(new_group_coords)
             if NOT_ASSIGNED not in group_coords:
