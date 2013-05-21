@@ -1,6 +1,6 @@
 import numpy as np
 import util
-
+import gibbs
 
 """
 Operations we want to be fast: 
@@ -129,4 +129,9 @@ class IRM(object):
         for r in self.relations.values():
             score += r.total_score()
         return score
+
+def do_inference(irm_model):
+    for domain_name, domain_inf in irm_model.types.iteritems():
+        gibbs.gibbs_sample_type(domain_inf)
+
 

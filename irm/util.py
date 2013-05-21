@@ -63,7 +63,7 @@ def crp_score(counts, alpha):
             score += crp_post_pred(customer, i + 1, alpha)
             i += 1
     return score
-
+    
 def die_roll(v):
     """
     Take in a vector of probs and roll

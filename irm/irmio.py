@@ -1,3 +1,5 @@
+import numpy as np
+
 import models
 import util
 import irm
@@ -7,7 +9,7 @@ def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_config(config, relation_class=relation.Relation):
+def model_from_config(config, relation_class=relation.Relation, init='allone'):
 
     types_config = config['types']
     relations_config = config['relations']
@@ -46,9 +48,45 @@ def model_from_config(config, relation_class=relation.Relation):
 
     # now initialize all to 1
     for tn, ti in type_interfaces.iteritems():
-        g = ti.create_group()
-        for j in range(ti.entity_count()):
-            ti.add_entity_to_group(g, j)
-    
+        if init == 'allone':
+            g = ti.create_group()
+            for j in range(ti.entity_count()):
+                ti.add_entity_to_group(g, j)
+        elif init == 'singleton':
+            for j in range(ti.entity_count()):
+                g = ti.create_group()
+                ti.add_entity_to_group(g, j)
+        elif init == "crp": 
+            perm = np.random.permutation(ti.entity_count())
+            # FIXME this should really be CRP
+            assign = np.arange(ti.entity_count()) % 8
+            gr = {}
+            for ai, a in enumerate(assign):
+                if a not in gr:
+                    gr[a] = ti.create_group()
+                ti.add_entity_to_group(gr[a], ai)
+                
+        else:
+            raise NotImplementedError()
+            
     return irm_model
 
+def empty_domain(domain_obj):
+    """
+    Remove all objects and delete all groups
+    """
+    for ei in range(domain_obj.entity_count()):
+        gid = domain_obj.remove_entity_from_group(ei)
+        if domain_obj.group_size(gid) == 0:
+            domain_obj.delete_group(gid)
+            
+def init_domain(domain_obj, assign_vect):
+    assert domain_obj.entity_count() == len(assign_vect)
+    empty_domain(domain_obj)
+    ai_to_gid = {}
+    for ei, ai in enumerate(assign_vect):
+        if ai not in ai_to_gid:
+            ai_to_gid[ai] = domain_obj.create_group()
+        domain_obj.add_entity_to_group(ai_to_gid[ai], ei)
+    
+    

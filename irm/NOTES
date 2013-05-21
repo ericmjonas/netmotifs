@@ -43,3 +43,19 @@ for type in types:
     gibbs_sample(type)
     hp_inference(type)
     
+
+
+Graph tools: 
+
+ LDFLAGS=-L/usr/local/opt/boost149/lib CPPFLAGS="-I/usr/local/opt/boost149/include -I/usr/local/include/sparsehash" CC=gcc-4.7 PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig/ ./configure --prefix=`python2.7-config --prefix` 
+
+for local boost:
+
+    CPPFLAGS="-I/usr/local/opt/boost149/include -I/usr/local/include/sparsehash"
+
+
+LDFLAGS=-L/usr/local/opt/boost149/lib CPPFLAGS="-I/usr/local/opt/boost149/include -I/usr/local/include/sparsehash" CC=gcc-4.7 PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig/ ./configure --prefix=`python2.7-config --prefix`
+
+-------------------
+Performance: 
+1. init to ground truth -- how's our log score? 
