@@ -163,10 +163,10 @@ class FastRelation(object):
             dp_entity_pos = self._get_dp_entity_coords(dp)
             
             for axis_pos in axispos_for_domain:
-                if dp_entity_pos[axis_pos] == entity_pos:
+                if dp_entity_pos[axis_pos] == dp_entity_pos[axis_pos]:
                     new_group_coords[axis_pos] = group_id
             ngc = tuple(new_group_coords)
-            if NOT_ASSIGNED in current_group_coords and NOT_ASSIGNED not in new_group_coords:
+            if NOT_ASSIGNED in current_group_coords and NOT_ASSIGNED not in ngc:
                 self.components[ngc] = self.model.ss_add(self.components[ngc], self.hps, value)
                 self.components_dp_count[ngc] += 1
 
