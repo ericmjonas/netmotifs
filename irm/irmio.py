@@ -59,7 +59,7 @@ def model_from_config(config, relation_class=relation.Relation, init='allone'):
         elif init == "crp": 
             perm = np.random.permutation(ti.entity_count())
             # FIXME this should really be CRP
-            assign = np.arange(ti.entity_count()) % 8
+            assign = np.arange(ti.entity_count()) % 16
             gr = {}
             for ai, a in enumerate(assign):
                 if a not in gr:
