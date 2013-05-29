@@ -1,0 +1,102 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[citestyle=numeric]{biblatex}
+\addbibresource{connectomics motif.bib}
+
+\begin{document}
+
+\title{Nonparametric stochastic blockmodels with spatial structure}
+\author{Eric Jonas}
+
+\maketitle
+
+\section{overview}
+
+Classic stochastic blockmodels posit the existence of a latent class
+which sets the probability of a relation holding between any
+collection of entities in a domain. That is, if $e^1_i$ is an entity
+in domain $T1$ and in latent class $m$ and $e^2_j$ is an entity in
+domain $T2$ in latent class $n$, then 
+\begin{equation}
+\operatorname{Relation}(e^1_i, e^2_j) \sim F(\cdot | \eta_{mn})
+\end{equation}
+
+Kemp \parencite{Kemp2006a} extends stochastic blockmodels to the nonparametric setting. 
+
+For our application we're interested in the directed graph of synapse
+connectivity between all pairs of cells. Thus our relation is
+``synapses on'' and is defined on $T1\times T1$. We want to determine
+the underlying latent class of each cell (``cell type''), as well as
+the cell-type-specific connectivity. For this sort of binary
+(connected-or-not) data, we'd traditionally use a conjugate
+beta-Bernoulli likelihood -- $\eta_{mn}$ is the probability of a
+connection between cells of class $m$ and $n$.
+
+In neural systems, we know that we have cell-type-specific
+connectivity, but we also know that geometry matters tremendously. In
+the retina, certain cell-types tessellate the entire retina, and only
+synapse with a subset of neighboring cells. This spatially-selective
+connectivity runs very counter to the blockmodel assumptions of latent class
+being all that matters. 
+
+Based on an off-handed comment about a ``discriminative blockmodel''
+that Kevin Murphy, we can extend the connectivity with
+
+\begin{equation}
+P(e_i, e_j) \sim \operatorname{Bernoulli}(w_{ab}\cdot f(e_i, e_j)
+\end{equation}
+
+where the goal is to have $w_{ab}$ be an arbitrary latent-class weight
+matrix that is applied to an arbitrary discriminative function between
+additional parameters of entities $e_i$ and $e_j$. That is, $f$ can be
+defined on additional per-entity attributes, like spatial location.
+
+But of course, we don't have to be so limiting -- we can in fact
+learn an arbitrary class-type-specific function $f_{ab}(e_i, e_j)$. Right
+now I'm planning Euclidian distance between $e_i$ and $e_j$ as well as learning
+the $\lambda_{ab}$. That is, the probability of a connection between
+cells $e_i$ and $e_j$ is now
+
+\begin{equation}
+p(e_i, e_j) \sim \operatorname{Bernoulli}\Big(p_{ab}\cdot \operatorname{Exp}(d(e_i, e_j) | \lambda_{a, b})\Big)
+\end{equation}
+
+
+\begin{itemize}
+\item The choice of an exponential distribution is entirely arbitrary
+  -- it restricts us to assuming that cells always prefer closer
+  neighbors than far away ones. Thus we'll probbably eventually want
+  to use something like a two-parameter gamma to enable ``cell class A
+  only synapses on cell class B when it is more than 40 $\mu m$ away
+  and less than $200 \mu m$ away.''
+\item We could even go crazy and stick a DP in there and learn
+  whole-hog the functional form of $f_{ab}$. But that sounds
+  like overkill right now. 
+\end{itemize}
+
+\section{Inference}
+
+Inference isn't that bad -- this really just looks like a nonconjugate
+IRM! With the original beta-Bernoulli IRM, we integrate out the
+$\eta_{ab}$, whereas here we are explicitly tracking the per-block
+parameters. We need to stick a prior on them, and then do
+non-conjugate inference, but thankfully other
+people \parencite{Neal2000} have already done a passable job
+making MCMC in nonconjugate models a bit easier. 
+
+As we get ``real'' large data, we'll want to certainly explore
+more efficient inference approaches, but we can fight that fight
+when we come to it. 
+
+Other things: we're estimating the latent class number, should we be
+using a mixture of finite mixtures? The DP is inconsistent
+\parencite{Miller2012} but minor tweaks allow us to use nearly-identical
+inference and more robustly learn the number of latent categories.
+
+
+\printbibliography
+
+
+
+\end{document}
