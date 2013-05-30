@@ -205,7 +205,7 @@ class FastRelation(object):
             self._set_dp_group_coords(dp, ngc)
         self._set_entity_group(domain_name, entity_pos, NOT_ASSIGNED)
 
-
+        
     def post_pred(self, domain_name, group_id, entity_pos):
         """
         Well crap. This can't be a mutation-free operation. Damn. 

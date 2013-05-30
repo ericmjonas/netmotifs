@@ -45,7 +45,7 @@ print "COMPUTING TRUE SCORE", "-"*40
 #print "ALL ONE SCORE", irm_model.total_score()
 
 
-SAMPLES = 100
+SAMPLES = 10
 ITERS_PER_SAMPLE = 1
 for s in range(SAMPLES):
     print "sample", s
