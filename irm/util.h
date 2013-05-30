@@ -26,43 +26,12 @@ typedef std::vector<entitypos_t> entity_coords_t;
 
 #define NOT_ASSIGNED -1
 
-// template<typename T> 
-// void cart_prod_helper(std::vector<std::vector<T> > & output, 
-//                       std::vector<size_t> axes, 
-//                       std::vector<T> current_element, 
-//                       int axispos); 
-
-// template<typename T> 
-// void cart_prod_helper(std::vector<std::vector<T> > & output, 
-//        std::vector<size_t> axes, 
-//        std::vector<T> current_element, 
-//        int axispos) {
-//     if(axispos == (axes.size()-1)) { 
-//         // base case
-//         for(int i = 0; i < axes[axispos]; ++i) {
-//             std::vector<T> x = current_element; 
-//             x.push_back(i); 
-//             output.push_back(x); 
-//         }
-//     } else { 
-//         for(int i = 0; i < axes[axispos]; ++i) { 
-//             std::vector<T> x = current_element; 
-//             x.push_back(i); 
-//             cart_prod_helper(output, axes, x, axispos + 1); 
-//         }
-//     }
-
-    
-// }
-
-
-
 
 template<typename T, typename ForwardIterator> 
 void cart_prod_helper(std::vector<std::vector<T> > & output, 
                       std::vector<std::pair<ForwardIterator, ForwardIterator> >  axes, 
                       std::vector<T> current_element, 
-                      int axispos); 
+                      size_t axispos); 
 
 template<typename T>
 std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
@@ -88,7 +57,7 @@ template<typename T, typename ForwardIterator>
 void cart_prod_helper(std::vector<std::vector<T> > & output, 
                       std::vector<std::pair<ForwardIterator, ForwardIterator>> axes, 
        std::vector<T> current_element, 
-       int axispos) {
+       size_t axispos) {
     for(auto it = axes[axispos].first; it != axes[axispos].second; ++it) {
         if(axispos == (axes.size()-1)) { 
             std::vector<T> x = current_element; 
@@ -103,6 +72,28 @@ void cart_prod_helper(std::vector<std::vector<T> > & output,
     
 }
 
+
+template<typename ForwardIterator> 
+std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val, 
+                                            std::vector<std::pair<ForwardIterator, ForwardIterator>> axes)
+
+{
+    std::set<group_coords_t> outset; 
+    std::vector<group_coords_t> output; 
+    group_coords_t o; 
+    cart_prod_helper(output, axes, o, 0); 
+    for(auto c : output) { 
+        bool include = true; 
+        for(auto i: axis_pos) { 
+            if (c[i] != val) 
+                include = false; 
+        }
+        if(include)
+            outset.insert(c); 
+    }
+    
+    return outset; 
+}
 
 }
 
