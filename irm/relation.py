@@ -100,8 +100,8 @@ class FastRelation(object):
 
     def _get_dp_entity_coords(self, dp):
         return self.datapoint_entity_index[dp]
-    def _get_dp_group_coords(self, dp):
 
+    def _get_dp_group_coords(self, dp):
         return self.datapoint_groups[dp]
 
     def _set_dp_group_coords(self, dp, group_coords):

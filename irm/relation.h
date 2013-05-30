@@ -39,6 +39,7 @@ private:
     IComponentContainer * pCC_; 
     const int DIMS_; 
     const int DOMAINN_; 
+    domainsizes_t domainsizes_; 
     std::vector<std::vector<int> > domain_to_axispos_; 
 
     groupid_t group_id_; 
@@ -49,8 +50,60 @@ private:
     std::vector<entity_coords_t> datapoint_entity_index_; 
 
     // for each domain, maps from its entities to the domain
-    std::vector<std::vector<std::vector<int> > > entity_to_dp; 
+    std::vector<std::vector<std::vector<dppos_t> > > entity_to_dp_; 
+
+    // for each domain, map entitypos to groupid
+    std::vector<std::vector<groupid_t> > domain_entity_assignment_; 
+
+    // map from domain to the groups contained in that domain 
+    std::vector<group_set_t> domain_groups_; 
+
+    // private functions
+    inline std::vector<int> 
+    get_axispos_for_domain(domainpos_t dp) { 
+        return domain_to_axispos_[dp]; 
+    }
     
+    inline std::vector<dppos_t> 
+    datapoints_for_entity(domainpos_t domain, entitypos_t ep) {
+        return entity_to_dp_[domain][ep]; 
+    }
+    
+    inline entity_coords_t 
+    get_dp_entity_coords(dppos_t dp) { 
+        return datapoint_entity_index_[dp]; 
+    }
+    
+    inline group_coords_t
+    get_dp_group_coords(dppos_t dp) { 
+        return datapoint_groups_[dp]; 
+    }
+
+    inline void
+    set_dp_group_coords(dppos_t dp, group_coords_t gc) { 
+         datapoint_groups_[dp] = gc; 
+    }
+    
+    inline groupid_t get_entity_group(domainpos_t domain, entitypos_t ep) { 
+        return domain_entity_assignment_[domain][ep]; 
+    }
+    
+    inline void set_entity_group(domainpos_t domain, entitypos_t ep, groupid_t g) { 
+        domain_entity_assignment_[domain][ep] = g; 
+    }
+
+    inline bool fully_assigned(group_coords_t gc) { 
+        for(auto g : gc) { 
+            if (g == NOT_ASSIGNED) 
+                return false; 
+        }
+        return true; 
+
+    }
+ 
+    
+    
+
 }; 
 
 }
