@@ -2,10 +2,11 @@ from nose.tools import *
 import numpy as np
 from numpy.testing import assert_approx_equal, assert_array_equal
 
-import models
-import irm
-import relation
-import util
+from irm import models
+from irm import relation
+from irm import util
+from irm import model
+from irm import Relation
 
 """
 Cases to worry about
@@ -24,17 +25,20 @@ def test_relation_T1T2_allone_singleton_default():
 def test_relation_T1T2_allone_singleton_default_fast():
     relation_T1T2_allone_singleton(relation.FastRelation)
 
+def test_relation_T1T2_allone_singleton_default_fast():
+    relation_T1T2_allone_singleton(Relation)
+
 def relation_T1T2_allone_singleton(relation_class):
     T1_N = 3
     T2_N = 4
 
-    data = np.arange(T1_N*T2_N)
+    data = np.arange(T1_N*T2_N, dtype=np.float32)
     data.shape = T1_N, T2_N
 
-    model =  models.AccumModel()
+    m =  models.AccumModel()
     r = relation_class([('T1', T1_N), ('T2', T2_N)], 
-                     data,model)
-    hps = model.create_hps()
+                     data,m)
+    hps = m.create_hps()
     hps['offset'] = 0.3
 
     r.set_hps(hps)
@@ -51,7 +55,7 @@ def relation_T1T2_allone_singleton(relation_class):
         r.add_entity_to_group('T2', t2_grp, i)
     
     s = r.total_score()
-    assert_equal(s, np.sum(data) + 0.3)
+    assert_approx_equal(s, np.sum(data) + 0.3)
     # this should be the score for a mixture model with
     # simply these hypers and these sets of whatever
     
@@ -99,10 +103,10 @@ def relation_T1T2_postpred(relation_class):
     np.random.seed(0)
     data = np.random.rand(T1_N, T2_N) > 0.5
 
-    model =  models.BetaBernoulli()
+    m =  models.BetaBernoulli()
     r = relation_class([('T1', T1_N), ('T2', T2_N)], 
-                     data,model)
-    hps = model.create_hps()
+                       data,m)
+    hps = m.create_hps()
 
     r.set_hps(hps)
     
@@ -171,17 +175,17 @@ def test_relation_T1T1_allone_slow():
 
 def test_relation_T1T1_allone_fast():
     relation_T1T1_allone(relation.FastRelation)
-        
+    
 def relation_T1T1_allone(relation_class):
     T1_N = 10
 
     data = np.arange(T1_N * T1_N)
     data.shape = T1_N, T1_N
 
-    model =  models.AccumModel()
+    m =  models.AccumModel()
     r = relation_class([('T1', T1_N), ('T1', T1_N)], 
-                     data,model)
-    hps = model.create_hps()
+                       data,m)
+    hps = m.create_hps()
     hps['offset'] = 0.3
 
     r.set_hps(hps)
@@ -239,20 +243,20 @@ def type_if_rel(relation_class):
     data.shape = T1_N, T2_N
 
 
-    model =  models.AccumModel()
+    m =  models.AccumModel()
     r = relation_class([('T1', T1_N), ('T2', T2_N)], 
-                     data,model)
-    hps = model.create_hps()
+                     data,m)
+    hps = m.create_hps()
     hps['offset'] = 0.3
 
     r.set_hps(hps)
 
-    tf_1 = irm.TypeInterface(T1_N, [('T1', r)])
+    tf_1 = model.DomainInterface(T1_N, [('T1', r)])
     tf_1.set_hps(1.0)
-    tf_2 = irm.TypeInterface(T2_N, [('T2', r)])
+    tf_2 = model.DomainInterface(T2_N, [('T2', r)])
     tf_2.set_hps(1.0)
 
-    assert_array_equal(tf_1.get_assignments(), np.ones(T1_N)*irm.NOT_ASSIGNED)
+    assert_array_equal(tf_1.get_assignments(), np.ones(T1_N)*model.NOT_ASSIGNED)
 
 
     ### put all T2 into one group, T1 in singletons

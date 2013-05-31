@@ -1,13 +1,19 @@
-#ifndef __FASTMODEL_H__
-#define __FASTMODEL_H__
+#ifndef __IRM_FASTMODEL_H__
+#define __IRM_FASTMODEL_H__
 
 #include <map>
 #include <iostream> 
 #include <math.h>
+#include <boost/python.hpp>
 
-namespace fastmodel { 
+#include "util.h"
 
-static const size_t MAXDIM = 10; 
+
+namespace bp=boost::python; 
+
+
+namespace irm { 
+
 typedef size_t group_hash_t; 
 
 float betaln(float x, float y) { 
@@ -16,7 +22,7 @@ float betaln(float x, float y) {
 }
 
 struct BetaBernoulli { 
-    typedef bool value_t; 
+    typedef unsigned char value_t; 
     
     struct suffstats_t { 
         uint32_t heads; 
@@ -73,6 +79,60 @@ struct BetaBernoulli {
         
         float logbeta_a_b = betaln(alpha, beta); 
         return betaln(alpha + heads, beta+tails) - logbeta_a_b; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict hps) { 
+        hypers_t hp; 
+        hp.alpha = bp::extract<float>(hps["alpha"]); 
+        hp.beta = bp::extract<float>(hps["beta"]);
+        return hp; 
+
+    }
+}; 
+
+struct AccumModel { 
+    typedef float value_t; 
+    
+    struct suffstats_t { 
+        float sum; 
+        float count; 
+    }; 
+
+    struct hypers_t { 
+        float offset; 
+    }; 
+    
+    static void ss_init(suffstats_t * ss, hypers_t * hps) { 
+        ss->sum = 0; 
+        ss->count = 0; 
+    }
+     
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val) {
+        ss->sum += val; 
+        ss->count++; 
+    }
+
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val) {
+        ss->sum -= val; 
+        ss->count--; 
+        
+    }
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) {
+        return val; 
+        
+    }
+
+    static float score(suffstats_t * ss, hypers_t * hps) { 
+        return ss->sum + hps->offset; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict hps) { 
+        hypers_t hp; 
+        hp.offset = bp::extract<float>(hps["offset"]); 
+
+        return hp; 
+
     }
 }; 
 

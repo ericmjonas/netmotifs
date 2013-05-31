@@ -9,7 +9,7 @@
 
 namespace irm { 
 
-const int MAX_AXES = 4; 
+static const int MAX_AXES = 4; 
 
 typedef std::vector<int> axesdef_t; 
 typedef std::vector<size_t> domainsizes_t; 
@@ -55,10 +55,12 @@ std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
 
 template<typename T, typename ForwardIterator> 
 void cart_prod_helper(std::vector<std::vector<T> > & output, 
-                      std::vector<std::pair<ForwardIterator, ForwardIterator>> axes, 
-       std::vector<T> current_element, 
-       size_t axispos) {
+                      std::vector<std::pair<ForwardIterator,
+                      ForwardIterator>> axes, 
+                      std::vector<T> current_element, 
+                      size_t axispos) {
     for(auto it = axes[axispos].first; it != axes[axispos].second; ++it) {
+
         if(axispos == (axes.size()-1)) { 
             std::vector<T> x = current_element; 
             x.push_back(*it); 
@@ -68,9 +70,11 @@ void cart_prod_helper(std::vector<std::vector<T> > & output,
             x.push_back(*it); 
             cart_prod_helper(output, axes, x, axispos + 1); 
         }
+
     }
     
 }
+
 
 
 template<typename ForwardIterator> 
@@ -81,12 +85,14 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
     std::set<group_coords_t> outset; 
     std::vector<group_coords_t> output; 
     group_coords_t o; 
+
     cart_prod_helper(output, axes, o, 0); 
+
     for(auto c : output) { 
-        bool include = true; 
+        bool include = false; 
         for(auto i: axis_pos) { 
-            if (c[i] != val) 
-                include = false; 
+            if (c[i] == (int)val) 
+                include = true; 
         }
         if(include)
             outset.insert(c); 
@@ -94,6 +100,21 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
     
     return outset; 
 }
+
+
+template<typename T>
+std::vector<std::pair<typename T::iterator, typename T::iterator>>
+    collection_of_collection_to_iterators(std::vector<T> & collections) 
+{
+    std::vector<std::pair<typename T::const_iterator, 
+                          typename T::const_iterator>>  output; 
+    for(auto & a : collections) { 
+        output.push_back(std::make_pair(a.begin(), a.end())); 
+    }
+    
+    return output; 
+}
+
 
 }
 

@@ -61,7 +61,7 @@ Performance:
 1. init to ground truth -- how's our log score? 
 
 
-CXX=g++-4.7 cmake -DBOOST_ROOT=/Users/jonas/anaconda/ ../
+CXX=g++-4.7 cmake -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
 
 
 

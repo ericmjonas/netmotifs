@@ -1,7 +1,7 @@
 #include "fastmodel.h"
 
 
-namespace fastmodel { 
+namespace irm { 
 
 //template class ComponentContainer<BetaBernoulli>; 
 

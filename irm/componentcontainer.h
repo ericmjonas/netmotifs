@@ -1,7 +1,16 @@
+#ifndef __IRM_COMPONENTCONTAINER_H__
+#define __IRM_COMPONENTCONTAINER_H__
+
 #include <iostream>
 #include <map>
 #include <inttypes.h>
+#include <boost/utility.hpp>
+#include <boost/python.hpp>
+
 #include "util.h"
+
+namespace bp=boost::python; 
+
 
 namespace irm { 
 
@@ -9,18 +18,19 @@ class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
     virtual float total_score() = 0; 
-    virtual void create_component(group_coords_t group_coords); 
-    virtual void delete_component(group_coords_t group_coords); 
+    virtual void create_component(group_coords_t group_coords) = 0; 
+    virtual void delete_component(group_coords_t group_coords) = 0; 
 
-    virtual float post_pred(group_coords_t group_coords, dppos_t dp_pos); 
-    virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos); 
-    virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) ; 
-
+    virtual float post_pred(group_coords_t group_coords, dppos_t dp_pos) = 0;  
+    virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
+    virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
+    virtual void set_hps(bp::dict hps) = 0; 
 
 }; 
    
 template<typename CM>
-class  ComponentContainer : public IComponentContainer{ 
+class  ComponentContainer : public IComponentContainer, boost::noncopyable
+{ 
     
     struct sswrapper_t { 
         size_t count; 
@@ -30,15 +40,18 @@ class  ComponentContainer : public IComponentContainer{
     typedef uint64_t group_hash_t; 
 
 public:
-    ComponentContainer(int ndim, char * data, 
-                       size_t data_shape[] ) : 
-        NDIM_(ndim), 
-        pdata_(static_cast<typename CM::value_t *>(data))
+    ComponentContainer(const std::string & data, 
+                       std::vector<size_t> data_shape) :
+        NDIM_(data_shape.size()), 
+        data_shape_(data_shape)
     {
+        size_t data_size = 1; 
         for(int i = 0; i < NDIM_; i++) { 
-            data_shape_[i] = data_shape[i]; 
+            data_size *= data_shape_[i]; 
         }
-
+        data_.resize(data_size); 
+        memcpy(&(data_[0]), data.c_str(), 
+               sizeof(typename CM::value_t)*data_size); 
         
     }
     
@@ -61,6 +74,7 @@ public:
         typename components_t::iterator i = components_.begin(); 
         float score = 0.0; 
         for(; i != components_.end(); ++i) { 
+
             if(i->second->count > 0) { 
                 score += CM::score(&(i->second->ss), &hps_); 
             }
@@ -73,36 +87,47 @@ public:
     float post_pred(group_coords_t group_coords, dppos_t dp_pos)
     {
         group_hash_t gp = hash_coords(group_coords); 
-        typename CM::value_t val = pdata_[dp_pos]; 
+        typename CM::value_t val = data_[dp_pos]; 
         sswrapper_t * ssw = components_.find(gp)->second; 
         return CM::post_pred(&(ssw->ss), &hps_, val); 
     }
     
     void add_dp(group_coords_t group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
-        typename CM::value_t val = pdata_[dp_pos]; 
+        typename CM::value_t val = data_[dp_pos]; 
         sswrapper_t * ssw = components_.find(gp)->second; 
         CM::ss_add(&(ssw->ss), &hps_, val); 
+        ssw->count++; 
         
     }
 
 
     void rem_dp(group_coords_t group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
-        typename CM::value_t val = pdata_[dp_pos]; 
+        typename CM::value_t val = data_[dp_pos]; 
         sswrapper_t * ssw = components_.find(gp)->second; 
         CM::ss_rem(&(ssw->ss), &hps_, val); 
+        ssw->count--; 
         
     }
 
+    size_t dpcount() { 
+        return data_.size(); 
+    }
+
+    void set_hps(bp::dict hps) { 
+        hps_ = CM::bp_dict_to_hps(hps); 
+
+    }
 
 private:
     typedef std::map<size_t, sswrapper_t *> components_t; 
 
     const int NDIM_;
-    const typename CM::value_t * pdata_; 
+    std::vector<size_t> data_shape_; 
+
+    std::vector< typename CM::value_t> data_; 
     components_t components_; 
-    size_t data_shape_[MAX_AXES]; 
 
     group_hash_t hash_coords(group_coords_t group_coords) { 
         size_t hash = 0; 
@@ -118,3 +143,5 @@ private:
 }; 
 
 }
+
+#endif

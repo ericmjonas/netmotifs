@@ -53,7 +53,7 @@ private:
     std::vector<std::vector<std::vector<dppos_t> > > entity_to_dp_; 
 
     // for each domain, map entitypos to groupid
-    std::vector<std::vector<groupid_t> > domain_entity_assignment_; 
+    std::vector<std::vector<groupid_t>> domain_entity_assignment_; 
 
     // map from domain to the groups contained in that domain 
     std::vector<group_set_t> domain_groups_; 

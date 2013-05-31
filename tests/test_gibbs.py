@@ -4,8 +4,8 @@ from numpy.testing import assert_approx_equal, assert_array_equal
 
 from matplotlib import pylab
 
-import models
-import irm
+from pyirm import models
+from pyirm import irm
 import relation
 import util
 import gibbs

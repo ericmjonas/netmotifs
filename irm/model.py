@@ -19,7 +19,7 @@ A relation must have hypers
 NOT_ASSIGNED = -1
 
 
-class TypeInterface(object):
+class DomainInterface(object):
     """
     A single handle that we use to glue objects together
     Also computes the CRP
