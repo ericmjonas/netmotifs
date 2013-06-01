@@ -1,5 +1,5 @@
 from nose.tools import *
-from pyirm import util
+from irm import util
 import numpy as np
 
 from numpy.testing import assert_approx_equal

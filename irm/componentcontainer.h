@@ -56,6 +56,7 @@ public:
     }
     
     void create_component(group_coords_t group_coords) {
+
         group_hash_t gp = hash_coords(group_coords); 
         sswrapper_t * ssw = new sswrapper_t; 
         CM::ss_init(&(ssw->ss), &hps_); 
@@ -95,6 +96,7 @@ public:
     void add_dp(group_coords_t group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
+
         sswrapper_t * ssw = components_.find(gp)->second; 
         CM::ss_add(&(ssw->ss), &hps_, val); 
         ssw->count++; 

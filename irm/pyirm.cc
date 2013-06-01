@@ -48,7 +48,14 @@ Relation * create_relation(bp::list axesdef, bp::list domainsizes,
 
 }
 
-
+bp::list get_all_groups_helper(Relation * rel, int d)
+{
+    bp::list out; 
+    for(auto v : rel->get_all_groups(d)) { 
+        out.append(v); 
+    }
+    return out;
+}
 
 BOOST_PYTHON_MODULE(pyirm)
 {
@@ -69,7 +76,7 @@ BOOST_PYTHON_MODULE(pyirm)
       .def( "__init__", bp::make_constructor( &create_relation))
       .def("create_group", &Relation::create_group)
       .def("delete_group", &Relation::delete_group)
-      .def("get_all_groups", &Relation::get_all_groups)
+      .def("get_all_groups", &get_all_groups_helper)
       .def("add_entity_to_group", &Relation::add_entity_to_group)
       .def("remove_entity_from_group", &Relation::remove_entity_from_group)
       .def("post_pred", &Relation::post_pred)

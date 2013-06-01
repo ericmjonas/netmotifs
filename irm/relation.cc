@@ -22,7 +22,7 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
         std::vector<int> axispos; 
         for (size_t i = 0; i < axes_.size(); ++i) { 
             if(axes_[i] == d) { 
-                axispos.push_back(d); 
+                axispos.push_back(i); 
             }
             
         }
@@ -85,11 +85,15 @@ groupid_t Relation::create_group(domainpos_t domain)
 {
     groupid_t new_gid = group_id_; 
     domain_groups_[domain].insert(new_gid); 
-    auto domain_iters = collection_of_collection_to_iterators(domain_groups_);
+    // domains by 
+    std::vector<group_set_t > domains_as_axes; 
+    for(auto a : axes_) { 
+        domains_as_axes.push_back(domain_groups_[a]); 
+    }
 
+    auto domain_iters = collection_of_collection_to_iterators(domains_as_axes);
     auto group_coords = unique_axes_pos(get_axispos_for_domain(domain), 
                                         new_gid, domain_iters); 
-
 
     for(auto g : group_coords) { 
         pCC_->create_component(g); 
@@ -102,20 +106,28 @@ groupid_t Relation::create_group(domainpos_t domain)
 
 void Relation::delete_group(domainpos_t domain, groupid_t gid)
 {
-     auto group_coords = unique_axes_pos(get_axispos_for_domain(domain), 
-                                         gid,
-                                         collection_of_collection_to_iterators(domain_groups_)); 
+    // FIXME: god this is inefficient
+    std::vector<group_set_t > domains_as_axes; 
+    for(auto a : axes_) { 
+        domains_as_axes.push_back(domain_groups_[a]); 
+    }
 
+    auto domain_iters = collection_of_collection_to_iterators(domains_as_axes);
+
+    auto group_coords = unique_axes_pos(get_axispos_for_domain(domain), 
+                                        gid,
+                                        domain_iters); 
+    
     for(auto g : group_coords) { 
         pCC_->delete_component(g); 
     }
     domain_groups_[domain].erase(gid); 
 }
 
-std::vector<groupid_t> Relation::get_all_groups(domainpos_t)
+std::vector<groupid_t> Relation::get_all_groups(domainpos_t di)
 {
-    // FIXME implement3
-    return std::vector<groupid_t>(); 
+    return std::vector<groupid_t>(domain_groups_[di].begin(), 
+                                  domain_groups_[di].end());
 }
 
 // FIXME come up with some way of caching the mutated components

@@ -97,8 +97,8 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
         if(include)
             outset.insert(c); 
     }
-    
     return outset; 
+    
 }
 
 

@@ -28,7 +28,9 @@ class Relation(object):
     # simple wrappers
     
     def create_group(self, domainname):
-        return self.relation.create_group(self.domain_mapper[domainname])
+        g = self.relation.create_group(self.domain_mapper[domainname])
+        print "group created" 
+        return g
 
     def delete_group(self, domainname, gid):
         return self.relation.delete_group(self.domain_mapper[domainname], 
@@ -49,3 +51,7 @@ class Relation(object):
         
     def set_hps(self, hps):
         self.compcontainer.set_hps(hps)
+        
+    def get_all_groups(self, domainname):
+        dpos = self.domain_mapper[domainname]
+        return self.relation.get_all_groups(dpos)

@@ -4,11 +4,11 @@ from numpy.testing import assert_approx_equal, assert_array_equal
 
 from matplotlib import pylab
 
-from pyirm import models
-from pyirm import irm
-import relation
-import util
-import gibbs
+from irm import models
+from irm import model
+from irm import relation
+from irm import util
+from irm import gibbs
 
 def test_gibbs_simple():
     """
@@ -25,17 +25,17 @@ def test_gibbs_simple():
     data = np.arange(T1_N * T2_N)
     data.shape = T1_N, T2_N
 
-    model =  models.NegVarModel()
+    m =  models.NegVarModel()
     r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
-                     data,model)
-    hps = model.create_hps()
+                     data,m)
+    hps = m.create_hps()
     hps['offset'] = 0.3
 
     r.set_hps(hps)
 
-    tf_1 = irm.TypeInterface(T1_N, [('T1', r)])
+    tf_1 = model.DomainInterface(T1_N, [('T1', r)])
     tf_1.set_hps(1.0)
-    tf_2 = irm.TypeInterface(T2_N, [('T2', r)])
+    tf_2 = model.DomainInterface(T2_N, [('T2', r)])
     tf_2.set_hps(1.0)
 
     ### All one group for everyone
@@ -86,16 +86,16 @@ def gibbs_beta_bernoulli(relation_class):
     data = data[np.random.permutation(T1_N)]
     data = data[:, np.random.permutation(T2_N)]
 
-    model =  models.BetaBernoulli()
+    m =  models.BetaBernoulli()
     r = relation_class([('T1', T1_N), ('T2', T2_N)], 
-                     data,model)
-    hps = model.create_hps()
+                     data,m)
+    hps = m.create_hps()
 
     r.set_hps(hps)
 
-    tf_1 = irm.TypeInterface(T1_N, [('T1', r)])
+    tf_1 = model.DomainInterface(T1_N, [('T1', r)])
     tf_1.set_hps(1.0)
-    tf_2 = irm.TypeInterface(T2_N, [('T2', r)])
+    tf_2 = model.DomainInterface(T2_N, [('T2', r)])
     tf_2.set_hps(1.0)
 
 
