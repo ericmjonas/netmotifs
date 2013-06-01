@@ -51,7 +51,7 @@ for s in range(SAMPLES):
     print "sample", s
     for i in range(ITERS_PER_SAMPLE):
         print "sample", s, "iter", i
-        irm.do_inference(irm_model)
+        model.do_inference(irm_model)
         print util.count(t1_obj.get_assignments())
     print "score =", irm_model.total_score()
     

@@ -2,7 +2,7 @@ import numpy as np
 
 import models
 import util
-import irm
+import model
 import relation
 
 def model_from_config_file(configfile):
@@ -24,13 +24,13 @@ def model_from_config(config, relation_class=relation.Relation, init='allone'):
     for rel_name, rel_config in config['relations'].iteritems():
         typedef = [(tn, types_config[tn]['N']) for tn in rel_config['relation']]
         if rel_config['model'] == "BetaBernoulli":
-            model = models.BetaBernoulli()
+            m = models.BetaBernoulli()
         elif rel_config['model'] == "BetaBernoulliNonConj":
-            model = models.BetaBernoulliNonConj()
+            m = models.BetaBernoulliNonConj()
         else:
             raise NotImplementedError()
         rel = relation_class(typedef, data_config[rel_name], 
-                                     model)
+                                     m)
         rel.set_hps(rel_config['hps'])
 
         relations[rel_name] = rel
@@ -40,11 +40,11 @@ def model_from_config(config, relation_class=relation.Relation, init='allone'):
     type_interfaces = {}
     for t_name, t_config in types_config.iteritems():
         T_N = t_config['N'] 
-        ti = irm.TypeInterface(T_N, types_to_relations[t_name])
+        ti = model.DomainInterface(T_N, types_to_relations[t_name])
         ti.set_hps(t_config['hps'])
         type_interfaces[t_name] = ti
 
-    irm_model = irm.IRM(type_interfaces, relations)
+    irm_model = model.IRM(type_interfaces, relations)
 
     # now initialize all to 1
     for tn, ti in type_interfaces.iteritems():

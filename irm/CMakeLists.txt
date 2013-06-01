@@ -2,11 +2,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(irm)
 
-set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O2 -std=c++11 -D_GLIBCXX_DEBUG " )
+set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O2 -std=c++11" )
 
 # boost requirements
 set(Boost_USE_STATIC_LIBS   ON)
-find_package(Boost 1.53.0 COMPONENTS  python system  REQUIRED)
+find_package(Boost 1.48.0 COMPONENTS  python system  REQUIRED)
 
 # notes: 
 # http://stackoverflow.com/questions/1937232/linking-to-a-dynamic-library-on-a-mac-with-full-path
@@ -63,5 +63,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
               ${CMAKE_CURRENT_SOURCE_DIR}/relation.py
               ${CMAKE_CURRENT_SOURCE_DIR}/model.py
               ${CMAKE_CURRENT_SOURCE_DIR}/gibbs.py              
+              ${CMAKE_CURRENT_SOURCE_DIR}/irmio.py              
               DESTINATION ${pyirm_install_DIR}
 )

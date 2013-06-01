@@ -56,8 +56,10 @@ public:
     }
     
     void create_component(group_coords_t group_coords) {
-
         group_hash_t gp = hash_coords(group_coords); 
+        auto i = components_.find(gp); 
+        assert(i == components_.end()); 
+
         sswrapper_t * ssw = new sswrapper_t; 
         CM::ss_init(&(ssw->ss), &hps_); 
         ssw->count = 0; 
@@ -66,6 +68,8 @@ public:
 
     void delete_component(group_coords_t group_coords) {
         group_hash_t gp = hash_coords(group_coords); 
+
+
         typename components_t::iterator i = components_.find(gp); 
         delete i->second; 
         components_.erase(i); 
@@ -89,7 +93,9 @@ public:
     {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
-        sswrapper_t * ssw = components_.find(gp)->second; 
+        auto i = components_.find(gp); 
+        assert(i != components_.end()); 
+        sswrapper_t * ssw = i->second; 
         return CM::post_pred(&(ssw->ss), &hps_, val); 
     }
     
@@ -97,7 +103,9 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
-        sswrapper_t * ssw = components_.find(gp)->second; 
+        auto i = components_.find(gp); 
+        assert(i != components_.end()); 
+        sswrapper_t * ssw = i->second; 
         CM::ss_add(&(ssw->ss), &hps_, val); 
         ssw->count++; 
         
@@ -106,8 +114,12 @@ public:
 
     void rem_dp(group_coords_t group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
+
         typename CM::value_t val = data_[dp_pos]; 
-        sswrapper_t * ssw = components_.find(gp)->second; 
+        auto i = components_.find(gp); 
+        assert(i != components_.end()); 
+
+        sswrapper_t * ssw = i->second; 
         CM::ss_rem(&(ssw->ss), &hps_, val); 
         ssw->count--; 
         
@@ -135,8 +147,8 @@ private:
         size_t hash = 0; 
         size_t multiplier = 1; 
         for (int i = 0; i < NDIM_; ++i) { 
-            hash += multiplier * (group_coords[i]); 
-            multiplier = multiplier * data_shape_[i]; 
+            hash += multiplier * (group_coords[i] + 1); 
+            multiplier = multiplier * (1<<15);
         }
         return hash; 
 

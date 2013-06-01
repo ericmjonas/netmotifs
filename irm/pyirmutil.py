@@ -29,7 +29,6 @@ class Relation(object):
     
     def create_group(self, domainname):
         g = self.relation.create_group(self.domain_mapper[domainname])
-        print "group created" 
         return g
 
     def delete_group(self, domainname, gid):
@@ -37,14 +36,14 @@ class Relation(object):
                                           gid)
     def add_entity_to_group(self, domainname, gid, ep):
         return self.relation.add_entity_to_group(self.domain_mapper[domainname], 
-                                                 gid, ep)
+                                                 gid, int(ep))
 
     def remove_entity_from_group(self, domainname, gid, ep):
         return self.relation.remove_entity_from_group(self.domain_mapper[domainname],
-                                                      gid, ep)
+                                                      gid, int(ep))
     def post_pred(self, domainname, gid, ep):
         return self.relation.post_pred(self.domain_mapper[domainname],
-                                    gid, ep)
+                                    gid, int(ep))
         
     def total_score(self):
         return self.relation.total_score()
