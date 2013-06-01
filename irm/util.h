@@ -60,14 +60,12 @@ void cart_prod_helper(std::vector<std::vector<T> > & output,
                       std::vector<T> current_element, 
                       size_t axispos) {
     for(auto it = axes[axispos].first; it != axes[axispos].second; ++it) {
-
+        std::vector<T> x = current_element; 
+        x.push_back(*it); 
+        
         if(axispos == (axes.size()-1)) { 
-            std::vector<T> x = current_element; 
-            x.push_back(*it); 
             output.push_back(x); 
         } else {
-            std::vector<T> x = current_element; 
-            x.push_back(*it); 
             cart_prod_helper(output, axes, x, axispos + 1); 
         }
 
