@@ -37,7 +37,7 @@ template<typename T>
 std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
 {
     std::vector<std::vector<T>> output; 
-    std::vector<T> x; 
+    std::vector<T> x(axes.size()); 
     // create the iterators
     typedef boost::counting_iterator<size_t> i_t; 
     std::vector<std::pair<i_t, i_t>> axes_iters; 
@@ -61,7 +61,7 @@ void cart_prod_helper(std::vector<std::vector<T> > & output,
                       size_t axispos) {
     for(auto it = axes[axispos].first; it != axes[axispos].second; ++it) {
         std::vector<T> x = current_element; 
-        x.push_back(*it); 
+        x[axispos] = *it; 
         
         if(axispos == (axes.size()-1)) { 
             output.push_back(x); 
@@ -77,12 +77,16 @@ void cart_prod_helper(std::vector<std::vector<T> > & output,
 
 template<typename ForwardIterator> 
 std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val, 
-                                            std::vector<std::pair<ForwardIterator, ForwardIterator>> axes)
+                                         std::vector<std::pair<ForwardIterator, ForwardIterator>> axes)
 
 {
+    /* 
+       DIMS: maximum dimension of group coords
+
+    */ 
     std::set<group_coords_t> outset; 
     std::vector<group_coords_t> output; 
-    group_coords_t o; 
+    group_coords_t o(axes.size()); 
 
     cart_prod_helper(output, axes, o, 0); 
 
