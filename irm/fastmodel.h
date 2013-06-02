@@ -34,7 +34,8 @@ struct BetaBernoulli {
         float beta; 
     }; 
     
-    static void ss_init(suffstats_t * ss, hypers_t * hps) { 
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
         ss->heads = 0; 
         ss->tails = 0; 
     }
@@ -102,7 +103,8 @@ struct AccumModel {
         float offset; 
     }; 
     
-    static void ss_init(suffstats_t * ss, hypers_t * hps) { 
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                        rng_t & rng) { 
         ss->sum = 0; 
         ss->count = 0; 
     }

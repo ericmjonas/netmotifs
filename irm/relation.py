@@ -116,9 +116,10 @@ class FastRelation(object):
     def _get_data_value(self, dp):
         return self.data[dp]
 
-    def create_group(self, domain_name):
+    def create_group(self, domain_name, rng):
         """
-        Return a group ID, a unique group handle
+        Return a group ID, a unique group handle. 
+        Do not use the RNG in most situations
         """
         new_gid = self.group_id
         self.domain_groups[domain_name].add(new_gid)
@@ -311,7 +312,7 @@ class Relation(object):
                 ap.append(ei)
         return ap
 
-    def create_group(self, type_name):
+    def create_group(self, type_name, rng):
         """
         Return a group id, an opaque group handle
         """

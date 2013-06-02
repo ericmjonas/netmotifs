@@ -81,7 +81,7 @@ size_t Relation::assigned_dp_count()
 }
 
 
-groupid_t Relation::create_group(domainpos_t domain)
+groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
 {
     groupid_t new_gid = group_ids_[domain]; 
     domain_groups_[domain].insert(new_gid); 
@@ -96,7 +96,7 @@ groupid_t Relation::create_group(domainpos_t domain)
                                         new_gid, domain_iters); 
 
     for(auto g : group_coords) { 
-        pCC_->create_component(g); 
+        pCC_->create_component(g, rng); 
     }
 
     group_ids_[domain]++; 

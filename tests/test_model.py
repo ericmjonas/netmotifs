@@ -7,6 +7,7 @@ from irm import relation
 from irm import util
 from irm import model
 from irm import Relation
+from irm import pyirm
 
 """
 Cases to worry about
@@ -26,9 +27,10 @@ def test_relation_T1T2_allone_singleton_default_fast():
     relation_T1T2_allone_singleton(relation.FastRelation)
 
 def test_relation_T1T2_allone_singleton_default_cpp():
-    relation_T1T2_allone_singleton(Relation)
+    rng = pyirm.RNG()
+    relation_T1T2_allone_singleton(Relation, rng)
 
-def relation_T1T2_allone_singleton(relation_class):
+def relation_T1T2_allone_singleton(relation_class, rng=None):
     T1_N = 3
     T2_N = 4
 
@@ -43,8 +45,8 @@ def relation_T1T2_allone_singleton(relation_class):
 
     r.set_hps(hps)
     
-    t1_grp = r.create_group('T1')
-    t2_grp = r.create_group('T2')
+    t1_grp = r.create_group('T1', rng)
+    t2_grp = r.create_group('T2', rng)
     
 
     for i in range(T1_N):
@@ -73,8 +75,8 @@ def relation_T1T2_allone_singleton(relation_class):
     r.delete_group('T2', t2_grp)
 
     #### ADD TO SINGLETONS
-    t1_grps = [r.create_group('T1') for _ in range(T1_N)]
-    t2_grps = [r.create_group('T2') for _ in range(T2_N)]
+    t1_grps = [r.create_group('T1', rng) for _ in range(T1_N)]
+    t2_grps = [r.create_group('T2', rng) for _ in range(T2_N)]
 
     for i in range(T1_N):
         r.add_entity_to_group('T1', t1_grps[i], i)
@@ -94,9 +96,10 @@ def test_relation_T1T2_postpred_fast():
     relation_T1T2_postpred(relation.FastRelation)
 
 def test_relation_T1T2_postpred_cpp():
-    relation_T1T2_postpred(Relation)
+    rng = pyirm.RNG()
+    relation_T1T2_postpred(Relation, rng)
     
-def relation_T1T2_postpred(relation_class):
+def relation_T1T2_postpred(relation_class, rng=None):
     """
     Perform a series of mutations and check that post-pred + actually
     performing mutation == total score delta
@@ -104,6 +107,7 @@ def relation_T1T2_postpred(relation_class):
     T1_N = 4
     T2_N = 3
     np.random.seed(0)
+
     data = np.random.rand(T1_N, T2_N) > 0.5
 
     m =  models.BetaBernoulli()
@@ -113,8 +117,8 @@ def relation_T1T2_postpred(relation_class):
 
     r.set_hps(hps)
     
-    t1_grp = r.create_group('T1')
-    t2_grp = r.create_group('T2')
+    t1_grp = r.create_group('T1', rng)
+    t2_grp = r.create_group('T2', rng)
 
     for i in range(T1_N):
         r.add_entity_to_group('T1', t1_grp, i)
@@ -147,8 +151,8 @@ def relation_T1T2_postpred(relation_class):
     r.delete_group('T2', t2_grp)
 
     #### ADD TO SINGLETONS
-    t1_grps = [r.create_group('T1') for _ in range(T1_N)]
-    t2_grps = [r.create_group('T2') for _ in range(T2_N)]
+    t1_grps = [r.create_group('T1', rng) for _ in range(T1_N)]
+    t2_grps = [r.create_group('T2', rng) for _ in range(T2_N)]
 
 
     for i in range(T2_N):
@@ -178,9 +182,10 @@ def test_relation_T1T1_allone_fast():
     relation_T1T1_allone(relation.FastRelation)
     
 def test_relation_T1T1_allone_cpp():
-    relation_T1T1_allone(Relation)
+    rng = pyirm.RNG()
+    relation_T1T1_allone(Relation, rng)
     
-def relation_T1T1_allone(relation_class):
+def relation_T1T1_allone(relation_class, rng=None):
     T1_N = 10
 
     data = np.arange(T1_N * T1_N, dtype=np.float32)
@@ -194,7 +199,7 @@ def relation_T1T1_allone(relation_class):
 
     r.set_hps(hps)
     
-    t1_grp = r.create_group('T1')
+    t1_grp = r.create_group('T1', rng)
     for i in range(T1_N):
         r.add_entity_to_group('T1', t1_grp, i)
     
@@ -215,7 +220,7 @@ def relation_T1T1_allone(relation_class):
 
     print "SINGLETON TEST", "="*50
     #### ADD TO SINGLETONS
-    t1_grps = [r.create_group('T1') for _ in range(T1_N)]
+    t1_grps = [r.create_group('T1', rng) for _ in range(T1_N)]
     
     for i in range(T1_N):
         print "TEST adding entity", i, "to group",  t1_grps[i], 
@@ -233,9 +238,11 @@ def test_type_if_rel_fast():
     type_if_rel(relation.FastRelation)
 
 def test_type_if_rel_fast_cpp():
-    type_if_rel(Relation)
+    rng = pyirm.RNG()
 
-def type_if_rel(relation_class):
+    type_if_rel(Relation, rng)
+
+def type_if_rel(relation_class, rng=None):
     """
     Test if transactions on the type interface propagate 
     correctly to relations and preserve invariants
@@ -265,12 +272,12 @@ def type_if_rel(relation_class):
 
 
     ### put all T2 into one group, T1 in singletons
-    t2_g1 = tf_2.create_group()
+    t2_g1 = tf_2.create_group(rng)
     assert_equal(len(r.get_all_groups('T2')), 1)
     for i in range(T2_N):
         tf_2.add_entity_to_group(t2_g1, i)
     
-    t1_grps= [tf_1.create_group() for _ in range(T1_N)]
+    t1_grps= [tf_1.create_group(rng) for _ in range(T1_N)]
     [tf_1.add_entity_to_group(g, i) for g, i in zip(t1_grps, range(T1_N))]
     
     # total score 

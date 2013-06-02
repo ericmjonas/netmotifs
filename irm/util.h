@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/random/mersenne_twister.hpp>
 #include <stdlib.h>
 
 #define GROUP_COORDS_ARRAY
@@ -14,7 +15,7 @@
 
 namespace irm { 
 
-
+typedef boost::random::mt19937 rng_t;
 
 typedef std::vector<int> axesdef_t; 
 typedef std::vector<size_t> domainsizes_t; 

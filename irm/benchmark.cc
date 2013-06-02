@@ -14,6 +14,8 @@ int main()
     const int ENTITY_N = 512; 
     const int GROUPS = 16; 
 
+    rng_t rng; 
+
     std::string data(ENTITY_N * ENTITY_N, 0); 
     std::vector<size_t> shape = {ENTITY_N, ENTITY_N}; 
     ComponentContainer<BetaBernoulli> cc_bb(data, shape); 
@@ -33,7 +35,7 @@ int main()
 
     // create the groups and add all the entities to them
     for(int g = 0; g < GROUPS; ++g) { 
-        auto gid = rel.create_group(0); 
+        auto gid = rel.create_group(0, rng); 
         groups[g] = gid; 
         for(int i = 0; i < ENTITY_N; ++i) { 
             if(i % GROUPS == g) {
@@ -54,7 +56,7 @@ int main()
             // this group isn't empty 
 
             // create ephemeral group
-            groups[GROUPS] = rel.create_group(0); 
+            groups[GROUPS] = rel.create_group(0, rng); 
 
             // now compute post pred
             for(auto gid : groups) { 

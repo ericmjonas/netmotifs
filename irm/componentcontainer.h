@@ -18,7 +18,8 @@ class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
     virtual float total_score() = 0; 
-    virtual void create_component(group_coords_t group_coords) = 0; 
+    virtual void create_component(group_coords_t group_coords, 
+                                  rng_t & rng) = 0; 
     virtual void delete_component(group_coords_t group_coords) = 0; 
 
     virtual float post_pred(group_coords_t group_coords, dppos_t dp_pos) = 0;  
@@ -60,14 +61,15 @@ public:
         }
         
     }
-    
-    void create_component(group_coords_t group_coords) {
+        
+    void create_component(group_coords_t group_coords, 
+                              rng_t & rng) { 
         group_hash_t gp = hash_coords(group_coords); 
         auto i = components_.find(gp); 
         assert(i == components_.end()); 
 
         sswrapper_t * ssw = new sswrapper_t; 
-        CM::ss_init(&(ssw->ss), &hps_); 
+        CM::ss_sample_new(&(ssw->ss), &hps_, rng); 
         ssw->count = 0; 
         components_.insert(std::make_pair(gp, ssw)); 
     }

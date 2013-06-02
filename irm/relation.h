@@ -10,12 +10,12 @@ namespace irm {
 
 class Relation
 {
-    /*
-      Domains are numbered, and axes are a list of domain integers. So for a T1xT1 
-      we would specify 
-      
-      
-    */
+/*
+  Domains are numbered, and axes are a list of domain integers. So for a T1xT1 
+  we would specify 
+  
+  
+*/
 public:
     Relation(axesdef_t axes_def, domainsizes_t domainsizes, 
              IComponentContainer * cm); 
@@ -24,7 +24,9 @@ public:
     void assert_assigned();
     size_t assigned_dp_count();
 
-    groupid_t create_group(domainpos_t domain); 
+    groupid_t create_group(domainpos_t domain, rng_t & rng); 
+    /* Creates groups and initializes from the prior, thus the need
+    for the RNG */ 
     
     void delete_group(domainpos_t dom, groupid_t gid); 
 

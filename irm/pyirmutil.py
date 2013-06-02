@@ -27,8 +27,9 @@ class Relation(object):
         
     # simple wrappers
     
-    def create_group(self, domainname):
-        g = self.relation.create_group(self.domain_mapper[domainname])
+    def create_group(self, domainname, rng):
+        g = self.relation.create_group(self.domain_mapper[domainname], 
+                                       rng)
         return g
 
     def delete_group(self, domainname, gid):

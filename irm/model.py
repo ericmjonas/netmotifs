@@ -44,11 +44,11 @@ class DomainInterface(object):
     def get_groups(self):
         return self.gid_mapping.keys()
 
-    def create_group(self):
+    def create_group(self, rng):
         """
         Returns group ID
         """
-        rel_groupid = [r.create_group(t) for t, r in self.relations]
+        rel_groupid = [r.create_group(t, rng) for t, r in self.relations]
         
         new_gid = self.g_pos
         self.g_pos += 1

@@ -60,7 +60,9 @@ bp::list get_all_groups_helper(Relation * rel, int d)
 BOOST_PYTHON_MODULE(pyirm)
 {
   using namespace boost::python;
-  
+ 
+  class_<rng_t>("RNG"); 
+
   class_<IComponentContainer, boost::noncopyable>("ComponentContainer", no_init)
       .def("dpcount", &IComponentContainer::dpcount)
       .def("set_hps", &IComponentContainer::set_hps); 

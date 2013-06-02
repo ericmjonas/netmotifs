@@ -4,7 +4,7 @@ import util
 # GIBBS SAMPLING
 
 
-def gibbs_sample_type(type_intf):
+def gibbs_sample_type(type_intf, rng):
 
     T_N = type_intf.entity_count()
 
@@ -13,7 +13,7 @@ def gibbs_sample_type(type_intf):
         if type_intf.group_size(g) == 0:
             temp_group = g
         else:
-            temp_group = type_intf.create_group()
+            temp_group = type_intf.create_group(rng)
 
 
         groups = type_intf.get_groups()
@@ -29,7 +29,7 @@ def gibbs_sample_type(type_intf):
             assert type_intf.group_size(temp_group) == 0
             type_intf.delete_group(temp_group)
 
-def gibbs_sample_type_nonconj(type_intf, M):
+def gibbs_sample_type_nonconj(type_intf, M, rng):
     """
     Radford neal Algo 8 for non-conj models
     
@@ -46,7 +46,7 @@ def gibbs_sample_type_nonconj(type_intf, M):
         if type_intf.group_size(g) == 0:
             extra_groups.append(g)
         while len(extra_groups) < M:
-            extra_groups.append(type_intf.create_group())
+            extra_groups.append(type_intf.create_group(rng))
 
         groups = type_intf.get_groups()
         scores = np.zeros(len(groups))
