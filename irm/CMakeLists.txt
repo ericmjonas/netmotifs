@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(irm)
 
-set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O2 -std=c++11" )
+set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11" )
 
 # boost requirements
 set(Boost_USE_STATIC_LIBS   ON)
