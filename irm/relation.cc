@@ -180,7 +180,7 @@ float Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid,
         }
         if (fully_assigned(current_group_coords)) { 
             pCC_->rem_dp(current_group_coords, dp); 
-            score -= pCC_->post_pred(current_group_coords, dp); 
+            //score -= pCC_->post_pred(current_group_coords, dp); 
         }
         set_dp_group_coords(dp, new_group_coords); 
     }
