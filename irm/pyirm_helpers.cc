@@ -8,7 +8,7 @@ bp::list cart_prod_helper_py(bp::list axes)
         l.push_back(bp::extract<size_t>(axes[i])); 
     }
     std::vector<std::vector<size_t>> output = 
-        irm::cart_prod<size_t>(l); 
+        irm::cart_prod<std::vector<size_t>>(l); 
     bp::list outl ; 
     for(auto i: output) { 
         bp::list e; 

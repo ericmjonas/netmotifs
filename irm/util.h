@@ -27,17 +27,17 @@ typedef std::vector<entitypos_t> entity_coords_t;
 #define NOT_ASSIGNED -1
 
 
-template<typename T, typename ForwardIterator> 
-void cart_prod_helper(std::vector<std::vector<T> > & output, 
+template<typename containerT, typename ForwardIterator> 
+void cart_prod_helper(std::vector<containerT > & output, 
                       std::vector<std::pair<ForwardIterator, ForwardIterator> >  axes, 
-                      std::vector<T> current_element, 
+                      containerT current_element, 
                       size_t axispos); 
 
-template<typename T>
-std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
+template<typename containerT>
+std::vector<containerT> cart_prod(std::vector<size_t> axes)
 {
-    std::vector<std::vector<T>> output; 
-    std::vector<T> x(axes.size()); 
+    std::vector<containerT> output; 
+    containerT x(axes.size()); ; 
     // create the iterators
     typedef boost::counting_iterator<size_t> i_t; 
     std::vector<std::pair<i_t, i_t>> axes_iters; 
@@ -45,7 +45,7 @@ std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
     for(auto a: axes) { 
         axes_iters.push_back(std::make_pair(i_t(0), i_t(a))); 
     }
-    cart_prod_helper<T>(output, axes_iters, x, 0); 
+    cart_prod_helper<containerT>(output, axes_iters, x, 0); 
     return output; 
 }
 
@@ -53,14 +53,14 @@ std::vector<std::vector<T>> cart_prod(std::vector<size_t> axes)
 // FIXME : use output iterator
 // FIXME: use boost::range
 
-template<typename T, typename ForwardIterator> 
-void cart_prod_helper(std::vector<std::vector<T> > & output, 
+template<typename containerT, typename ForwardIterator> 
+void cart_prod_helper(std::vector<containerT > & output, 
                       std::vector<std::pair<ForwardIterator,
                       ForwardIterator>> axes, 
-                      std::vector<T> current_element, 
+                      containerT current_element, 
                       size_t axispos) {
     for(auto it = axes[axispos].first; it != axes[axispos].second; ++it) {
-        std::vector<T> x = current_element; 
+        containerT x = current_element; 
         x[axispos] = *it; 
         
         if(axispos == (axes.size()-1)) { 
@@ -88,7 +88,7 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
     std::vector<group_coords_t> output; 
     group_coords_t o(axes.size()); 
 
-    cart_prod_helper(output, axes, o, 0); 
+    cart_prod_helper<group_coords_t>(output, axes, o, 0); 
 
     for(auto c : output) { 
         bool include = false; 
