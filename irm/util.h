@@ -7,6 +7,7 @@
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_01.hpp>
 #include <stdlib.h>
 
 #define GROUP_COORDS_ARRAY
@@ -124,6 +125,13 @@ std::vector<std::pair<typename T::iterator, typename T::iterator>>
     return output; 
 }
 
+
+
+inline float uniform_01(rng_t & rng) { 
+    boost::uniform_01<rng_t> dist(rng); 
+
+    return dist();
+}
 
 }
 

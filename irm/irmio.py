@@ -9,7 +9,8 @@ def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_config(config, relation_class=relation.Relation, init='allone'):
+def model_from_config(config, relation_class=relation.Relation,
+                      init='allone', rng=None):
 
     types_config = config['types']
     relations_config = config['relations']
@@ -49,12 +50,12 @@ def model_from_config(config, relation_class=relation.Relation, init='allone'):
     # now initialize all to 1
     for tn, ti in type_interfaces.iteritems():
         if init == 'allone':
-            g = ti.create_group()
+            g = ti.create_group(rng)
             for j in range(ti.entity_count()):
                 ti.add_entity_to_group(g, j)
         elif init == 'singleton':
             for j in range(ti.entity_count()):
-                g = ti.create_group()
+                g = ti.create_group(rng)
                 ti.add_entity_to_group(g, j)
         elif init == "crp": 
             perm = np.random.permutation(ti.entity_count())
@@ -63,7 +64,7 @@ def model_from_config(config, relation_class=relation.Relation, init='allone'):
             gr = {}
             for ai, a in enumerate(assign):
                 if a not in gr:
-                    gr[a] = ti.create_group()
+                    gr[a] = ti.create_group(rng)
                 ti.add_entity_to_group(gr[a], ai)
                 
         else:
@@ -86,7 +87,7 @@ def init_domain(domain_obj, assign_vect):
     ai_to_gid = {}
     for ei, ai in enumerate(assign_vect):
         if ai not in ai_to_gid:
-            ai_to_gid[ai] = domain_obj.create_group()
+            ai_to_gid[ai] = domain_obj.create_group(rng)
         domain_obj.add_entity_to_group(ai_to_gid[ai], ei)
     
     

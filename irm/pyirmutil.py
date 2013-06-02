@@ -7,8 +7,12 @@ class Relation(object):
 
         if isinstance(modeltype, models.BetaBernoulli):
             modeltypestr = "BetaBernoulli"
+        elif isinstance(modeltype, models.BetaBernoulliNonConj):
+            modeltypestr = "BetaBernoulliNonConj"
         elif isinstance(modeltype, models.AccumModel):
             modeltypestr = "AccumModel"
+        else:
+            raise NotImplementedError()
         self.compcontainer = pyirm.create_component_container(data.tostring(), 
                                                               data.shape, 
                                                               modeltypestr)

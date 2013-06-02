@@ -5,6 +5,7 @@
 #include <iostream> 
 #include <math.h>
 #include <boost/python.hpp>
+#include <boost/math/distributions.hpp>
 
 #include "util.h"
 
@@ -133,6 +134,86 @@ struct AccumModel {
         hypers_t hp; 
         hp.offset = bp::extract<float>(hps["offset"]); 
 
+        return hp; 
+
+    }
+}; 
+
+
+struct BetaBernoulliNonConj { 
+    typedef unsigned char value_t; 
+    
+    struct suffstats_t { 
+        uint32_t heads; 
+        uint32_t tails; 
+        float p; 
+    }; 
+
+    struct hypers_t { 
+        float alpha; 
+        float beta; 
+    }; 
+
+    static float sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float alpha = hps->alpha; 
+        float beta = hps->beta; 
+
+        boost::math::beta_distribution<> dist(alpha, beta);
+        double p = quantile(dist, uniform_01(rng)); 
+
+        return p; 
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        ss->heads = 0; 
+        ss->tails = 0; 
+        ss->p = sample_from_prior(hps, rng); 
+    }
+     
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val) {
+        if(val) { 
+            ss->heads++; 
+        } else { 
+            ss->tails++; 
+        }
+    }
+
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val) {
+        if(val) { 
+            ss->heads--; 
+        } else { 
+            ss->tails--; 
+        }
+        
+    }
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) {
+        float p = ss->p; 
+        if (val) { 
+            return logf(p); 
+        } else { 
+            return logf(1-p); 
+        }
+        
+    }
+
+    static float score(suffstats_t * ss, hypers_t * hps) { 
+        float alpha = hps->alpha; 
+        float beta = hps->beta; 
+        float p = ss->p; 
+
+        float logbeta_a_b = betaln(alpha, beta); 
+        float lp = logf(p); 
+        float lmop = logf(p); 
+        return  - logbeta_a_b + (alpha -1)*lp  + (beta-1)*lmop; 
+
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.alpha = bp::extract<float>(hps["alpha"]); 
+        hp.beta = bp::extract<float>(hps["beta"]);
         return hp; 
 
     }

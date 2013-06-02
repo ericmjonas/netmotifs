@@ -12,6 +12,7 @@ from irm import util
 RELATION_CLASS =  irm.Relation
 
 np.random.seed(0)
+rng = irm.RNG()
 
 filename = sys.argv[1]
 
@@ -24,13 +25,13 @@ NODEN = connectivity.shape[0]
 config = {'types' : {'t1' : {'hps' : 1.0, 
                              'N' : NODEN}}, 
           'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
-                                  'model' : 'BetaBernoulli', 
+                                  'model' : 'BetaBernoulliNonConj', 
                                   'hps' : {'alpha' : 1.0, 
                                            'beta' : 1.0}}}, 
           'data' : {'R1' : connectivity}}
 
 irm_model = irmio.model_from_config(config, relation_class = RELATION_CLASS, 
-                                    init='crp')
+                                    init='crp', rng=rng)
 
 t1_name = sorted(irm_model.types.keys())[0]
 t1_obj = irm_model.types[t1_name]
@@ -46,13 +47,13 @@ print "COMPUTING TRUE SCORE", "-"*40
 #print "ALL ONE SCORE", irm_model.total_score()
 
 t1 = time.time()
-SAMPLES = 8
+SAMPLES = 40
 ITERS_PER_SAMPLE = 1
 for s in range(SAMPLES):
     print "sample", s
     for i in range(ITERS_PER_SAMPLE):
         print "sample", s, "iter", i
-        model.do_inference(irm_model)
+        model.do_inference(irm_model, rng, conj=False)
         print util.count(t1_obj.get_assignments())
     print "score =", irm_model.total_score()
     
