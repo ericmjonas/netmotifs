@@ -32,7 +32,7 @@ public:
 
     float add_entity_to_group(domainpos_t, groupid_t, entitypos_t); 
     
-    float remove_entity_from_group(domainpos_t, groupid_t, entitypos_t); 
+    void remove_entity_from_group(domainpos_t, groupid_t, entitypos_t); 
     float post_pred(domainpos_t, groupid_t, entitypos_t); 
 
     float total_score(); 

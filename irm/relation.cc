@@ -162,11 +162,10 @@ float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id,
     return score; 
 }
 
-float Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid, 
+void Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid, 
                                         entitypos_t entity_pos)
 {
 
-    float score = 0.0; 
     const auto & axispos_for_domain = get_axispos_for_domain(domain); 
     for(auto dp : datapoints_for_entity(domain, entity_pos)) { 
         const auto & current_group_coords = get_dp_group_coords(dp); 
@@ -180,21 +179,21 @@ float Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid,
         }
         if (fully_assigned(current_group_coords)) { 
             pCC_->rem_dp(current_group_coords, dp); 
-            //score -= pCC_->post_pred(current_group_coords, dp); 
         }
         set_dp_group_coords(dp, new_group_coords); 
     }
     set_entity_group(domain, entity_pos, NOT_ASSIGNED); 
-    return score; 
 }
 
 
-float Relation::post_pred(domainpos_t domain, groupid_t groupid, 
-                          entitypos_t entitypos)
+float Relation::post_pred(domainpos_t domain, groupid_t group_id, 
+                          entitypos_t entity_pos)
 {
-    float score = add_entity_to_group(domain, groupid, entitypos); 
-    remove_entity_from_group(domain, groupid, entitypos); 
+    float score = add_entity_to_group(domain, group_id, entity_pos); 
+    remove_entity_from_group(domain, group_id, entity_pos); 
     return score; 
+
+
 }
 
 float Relation::total_score()
