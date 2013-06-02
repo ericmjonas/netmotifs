@@ -24,7 +24,7 @@ public:
     virtual float post_pred(group_coords_t group_coords, dppos_t dp_pos) = 0;  
     virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
     virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
-    virtual void set_hps(bp::dict hps) = 0; 
+    virtual void set_hps(bp::dict & hps) = 0; 
 
 }; 
    
@@ -52,6 +52,12 @@ public:
         data_.resize(data_size); 
         memcpy(&(data_[0]), data.c_str(), 
                sizeof(typename CM::value_t)*data_size); 
+        
+    }
+    ~ComponentContainer() { 
+        for(auto a : components_) { 
+            delete a.second; 
+        }
         
     }
     
@@ -129,7 +135,7 @@ public:
         return data_.size(); 
     }
 
-    void set_hps(bp::dict hps) { 
+    void set_hps(bp::dict & hps) { 
         hps_ = CM::bp_dict_to_hps(hps); 
 
     }

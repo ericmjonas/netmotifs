@@ -81,7 +81,7 @@ struct BetaBernoulli {
         return betaln(alpha + heads, beta+tails) - logbeta_a_b; 
     }
 
-    static hypers_t bp_dict_to_hps(bp::dict hps) { 
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
         hypers_t hp; 
         hp.alpha = bp::extract<float>(hps["alpha"]); 
         hp.beta = bp::extract<float>(hps["beta"]);
@@ -127,7 +127,7 @@ struct AccumModel {
         return ss->sum + hps->offset; 
     }
 
-    static hypers_t bp_dict_to_hps(bp::dict hps) { 
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
         hypers_t hp; 
         hp.offset = bp::extract<float>(hps["offset"]); 
 
