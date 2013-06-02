@@ -140,9 +140,9 @@ float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id,
     float score = 0.0; 
 
     for(auto dp :  datapoints_for_entity(domain, entity_pos)) { 
-        auto current_group_coords = get_dp_group_coords(dp); 
+        const auto & current_group_coords = get_dp_group_coords(dp); 
         auto new_group_coords = current_group_coords; 
-        auto dp_entity_pos = get_dp_entity_coords(dp); 
+        const auto & dp_entity_pos = get_dp_entity_coords(dp); 
         
         for(auto axis_pos :  axispos_for_domain) { 
             if(dp_entity_pos[axis_pos] == entity_pos) { 
@@ -169,9 +169,9 @@ float Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid,
     float score = 0.0; 
     auto axispos_for_domain = get_axispos_for_domain(domain); 
     for(auto dp : datapoints_for_entity(domain, entity_pos)) { 
-        auto current_group_coords = get_dp_group_coords(dp); 
+        const auto & current_group_coords = get_dp_group_coords(dp); 
         auto new_group_coords = current_group_coords; 
-        auto dp_entity_pos = get_dp_entity_coords(dp); 
+        const auto & dp_entity_pos = get_dp_entity_coords(dp); 
         
         for(auto axis_pos : axispos_for_domain) { 
             if(dp_entity_pos[axis_pos] == entity_pos) { 

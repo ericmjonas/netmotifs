@@ -61,23 +61,23 @@ private:
     std::vector<group_set_t> domain_groups_; 
 
     // private functions
-    inline std::vector<int> 
-    get_axispos_for_domain(domainpos_t dp) { 
+    inline const std::vector<int> & 
+    get_axispos_for_domain(domainpos_t dp) const { 
         return domain_to_axispos_[dp]; 
     }
     
-    inline std::vector<dppos_t> 
-    datapoints_for_entity(domainpos_t domain, entitypos_t ep) {
+    inline const std::vector<dppos_t> & 
+    datapoints_for_entity(domainpos_t domain, entitypos_t ep) const {
         return entity_to_dp_[domain][ep]; 
     }
     
-    inline entity_coords_t 
-    get_dp_entity_coords(dppos_t dp) { 
+    inline const entity_coords_t &
+    get_dp_entity_coords(dppos_t dp) const { 
         return datapoint_entity_index_[dp]; 
     }
     
-    inline group_coords_t
-    get_dp_group_coords(dppos_t dp) { 
+    inline const group_coords_t & 
+    get_dp_group_coords(dppos_t dp) const { 
         return datapoint_groups_[dp]; 
     }
 
@@ -86,7 +86,7 @@ private:
          datapoint_groups_[dp] = gc; 
     }
     
-    inline groupid_t get_entity_group(domainpos_t domain, entitypos_t ep) { 
+    inline groupid_t get_entity_group(domainpos_t domain, entitypos_t ep) const { 
         return domain_entity_assignment_[domain][ep]; 
     }
     
