@@ -19,7 +19,7 @@ def example():
     CLASSN = 4
 
     # create the cells in grids; 
-    GRID_N = 10
+    GRID_N = 16
     DIST_X = 1.0
     DIST_Y = 1.0
     DIST_Z = 1.0
