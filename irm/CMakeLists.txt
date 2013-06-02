@@ -26,8 +26,8 @@ set(PYTHON_INCLUDE "/Users/jonas/anaconda/include/python2.7")
 #include_directories(${PYTHON_INCLUDE})
 
 
-add_executable(hello 
-   helloworld.cc
+add_executable(benchmark
+   benchmark.cc
                      
 )
 
@@ -43,7 +43,7 @@ add_library(pyirm SHARED
 
 
 
-TARGET_LINK_LIBRARIES( hello ${Boost_LIBRARIES} )
+TARGET_LINK_LIBRARIES( benchmark ${Boost_LIBRARIES} irm ${PYTHON_LIBRARIES})
 
 #TARGET_LINK_LIBRARIES( irm ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
