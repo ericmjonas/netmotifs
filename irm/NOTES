@@ -63,6 +63,9 @@ Performance:
 
 CXX=g++-4.7 cmake -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
 
+Building boost: 
+./bootstrap.sh --prefix=$USER/anaconda/
+
 
 
 Goals : get boost working with anaconda
@@ -71,3 +74,28 @@ otool -L
 
 DYLD_LIBRARY_PATH
 http://stackoverflow.com/questions/3146274/is-it-ok-to-use-dyld-library-path-on-mac-os-x-and-whats-the-dynamic-library-s
+
+
+
+What to optimize: 
+1. is it the call to unique_axes_pos and all the crap that it's returning (a dynamically-allocated set! yikes!) that's eating all of our time? 
+2. is it simply the overhead of passing around all these heap-allocated std::vectors that are killing us? 
+
+Before we remove math for post pred : 1:54
+after we remove math for post pred: 1:49
+
+after we remove all mutation, just the skeleton is : 51s
+
+Valgrind and Instruments both suggest that all the time is being used
+with malloc and free
+
+
+in user-config.jam
+using gcc
+   : c11
+   : "/usr/local/bin/g++-4.7" # your path to the C++0x compiler
+   : <cxxflags>-std=c++11
+   ;
+
+
+./b2 toolset=gcc-c11
