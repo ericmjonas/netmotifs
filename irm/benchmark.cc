@@ -11,8 +11,8 @@ using namespace irm;
 int main()
 {
 
-    const int ENTITY_N = 400; 
-    const int GROUPS = 10; 
+    const int ENTITY_N = 512; 
+    const int GROUPS = 16; 
 
     std::string data(ENTITY_N * ENTITY_N, 0); 
     std::vector<size_t> shape = {ENTITY_N, ENTITY_N}; 
