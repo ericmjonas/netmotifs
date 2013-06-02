@@ -12,9 +12,14 @@ static const int MAX_AXES = 4;
 #ifdef GROUP_COORDS_ARRAY
 
 typedef std::array<groupid_t, MAX_AXES> group_coords_t; 
+
 inline group_coords_t new_group_coords(int size) 
 {
-    return group_coords_t(); 
+    group_coords_t c; 
+    for(int i = 0; i < MAX_AXES; ++i) { 
+        c[i] = 0; 
+    }
+    return c; 
     
 }
 
