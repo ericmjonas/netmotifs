@@ -12,7 +12,7 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
     DIMS_(axes_def.size()), 
     DOMAINN_(domainsizes.size()), 
     domainsizes_(domainsizes), 
-    group_id_(0), 
+    group_ids_(DOMAINN_), 
     datapoint_groups_(pCC_->dpcount()), 
     datapoint_entity_index_(pCC_->dpcount()), 
     domain_groups_(DOMAINN_)
@@ -83,7 +83,7 @@ size_t Relation::assigned_dp_count()
 
 groupid_t Relation::create_group(domainpos_t domain)
 {
-    groupid_t new_gid = group_id_; 
+    groupid_t new_gid = group_ids_[domain]; 
     domain_groups_[domain].insert(new_gid); 
     // domains by 
     std::vector<group_set_t > domains_as_axes; 
@@ -99,7 +99,7 @@ groupid_t Relation::create_group(domainpos_t domain)
         pCC_->create_component(g); 
     }
 
-    group_id_++; 
+    group_ids_[domain]++; 
 
     return new_gid; 
 }
