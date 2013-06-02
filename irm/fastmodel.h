@@ -17,7 +17,7 @@ namespace irm {
 typedef size_t group_hash_t; 
 
 float betaln(float x, float y) { 
-    return lgamma(x) + lgamma(y) - lgamma(x + y); 
+    return lgammaf(x) + lgammaf(y) - lgammaf(x + y); 
 
 }
 
@@ -62,11 +62,11 @@ struct BetaBernoulli {
         float alpha = hps->alpha; 
         float beta = hps->beta; 
 
-        float den = log(alpha + beta + heads + tails); 
+        float den = logf(alpha + beta + heads + tails); 
         if (val) { 
-            return log(heads + alpha) - den; 
+            return logf(heads + alpha) - den; 
         } else { 
-            return log(tails + beta) - den; 
+            return logf(tails + beta) - den; 
         }
         
     }
