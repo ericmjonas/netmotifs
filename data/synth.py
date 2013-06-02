@@ -47,16 +47,24 @@ def example():
         pos2 = n2['pos']
 
         p = 0.001
+        # if c1 == 0 and c2 == 1:
+        #     if d(pos1, pos2) < 4:
+        #         p = 0.4
+        # elif c1 == 1 and c2 == 2:
+        #     if d(pos1, pos2) > 3 and d(pos1, pos2) < 6:
+        #         p = 0.2
+        # elif c1 == 2 and c2 == 3:
+        #     p = 0.05
+        # elif c1 == 3 and c2 == 1:
+        #     p = max(1.0 - d(pos1, pos2) / 5., 0.0)
         if c1 == 0 and c2 == 1:
-            if d(pos1, pos2) < 4:
-                p = 0.4
+            p = 0.4
         elif c1 == 1 and c2 == 2:
-            if d(pos1, pos2) > 3 and d(pos1, pos2) < 6:
-                p = 0.2
+            p = 0.2
         elif c1 == 2 and c2 == 3:
             p = 0.05
         elif c1 == 3 and c2 == 1:
-            p = max(1.0 - d(pos1, pos2) / 5., 0.0)
+            p=0.7
         return np.random.rand() < p
 
     connectivity = np.zeros((NODEN, NODEN), dtype=np.bool)
