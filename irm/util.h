@@ -30,7 +30,7 @@ typedef std::set<groupid_t> group_set_t;
 
 typedef std::vector<entitypos_t> entity_coords_t; 
 
-
+const static int MAX_GROUPS_PER_DOMAIN = 1000; 
 #define NOT_ASSIGNED -1
 
 

@@ -60,6 +60,14 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
         dppos++; 
     }
 
+    // initial stacks of group ids
+    for(int i = (MAX_GROUPS_PER_DOMAIN-1); i >= 0; i--) { 
+        for(int d = 0; d < DOMAINN_; ++d) { 
+            group_ids_[d].push_back(i); 
+        }
+    }
+
+
 }
 
 
@@ -83,7 +91,7 @@ size_t Relation::assigned_dp_count()
 
 groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
 {
-    groupid_t new_gid = group_ids_[domain]; 
+    groupid_t new_gid = group_ids_[domain].back(); 
     domain_groups_[domain].insert(new_gid); 
     // domains by 
     std::vector<group_set_t > domains_as_axes; 
@@ -99,7 +107,7 @@ groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
         pCC_->create_component(g, rng); 
     }
 
-    group_ids_[domain]++; 
+    group_ids_[domain].pop_back(); 
 
     return new_gid; 
 }
@@ -122,6 +130,9 @@ void Relation::delete_group(domainpos_t domain, groupid_t gid)
         pCC_->delete_component(g); 
     }
     domain_groups_[domain].erase(gid); 
+
+    // put it back on the stack
+    group_ids_[domain].push_back(gid); 
 }
 
 std::vector<groupid_t> Relation::get_all_groups(domainpos_t di)

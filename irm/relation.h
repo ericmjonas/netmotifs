@@ -46,7 +46,7 @@ private:
     domainsizes_t domainsizes_; 
     std::vector<std::vector<int> > domain_to_axispos_; 
 
-    std::vector<groupid_t> group_ids_; 
+    std::vector<std::vector<groupid_t>> group_ids_; 
 
     // maps from a datapoint to that datapoint's current group coordinates
     std::vector<group_coords_t> datapoint_groups_; 
