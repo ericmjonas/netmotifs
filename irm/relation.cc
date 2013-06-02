@@ -204,4 +204,9 @@ float Relation::total_score()
 
 }
 
+Relation::~Relation()
+{
+
+}
+
 }

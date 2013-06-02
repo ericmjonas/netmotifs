@@ -1,6 +1,8 @@
 #ifndef __IRM_RELATION_H__
 #define __IRM_RELATION_H__
 
+#include <boost/timer/timer.hpp>
+
 #include "util.h"
 #include "componentcontainer.h"
 
@@ -17,7 +19,7 @@ class Relation
 public:
     Relation(axesdef_t axes_def, domainsizes_t domainsizes, 
              IComponentContainer * cm); 
-    
+    ~Relation() ; 
     void assert_unassigned(); 
     void assert_assigned();
     size_t assigned_dp_count();
