@@ -12,8 +12,8 @@ bp::list cart_prod_helper_py(bp::list axes)
     bp::list outl ; 
     for(auto i: output) { 
         bp::list e; 
-        for(auto j : i) { 
-            e.append(j); 
+        for(int ji = 0; ji < len(axes); ++ji) { 
+            e.append(i[ji]); 
         }
         outl.append(e); 
     }
@@ -46,8 +46,8 @@ bp::list unique_axes_pos_helper_py(bp::list axes_pos, irm::groupid_t val,
     bp::list out; 
     for(auto c: uap ) { 
         bp::list coord; 
-        for(auto v : c) { 
-            coord.append(v); 
+        for(int i = 0; i < len(axes_possible_vals); ++i){
+            coord.append(c[i]); 
         }
 
         out.append(bp::tuple(coord)); 

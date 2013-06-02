@@ -4,23 +4,29 @@
 #include <list>
 #include <set>
 #include <vector>
+#include <array>
 #include <boost/iterator/counting_iterator.hpp>
 #include <stdlib.h>
 
+#define GROUP_COORDS_ARRAY
+#include "group_coords.h"
+
+
 namespace irm { 
 
-static const int MAX_AXES = 4; 
+
 
 typedef std::vector<int> axesdef_t; 
 typedef std::vector<size_t> domainsizes_t; 
 typedef int domainpos_t; 
-typedef int groupid_t; 
+
 typedef size_t dppos_t;
 typedef size_t entitypos_t; 
 
 typedef std::set<groupid_t> group_set_t; 
 
-typedef std::vector<groupid_t> group_coords_t; 
+
+
 typedef std::vector<entitypos_t> entity_coords_t; 
 
 
@@ -86,7 +92,7 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
     */ 
     std::set<group_coords_t> outset; 
     std::vector<group_coords_t> output; 
-    group_coords_t o(axes.size()); 
+    group_coords_t o = new_group_coords(axes.size()); 
 
     cart_prod_helper<group_coords_t>(output, axes, o, 0); 
 
