@@ -20,15 +20,9 @@ set(PYTHON_INCLUDE "/Users/jonas/anaconda/include/python2.7")
 
 include(FindPythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
-set(PYTHON_LIBRARY "/Users/jonas/anaconda/lib/libpython2.7.dylib")
-set(PYTHON_INCLUDE "/Users/jonas/anaconda/include/python2.7")
-
-#include_directories(${PYTHON_INCLUDE})
-
 
 add_executable(benchmark
    benchmark.cc
-                     
 )
 
 add_library(irm 
@@ -49,7 +43,10 @@ TARGET_LINK_LIBRARIES( pyirm irm ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 
 set_target_properties(pyirm PROPERTIES PREFIX "" SUFFIX ".so")
 
-set(pyirm_install_DIR lib/site-python/irm)
+execute_process(COMMAND python -c "from distutils import sysconfig;print(sysconfig.get_python_lib())" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(pyirm_install_DIR "${PYTHON_SITE_PACKAGES}/irm")
+message(STATUS "Installing python to ${PYTHON_SITE_PACKAGES}")
 
 install(TARGETS pyirm LIBRARY DESTINATION ${pyirm_install_DIR})
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py 
@@ -60,5 +57,4 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
               ${CMAKE_CURRENT_SOURCE_DIR}/model.py
               ${CMAKE_CURRENT_SOURCE_DIR}/gibbs.py              
               ${CMAKE_CURRENT_SOURCE_DIR}/irmio.py              
-              DESTINATION ${pyirm_install_DIR}
-)
+              DESTINATION ${pyirm_install_DIR})
