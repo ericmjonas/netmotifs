@@ -5,7 +5,12 @@ PROJECT(irm)
 set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11" )
 
 # boost requirements
+if(APPLE)
 set(Boost_USE_STATIC_LIBS   ON)
+else(APPLE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif(APPLE)
+
 find_package(Boost 1.48.0 COMPONENTS  python system  REQUIRED)
 
 # notes: 
@@ -15,8 +20,10 @@ find_package(Boost 1.48.0 COMPONENTS  python system  REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
+if(APPLE)
 set(PYTHON_LIBRARY "/Users/jonas/anaconda/lib/libpython2.7.dylib")
 set(PYTHON_INCLUDE "/Users/jonas/anaconda/include/python2.7")
+endif(APPLE)
 
 include(FindPythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
