@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import betaln
+import util
 
 class BetaBernoulli(object):
     def create_hps(self):
@@ -221,7 +222,7 @@ class BetaBernoulliNonConj(object):
         # should this be a beta or a bernoulli
         #d_score = util.log_bernoulli(heads, tails, p)
 
-        return p_score + d_score
+        return p_score  # + d_score
 
     def post_pred(self, ss, hp, datum):
         p = ss['p']

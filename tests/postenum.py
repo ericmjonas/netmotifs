@@ -4,19 +4,21 @@ import cPickle as pickle
 
 from matplotlib import pylab
 from copy import deepcopy
+
 import irm
-import models
-import gibbs
-import util
-import irmio
+from irm import models
+from irm import gibbs
+from irm import util
+from irm import irmio
 
-import relation
+from irm import relation
 
-RELATION_CLASS = relation.FastRelation
+RELATION_CLASS = irm.Relation # relation.FastRelation
 
 SAMPLE_SETS = 20
 SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
+SEEDS = 4
 
 def addelement(partlist, e):
     newpartlist = []
@@ -91,7 +93,7 @@ def enumerate_canonical_partitions(Nrows):
     return parts, assignments
 
 
-def type_to_assign_vect(type_intf, av):
+def type_to_assign_vect(type_intf, av, rng=None):
     """
     for a given assignment vector, force the type into that format
     """
@@ -103,14 +105,14 @@ def type_to_assign_vect(type_intf, av):
         if type_intf.group_size(oldgroup) == 0:
             type_intf.delete_group(oldgroup)
         if a not in id_to_gid:
-            new_gid = type_intf.create_group()
+            new_gid = type_intf.create_group(rng)
             id_to_gid[a] = new_gid
         type_intf.add_entity_to_group(id_to_gid[a], ei)
     
 def t1_t2_datasets():
     T1_N = 10
     T2_N = 8
-    for seed in range(4):
+    for seed in range(SEEDS):
         output_filename = "irm.t1xt2.%d.%d.%d.pickle" % (T1_N, T2_N, seed)
         yield None, output_filename, T1_N, T2_N, seed
 
@@ -134,7 +136,7 @@ def create_data_t1t2(inputfile, outputfile, T1_N, T2_N, seed):
 
 def t1_t1_datasets():
     T1_N = 8
-    for seed in range(4):
+    for seed in range(SEEDS):
         output_filename = "irm.t1xt1.%d.%d.pickle" % (T1_N, seed)
         yield None, output_filename, T1_N,  seed
 
@@ -159,7 +161,11 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
            suffix(".pickle"), ".samples.pickle")
 def run_samples(infile, outfile):
     config = pickle.load(open(infile))
-    irm_model = irmio.model_from_config(config, relation_class = RELATION_CLASS)
+
+    rng = irm.RNG()
+
+    irm_model = irmio.model_from_config(config, relation_class = RELATION_CLASS,
+                                        rng = rng)
 
     # pick what the T1 is that we're going to use
     t1_name = sorted(irm_model.types.keys())[0]
@@ -173,7 +179,7 @@ def run_samples(infile, outfile):
     scores = np.zeros(len(assignments))
     ca_to_pos = {}
     for ai, a in enumerate(assignments):
-        type_to_assign_vect(t1_obj, a)
+        type_to_assign_vect(t1_obj, a, rng)
         scores[ai]  = irm_model.total_score()
         ca_to_pos[tuple(a)] = ai
 
@@ -185,7 +191,7 @@ def run_samples(infile, outfile):
         print "Samp_set", samp_set
         for s in range(SAMPLES_N):
             for i in range(ITERS_PER_SAMPLE):
-                gibbs.gibbs_sample_type(t1_obj)
+                gibbs.gibbs_sample_type(t1_obj, rng)
             a = t1_obj.get_assignments()
             ca = canonicalize_assignment(a)
             pi = ca_to_pos[tuple(ca)]
@@ -201,11 +207,14 @@ def run_samples(infile, outfile):
            suffix(".pickle"), ".nonconj.samples.pickle")
 def run_samples_nonconj(infile, outfile):
     config = pickle.load(open(infile))
+
+    rng = irm.RNG()
     
-    irm_model = irmio.model_from_config(config, relation_class=RELATION_CLASS)
+    irm_model = irmio.model_from_config(config, relation_class=RELATION_CLASS, 
+                                        rng = rng)
     config['relations']['R1']['model'] = "BetaBernoulliNonConj"
 
-    irm_model_nonconj = irmio.model_from_config(config, relation_class=RELATION_CLASS)
+    irm_model_nonconj = irmio.model_from_config(config, relation_class=RELATION_CLASS, rng=rng)
 
     # pick what the T1 is that we're going to use
     t1_name = sorted(irm_model.types.keys())[0]
@@ -219,7 +228,7 @@ def run_samples_nonconj(infile, outfile):
     scores = np.zeros(len(assignments))
     ca_to_pos = {}
     for ai, a in enumerate(assignments):
-        type_to_assign_vect(t1_obj, a)
+        type_to_assign_vect(t1_obj, a, rng)
         scores[ai]  = irm_model.total_score()
         ca_to_pos[tuple(a)] = ai
 
@@ -233,7 +242,7 @@ def run_samples_nonconj(infile, outfile):
         print "Samp_set", samp_set
         for s in range(SAMPLES_N):
             for i in range(ITERS_PER_SAMPLE):
-                gibbs.gibbs_sample_type_nonconj(t1_obj_nonconj, M)
+                gibbs.gibbs_sample_type_nonconj(t1_obj_nonconj, M, rng)
             a = t1_obj_nonconj.get_assignments()
             ca = canonicalize_assignment(a)
             pi = ca_to_pos[tuple(ca)]

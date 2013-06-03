@@ -9,7 +9,7 @@ from irm import relation
 from irm import irmio
 from irm import util
 
-RELATION_CLASS =  irm.Relation
+RELATION_CLASS =  relation.FastRelation
 
 np.random.seed(0)
 rng = irm.RNG()
@@ -47,13 +47,13 @@ print "COMPUTING TRUE SCORE", "-"*40
 #print "ALL ONE SCORE", irm_model.total_score()
 
 t1 = time.time()
-SAMPLES = 40
+SAMPLES = 400
 ITERS_PER_SAMPLE = 1
 for s in range(SAMPLES):
     print "sample", s
     for i in range(ITERS_PER_SAMPLE):
         print "sample", s, "iter", i
-        model.do_inference(irm_model, rng, conj=False)
+        model.do_inference(irm_model, rng, conj = False)
         print util.count(t1_obj.get_assignments())
     print "score =", irm_model.total_score()
     
