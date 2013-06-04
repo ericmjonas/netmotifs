@@ -235,7 +235,7 @@ def run_samples_nonconj(infile, outfile):
     true_probs = util.scores_to_prob(scores)
     bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
     print "SAMPLING"
-    t1_obj_nonconj = irm_model.types[t1_name]
+    t1_obj_nonconj = irm_model_nonconj.types[t1_name]
     
     M = 10
     for samp_set in range(SAMPLE_SETS):
