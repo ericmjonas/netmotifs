@@ -6,7 +6,7 @@ from matplotlib import pylab
 import irm
 from irm import util 
 
-def test_slice():
+def test_slice_normal():
     def dens(x): 
         #mixture of gaussian
         mus = [-1.5, 2]
@@ -43,3 +43,48 @@ def test_slice():
     #pylab.scatter(x[:-1]+ bin_width/2, hist)
     #pylab.plot(x[:-1], p)
     #pylab.show()
+
+
+def test_slice_exp():
+    """
+    Test on a distribution with support on the positive reals
+    """
+
+    def dens(x): 
+        #mixture of gaussian
+        lamb = 2.47
+        if x < 0:
+            return -np.inf
+        else:
+            return -x * lamb
+        
+        # return util.log_norm_dens(x, 0, 1.0)
+
+    rng = irm.RNG()
+    ITERS = 1000000
+    
+    x = 0
+    results = np.zeros(ITERS)
+    
+    for i in range(ITERS):
+        x = irm.slice_sample(x, dens, rng, 0.5)
+        results[i] = x
+    print "Done" 
+    MIN = -1
+    MAX = 4
+    BINS = 101
+    x = np.linspace(MIN, MAX, BINS)
+    bin_width = x[1] - x[0]
+
+    y = [dens(a + bin_width/2) for a in x[:-1]]
+    p = np.exp(y)
+    p = p/np.sum(p)/(x[1]-x[0])
+
+
+    hist, bin_edges = np.histogram(results, x, normed=True)
+
+    kl=  util.kl(hist, p)
+    assert kl < 0.1
+    # pylab.scatter(x[:-1]+ bin_width/2, hist)
+    # pylab.plot(x[:-1], p)
+    # pylab.show()
