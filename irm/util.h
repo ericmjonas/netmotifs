@@ -135,6 +135,7 @@ return real(rng);
 }
 
 inline float uniform_01(rng_t & rng) { 
+ // boost::uniform_01<rng_t> dist(rng);  NEVER USE THIS IT DOES NOT ADVANCE THE RNG STATE
 
    return uniform(0, 1.0, rng); 
 }
