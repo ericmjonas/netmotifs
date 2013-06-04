@@ -46,3 +46,5 @@ def test_create_component():
     cc = irm.create_component_container(x.tostring(), 
                                         x.shape, "BetaBernoulli")
     assert_equal(cc.dpcount(), 10*20*30)
+
+

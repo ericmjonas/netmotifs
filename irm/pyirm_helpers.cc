@@ -1,4 +1,5 @@
 #include "pyirm_helpers.h"
+#include "kernels.h"
 
 bp::list cart_prod_helper_py(bp::list axes)
 {
@@ -53,4 +54,18 @@ bp::list unique_axes_pos_helper_py(bp::list axes_pos, irm::groupid_t val,
         out.append(bp::tuple(coord)); 
     }
     return out; 
+}
+
+float slice_sampler_wrapper(float x, bp::object P, 
+                            irm::rng_t & rng, float w) { 
+    /* 
+       Only works for floats, oh well
+    */ 
+
+    return irm::slice_sample<float>(x,
+                                    [&P](float t) -> float
+        { return bp::extract<float>(P(t));}, 
+                                    rng, w);
+
+
 }

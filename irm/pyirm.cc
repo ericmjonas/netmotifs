@@ -87,5 +87,8 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("post_pred", &Relation::post_pred)
       .def("total_score", &Relation::total_score); 
 
+  def("slice_sample", &slice_sampler_wrapper); 
+  def("uniform_01", &uniform_01); 
+
 }
 

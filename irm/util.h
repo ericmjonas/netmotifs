@@ -7,7 +7,7 @@
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_01.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 #include <stdlib.h>
 
 #define GROUP_COORDS_ARRAY
@@ -37,9 +37,9 @@ const static int MAX_GROUPS_PER_DOMAIN = 1000;
 
 template<typename containerT, typename ForwardIterator> 
 void cart_prod_helper(std::vector<containerT > & output, 
-                      std::vector<std::pair<ForwardIterator, ForwardIterator> >  axes, 
-                      containerT current_element, 
-                      size_t axispos); 
+                          std::vector<std::pair<ForwardIterator, ForwardIterator> >  axes, 
+                          containerT current_element, 
+                          size_t axispos); 
 
 template<typename containerT>
 std::vector<containerT> cart_prod(std::vector<size_t> axes)
@@ -127,10 +127,15 @@ std::vector<std::pair<typename T::iterator, typename T::iterator>>
 
 
 
-inline float uniform_01(rng_t & rng) { 
-    boost::uniform_01<rng_t> dist(rng); 
+inline float uniform(float min, float max, rng_t & rng) { 
+ // boost::uniform_01<rng_t> dist(rng);  NEVER USE THIS IT DOES NOT ADVANCE THE RNG STATE
 
-    return dist();
+    boost::random::uniform_real_distribution<> real(min, max); 
+    return real(rng);
+}
+
+inline float uniform_01(rng_t & rng) { 
+    return uniform(0, 1.0, rng); 
 }
 
 }

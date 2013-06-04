@@ -106,3 +106,8 @@ def count(x):
 def log_bernoulli(heads, tails, p):
     pass
 
+def log_norm_dens(x, mu, var):
+    c = -np.log(np.sqrt(var*2*np.pi) )
+    v = -(x-mu)**2 / (2*var)
+    return c + v 
+
