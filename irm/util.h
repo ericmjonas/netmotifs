@@ -130,12 +130,13 @@ std::vector<std::pair<typename T::iterator, typename T::iterator>>
 inline float uniform(float min, float max, rng_t & rng) { 
  // boost::uniform_01<rng_t> dist(rng);  NEVER USE THIS IT DOES NOT ADVANCE THE RNG STATE
 
-    boost::random::uniform_real_distribution<> real(min, max); 
-    return real(rng);
+boost::random::uniform_real_distribution<> real(min, max); 
+return real(rng);
 }
 
 inline float uniform_01(rng_t & rng) { 
-    return uniform(0, 1.0, rng); 
+
+   return uniform(0, 1.0, rng); 
 }
 
 }
