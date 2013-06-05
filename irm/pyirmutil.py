@@ -62,4 +62,7 @@ class Relation(object):
 
     def get_component(self, group_coords): 
         return self.relation.get_component(group_coords)
-        
+
+    def apply_comp_kernel(self, kernel_name, rng, params):
+        self.compcontainer.apply_kernel(kernel_name, rng, params)
+

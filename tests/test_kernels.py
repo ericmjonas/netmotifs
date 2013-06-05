@@ -5,6 +5,9 @@ from matplotlib import pylab
 
 import irm
 from irm import util 
+from irm import models
+from irm import model
+
 
 def test_slice_normal():
     def dens(x): 
@@ -91,15 +94,16 @@ def test_slice_exp():
 
 
 def test_slice_nonconj():
-    
     T1_N = 10
     T2_N = 20
     np.random.seed(0)
+    rng = irm.RNG()
+
     data = np.random.rand(T1_N, T2_N) > 0.5
     data.shape = T1_N, T2_N
 
-    m =  models.BetaBernoulliConj()
-    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
+    m =  models.BetaBernoulliNonConj()
+    r = irm.Relation([('T1', T1_N), ('T2', T2_N)], 
                      data,m)
     hps = m.create_hps()
     hps['alpha'] = 1.0
@@ -112,17 +116,42 @@ def test_slice_nonconj():
     tf_2 = model.DomainInterface(T2_N, [('T2', r)])
     tf_2.set_hps(1.0)
 
-    ### All one group for everyone
-    t1_g1 = tf_1.create_group(rng)
-    for i in range(T1_N):
-        tf_1.add_entity_to_group(t1_g1, i)
+    T1_GRPN = 4
+    t1_assign = np.arange(T1_N) % T1_GRPN
+    t1_grps = {}
+    for i, gi in enumerate(t1_assign):
+        if gi not in t1_grps:
+            g = tf_1.create_group(rng)
+            t1_grps[gi] = g
+        tf_1.add_entity_to_group(t1_grps[gi], i)
 
-    t2_g1 = tf_2.create_group(rng)
-    for i in range(T2_N):
-        tf_2.add_entity_to_group(t2_g1, i)
+    T2_GRPN = 4
+    t2_assign = np.arange(T2_N) % T2_GRPN
+    t2_grps = {}
+    for i, gi in enumerate(t2_assign):
+        if gi not in t2_grps:
+            g = tf_2.create_group(rng)
+            t2_grps[gi] = g
+        tf_2.add_entity_to_group(t2_grps[gi], i)
 
-    
-    # ITERS = 10
-    # for i in range(ITERS):
-    #     gibbs.gibbs_sample_type(tf_1, rng)
+    r.apply_comp_kernel("slice_sample", rng, {'width' : 0.2})
+
+    t1_assign_g = tf_1.get_assignments()
+    t2_assign_g = tf_2.get_assignments()
+
+    for t1_g in np.unique(t1_assign_g):
+        for t2_g in np.unique(t2_assign_g):
+            t1_entities = np.argwhere(t1_assign_g == t1_g).flatten()
+            t2_entities = np.argwhere(t2_assign_g == t2_g).flatten()
+            
+            dps = []
+            for e1 in t1_entities:
+                for e2 in t2_entities:
+                    dps.append(data[e1, e2])
+            heads = np.sum(np.array(dps)==1)
+            tails = np.sum(np.array(dps)==0)
+            c = r.get_component((tf_1.get_relation_groupid(0, t1_g), 
+                                 tf_2.get_relation_groupid(0, t2_g)))
+
+            print c['p']
     # assert_equal(len(np.unique(tf_1.get_assignments())), 10)

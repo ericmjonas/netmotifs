@@ -154,8 +154,9 @@ public:
         if(name == "slice_sample") { 
             float width = bp::extract<float>(config["width"]); 
             for(auto c : components_) { 
-                slice_sample_exec<CM>(rng, width, &(c.second->ss), 
-                                     &hps_, data_.begin()); 
+                slice_sample_exec<CM>(rng, width, 
+                                      &(c.second->ss), 
+                                      &hps_, data_.begin()); 
             }
         } else { 
             throw std::runtime_error("unknown kernel name"); 

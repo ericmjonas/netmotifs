@@ -35,6 +35,7 @@ add_executable(benchmark
 add_library(irm 
    relation.cc
    componentmodels.cc
+   componentslice.cc
 )
 
 add_library(pyirm SHARED
