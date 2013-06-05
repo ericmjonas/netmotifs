@@ -231,7 +231,11 @@ struct BetaBernoulliNonConj {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float alpha = hps->alpha; 
         float beta = hps->beta; 
+        // std::cout << "score_prior " << alpha << " " << beta << std::endl; 
         boost::math::beta_distribution<> dist(alpha, beta);
+        if((ss->p > 1.0) || (ss->p < 0.0)) { 
+            return -std::numeric_limits<float>::infinity();
+        }
         return logf(boost::math::pdf(dist, ss->p)); 
     }
     
@@ -241,6 +245,10 @@ struct BetaBernoulliNonConj {
     {
         int heads = 0; 
         int tails = 0; 
+        if((ss->p > 1.0) || (ss->p < 0.0)) { 
+            return -std::numeric_limits<float>::infinity();
+        }
+
         for(auto dpi : ss->datapoint_pos_) { 
             if(data[dpi]) {
                 heads++; 

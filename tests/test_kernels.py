@@ -27,7 +27,6 @@ def test_slice_normal():
     for i in range(ITERS):
         x = irm.slice_sample(x, dens, rng, 0.5)
         results[i] = x
-    print "Done" 
     MIN = -5
     MAX = 5
     BINS = 100
@@ -72,7 +71,6 @@ def test_slice_exp():
     for i in range(ITERS):
         x = irm.slice_sample(x, dens, rng, 0.5)
         results[i] = x
-    print "Done" 
     MIN = -1
     MAX = 4
     BINS = 101
@@ -134,11 +132,12 @@ def test_slice_nonconj():
             t2_grps[gi] = g
         tf_2.add_entity_to_group(t2_grps[gi], i)
 
-    r.apply_comp_kernel("slice_sample", rng, {'width' : 0.2})
 
     t1_assign_g = tf_1.get_assignments()
     t2_assign_g = tf_2.get_assignments()
 
+    # build list of coords / heads/tails
+    coord_data = {}
     for t1_g in np.unique(t1_assign_g):
         for t2_g in np.unique(t2_assign_g):
             t1_entities = np.argwhere(t1_assign_g == t1_g).flatten()
@@ -150,8 +149,30 @@ def test_slice_nonconj():
                     dps.append(data[e1, e2])
             heads = np.sum(np.array(dps)==1)
             tails = np.sum(np.array(dps)==0)
-            c = r.get_component((tf_1.get_relation_groupid(0, t1_g), 
-                                 tf_2.get_relation_groupid(0, t2_g)))
+            coords = ((tf_1.get_relation_groupid(0, t1_g), 
+                       tf_2.get_relation_groupid(0, t2_g)))
+            coord_data[coords] = (heads, tails)
+    # now the histograms
 
-            print c['p']
-    # assert_equal(len(np.unique(tf_1.get_assignments())), 10)
+    for alpha, beta in [(1.0, 1.0), (10.0, 1.0), (1.0, 10.0), 
+                        (0.1, 5.0)]:
+        coords_hist = {k : [] for k in coord_data}
+
+        print "alpha=", alpha, "beta=", beta, "="*50
+        hps['alpha'] = alpha
+        hps['beta'] = beta
+
+        r.set_hps(hps)
+
+        ITERS = 100000
+        for i in range(ITERS):
+            r.apply_comp_kernel("slice_sample", rng, {'width' : 0.2})
+            for c in coord_data:
+                coords_hist[c].append(r.get_component(c)['p'])
+        for c in coords_hist:
+            heads, tails = coord_data[c]
+            empirical_p = np.mean(coords_hist[c])
+            true_map_p = float(heads + alpha) / (heads +tails + alpha + beta)
+            print empirical_p - true_map_p
+            np.testing.assert_approx_equal(empirical_p, true_map_p, 3)
+        # assert_equal(len(np.unique(tf_1.get_assignments())), 10)
