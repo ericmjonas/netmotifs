@@ -34,7 +34,7 @@ add_executable(benchmark
 
 add_library(irm 
    relation.cc
-   fastmodel.cc
+   componentmodels.cc
 )
 
 add_library(pyirm SHARED

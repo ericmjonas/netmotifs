@@ -1,4 +1,4 @@
-#include "fastmodel.h"
+#include "componentmodels.h"
 
 
 namespace irm { 

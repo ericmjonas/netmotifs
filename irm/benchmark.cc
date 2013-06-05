@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "componentcontainer.h"
-#include "fastmodel.h"
+#include "componentmodels.h"
 #include "relation.h"
 
 

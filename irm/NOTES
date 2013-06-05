@@ -99,3 +99,33 @@ using gcc
 
 
 ./b2 toolset=gcc-c11
+----------------------------
+
+Slice-sampling the inner parameters of a component in the non-conj case
+requires evaluating the score of the component
+
+Getting the "true" total score also requires evaluating the score
+of the component
+
+In the non-conjugate (or arbitrary component case) to score
+a component we need: 
+hps
+params
+data
+
+in the nonconj case perhaps we'll have the components keep track of
+their data points? And then score() in the nonconj case
+takes the data pointer? so they can do something with it if they want to? 
+
+
+How do we do a generic slice sampler though? If we have
+the strongly-typed component container but we have lost
+the components' class by the time we're in python
+
+Slice sampler must: 
+score component
+mutate hyperparam value (which we know must be real)
+
+slice_sample_params<component_container>(comp_container,  rngs, width)
+
+from python we will be calling this as: 

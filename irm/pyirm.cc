@@ -6,7 +6,7 @@
 #include "util.h"
 #include "relation.h"
 #include "componentcontainer.h"
-#include "fastmodel.h"
+#include "componentmodels.h"
 #include "pyirm_helpers.h"
 
 namespace bp=boost::python; 

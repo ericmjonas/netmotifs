@@ -1,5 +1,5 @@
-#ifndef __IRM_FASTMODEL_H__
-#define __IRM_FASTMODEL_H__
+#ifndef __IRM_COMPONENTMODELS_H__
+#define __IRM_COMPONENTMODELS_H__
 
 #include <map>
 #include <iostream> 
