@@ -15,7 +15,7 @@ from irm import relation
 
 RELATION_CLASS = irm.Relation # relation.FastRelation
 
-SAMPLE_SETS = 10
+SAMPLE_SETS = 40
 SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
 SEEDS = 4

@@ -12,13 +12,13 @@ int main()
 {
 
     const int ENTITY_N = 512; 
-    const int GROUPS = 16; 
+    const int GROUPS = 32; 
 
     rng_t rng; 
 
     std::string data(ENTITY_N * ENTITY_N, 0); 
     std::vector<size_t> shape = {ENTITY_N, ENTITY_N}; 
-    ComponentContainer<BetaBernoulli> cc_bb(data, shape); 
+    ComponentContainer<BetaBernoulliNonConj> cc_bb(data, shape); 
 
     axesdef_t axes_def = {0, 0}; 
     domainsizes_t domainsizes = {ENTITY_N}; 

@@ -31,9 +31,9 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
     }     else if(modeltype == "BetaBernoulliNonConj") { 
         IComponentContainer * cc = new ComponentContainer<BetaBernoulliNonConj>(data, data_dims_v); 
         return cc; 
-    } else if(modeltype == "AccumModel") { 
-        IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
-        return cc; 
+    // } else if(modeltype == "AccumModel") { 
+    //     IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
+    //     return cc; 
 
     } else { 
         throw std::runtime_error("unknown model type"); 

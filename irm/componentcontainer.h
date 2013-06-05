@@ -89,7 +89,8 @@ public:
         for(; i != components_.end(); ++i) { 
 
             if(i->second->count > 0) { 
-                score += CM::score(&(i->second->ss), &hps_); 
+                score += CM::score(&(i->second->ss), &hps_, 
+                                   data_.begin()); 
             }
         }
         return score; 
@@ -104,7 +105,8 @@ public:
         auto i = components_.find(gp); 
         assert(i != components_.end()); 
         sswrapper_t * ssw = i->second; 
-        return CM::post_pred(&(ssw->ss), &hps_, val); 
+        return CM::post_pred(&(ssw->ss), &hps_, val, 
+                             dp_pos, data_.begin()); 
     }
     
     void add_dp(group_coords_t group_coords, dppos_t dp_pos) {
@@ -114,7 +116,7 @@ public:
         auto i = components_.find(gp); 
         assert(i != components_.end()); 
         sswrapper_t * ssw = i->second; 
-        CM::ss_add(&(ssw->ss), &hps_, val); 
+        CM::ss_add(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
         ssw->count++; 
         
     }
@@ -128,7 +130,7 @@ public:
         assert(i != components_.end()); 
 
         sswrapper_t * ssw = i->second; 
-        CM::ss_rem(&(ssw->ss), &hps_, val); 
+        CM::ss_rem(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
         ssw->count--; 
         
     }
