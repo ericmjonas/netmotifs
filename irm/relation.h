@@ -38,6 +38,9 @@ public:
     float post_pred(domainpos_t, groupid_t, entitypos_t); 
 
     float total_score(); 
+    bp::dict get_component(bp::tuple group_coords); 
+
+
 private:
     const axesdef_t axes_; 
     IComponentContainer * pCC_; 

@@ -68,6 +68,15 @@ class DomainInterface(object):
     def get_assignments(self):
         return self.assignments.copy()
 
+    def get_relation_groupid(self, relpos, g):
+        """
+        Get the underlying relation's groupid for this group
+        
+        Useful for then getting at relation components
+        """
+        
+        return self.gid_mapping[g][relpos]
+
     def delete_group(self, group_id):
         rel_groupid = self.gid_mapping[group_id]
         [r.delete_group(t, g) for g, (t, r) in zip(rel_groupid, self.relations)]

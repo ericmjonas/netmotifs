@@ -31,9 +31,9 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
     }     else if(modeltype == "BetaBernoulliNonConj") { 
         IComponentContainer * cc = new ComponentContainer<BetaBernoulliNonConj>(data, data_dims_v); 
         return cc; 
-    // } else if(modeltype == "AccumModel") { 
-    //     IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
-    //     return cc; 
+    } else if(modeltype == "AccumModel") { 
+        IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
+        return cc; 
 
     } else { 
         throw std::runtime_error("unknown model type"); 
@@ -68,7 +68,8 @@ BOOST_PYTHON_MODULE(pyirm)
 
   class_<IComponentContainer, boost::noncopyable>("ComponentContainer", no_init)
       .def("dpcount", &IComponentContainer::dpcount)
-      .def("set_hps", &IComponentContainer::set_hps); 
+      .def("set_hps", &IComponentContainer::set_hps)
+      .def("apply_kernel", &IComponentContainer::apply_kernel); 
 
   def("helloworld", &helloworld); 
   def("cart_prod", &cart_prod_helper_py); 
@@ -85,7 +86,8 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("add_entity_to_group", &Relation::add_entity_to_group)
       .def("remove_entity_from_group", &Relation::remove_entity_from_group)
       .def("post_pred", &Relation::post_pred)
-      .def("total_score", &Relation::total_score); 
+      .def("total_score", &Relation::total_score)
+      .def("get_component", &Relation::get_component); 
 
   def("slice_sample", &slice_sampler_wrapper); 
   def("uniform_01", &uniform_01); 

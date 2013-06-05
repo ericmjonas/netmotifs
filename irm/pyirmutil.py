@@ -59,3 +59,7 @@ class Relation(object):
     def get_all_groups(self, domainname):
         dpos = self.domain_mapper[domainname]
         return self.relation.get_all_groups(dpos)
+
+    def get_component(self, group_coords): 
+        return self.relation.get_component(group_coords)
+        

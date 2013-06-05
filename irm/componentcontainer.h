@@ -9,6 +9,8 @@
 
 #include "util.h"
 
+#include "componentslice.h"
+
 namespace bp=boost::python; 
 
 
@@ -26,6 +28,10 @@ public:
     virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
     virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
     virtual void set_hps(bp::dict & hps) = 0; 
+    virtual void apply_kernel(std::string name, rng_t & rng, 
+                              bp::dict params) = 0; 
+
+    virtual bp::dict get_component(group_coords_t gc) = 0; 
 
 }; 
    
@@ -142,6 +148,30 @@ public:
     void set_hps(bp::dict & hps) { 
         hps_ = CM::bp_dict_to_hps(hps); 
 
+    }
+
+    void apply_kernel(std::string name, rng_t & rng, bp::dict config) { 
+        if(name == "slice_sample") { 
+            float width = bp::extract<float>(config["width"]); 
+            for(auto c : components_) { 
+                slice_sample_exec<CM>(rng, width, &(c.second->ss), 
+                                     &hps_, data_.begin()); 
+            }
+        } else { 
+            throw std::runtime_error("unknown kernel name"); 
+        }
+
+
+    }
+
+    bp::dict get_component(group_coords_t gc) { 
+        group_hash_t gp = hash_coords(gc); 
+
+        auto i = components_.find(gp); 
+        assert(i != components_.end()); 
+
+        sswrapper_t * ssw = i->second; 
+        return CM::ss_to_dict(&(ssw->ss)); 
     }
 
 private:

@@ -219,4 +219,14 @@ Relation::~Relation()
 
 }
 
+bp::dict Relation::get_component(bp::tuple group_coords)
+{
+    group_coords_t gc = new_group_coords(DIMS_); 
+    for(int i = 0; i < bp::len(group_coords); ++i) { 
+        gc[i] = bp::extract<int>(group_coords[i]); 
+    }
+    return pCC_->get_component(gc); 
+}
+
+
 }

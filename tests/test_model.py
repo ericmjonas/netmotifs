@@ -298,3 +298,5 @@ def type_if_rel(relation_class, rng=None):
         score_delta = est_score_new- est_score_old + util.crp_post_pred(1, T1_N, 1.0)
         assert_approx_equal(score_delta, score)
 
+
+

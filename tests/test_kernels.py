@@ -88,3 +88,41 @@ def test_slice_exp():
     # pylab.scatter(x[:-1]+ bin_width/2, hist)
     # pylab.plot(x[:-1], p)
     # pylab.show()
+
+
+def test_slice_nonconj():
+    
+    T1_N = 10
+    T2_N = 20
+    np.random.seed(0)
+    data = np.random.rand(T1_N, T2_N) > 0.5
+    data.shape = T1_N, T2_N
+
+    m =  models.BetaBernoulliConj()
+    r = relation.Relation([('T1', T1_N), ('T2', T2_N)], 
+                     data,m)
+    hps = m.create_hps()
+    hps['alpha'] = 1.0
+    hps['beta'] = 1.0
+
+    r.set_hps(hps)
+
+    tf_1 = model.DomainInterface(T1_N, [('T1', r)])
+    tf_1.set_hps(1.0)
+    tf_2 = model.DomainInterface(T2_N, [('T2', r)])
+    tf_2.set_hps(1.0)
+
+    ### All one group for everyone
+    t1_g1 = tf_1.create_group(rng)
+    for i in range(T1_N):
+        tf_1.add_entity_to_group(t1_g1, i)
+
+    t2_g1 = tf_2.create_group(rng)
+    for i in range(T2_N):
+        tf_2.add_entity_to_group(t2_g1, i)
+
+    
+    # ITERS = 10
+    # for i in range(ITERS):
+    #     gibbs.gibbs_sample_type(tf_1, rng)
+    # assert_equal(len(np.unique(tf_1.get_assignments())), 10)

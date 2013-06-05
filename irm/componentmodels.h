@@ -17,7 +17,7 @@ namespace irm {
 
 typedef size_t group_hash_t; 
 
-float betaln(float x, float y) { 
+inline float betaln(float x, float y) { 
     return lgammaf(x) + lgammaf(y) - lgammaf(x + y); 
 
 }
@@ -96,54 +96,77 @@ struct BetaBernoulli {
         return hp; 
 
     }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["heads"] = ss->heads; 
+        d["tails"] = ss->tails; 
+        return d; 
+    }
 }; 
 
-// struct AccumModel { 
-//     typedef float value_t; 
+struct AccumModel { 
+    typedef float value_t; 
     
-//     struct suffstats_t { 
-//         float sum; 
-//         float count; 
-//     }; 
+    struct suffstats_t { 
+        float sum; 
+        float count; 
+    }; 
 
-//     struct hypers_t { 
-//         float offset; 
-//     }; 
+    struct hypers_t { 
+        float offset; 
+    }; 
     
-//     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
-//                         rng_t & rng) { 
-//         ss->sum = 0; 
-//         ss->count = 0; 
-//     }
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                        rng_t & rng) { 
+        ss->sum = 0; 
+        ss->count = 0; 
+    }
      
-//     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val) {
-//         ss->sum += val; 
-//         ss->count++; 
-//     }
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val,
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->sum += val; 
+        ss->count++; 
+    }
 
-//     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val) {
-//         ss->sum -= val; 
-//         ss->count--; 
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->sum -= val; 
+        ss->count--; 
         
-//     }
+    }
 
-//     static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) {
-//         return val; 
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        return val; 
         
-//     }
+    }
 
-//     static float score(suffstats_t * ss, hypers_t * hps) { 
-//         return ss->sum + hps->offset; 
-//     }
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data) { 
+        return ss->sum + hps->offset; 
+    }
 
-//     static hypers_t bp_dict_to_hps(bp::dict & hps) { 
-//         hypers_t hp; 
-//         hp.offset = bp::extract<float>(hps["offset"]); 
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.offset = bp::extract<float>(hps["offset"]); 
 
-//         return hp; 
+        return hp; 
 
-//     }
-// }; 
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["sum"] = ss->sum; 
+        d["count"] = ss->count; 
+        return d; 
+    }
+
+}; 
 
 
 struct BetaBernoulliNonConj { 
@@ -244,6 +267,13 @@ struct BetaBernoulliNonConj {
         return hp; 
 
     }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["p"] = ss->p; 
+        return d; 
+    }
+
 }; 
 
 
