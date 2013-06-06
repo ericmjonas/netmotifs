@@ -15,10 +15,10 @@ from irm import relation
 
 RELATION_CLASS = irm.Relation # relation.FastRelation
 
-SAMPLE_SETS = 40
+SAMPLE_SETS = 200
 SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
-SEEDS = 4
+SEEDS = 8
 
 def addelement(partlist, e):
     newpartlist = []
@@ -243,6 +243,7 @@ def run_samples_nonconj(infile, outfile):
         for s in range(SAMPLES_N):
             for i in range(ITERS_PER_SAMPLE):
                 gibbs.gibbs_sample_type_nonconj(t1_obj_nonconj, M, rng)
+                irm_model_nonconj.relations['R1'].apply_comp_kernel("slice_sample", rng, {'width' : 0.3})
             a = t1_obj_nonconj.get_assignments()
             ca = canonicalize_assignment(a)
             pi = ca_to_pos[tuple(ca)]
@@ -257,7 +258,7 @@ def run_samples_nonconj(infile, outfile):
 @collate([run_samples, run_samples_nonconj],
          regex(r"\.(.+).\d+.(.*)samples.pickle$"),  r'\1.\2kl.pdf')
 def summarize(infiles, summary_file):
-    PLOT_N = 80
+    PLOT_N = 5000
 
     KLs = np.zeros((len(infiles), 1000))
     for infile_i, infile in enumerate(infiles):
