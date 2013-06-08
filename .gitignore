@@ -1,3 +1,8 @@
 *.pyc
 *~
 irm/build
+irm/buildvm
+*.o
+*.pickle
+*.png
+*.pdf

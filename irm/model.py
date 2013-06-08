@@ -139,11 +139,3 @@ class IRM(object):
             score += r.total_score()
         return score
 
-def do_inference(irm_model, rng, conj = True, M=10):
-    for domain_name, domain_inf in irm_model.types.iteritems():
-        if conj:
-            gibbs.gibbs_sample_type(domain_inf, rng)
-        else:
-            gibbs.gibbs_sample_type_nonconj(domain_inf, M, rng)
-
-
