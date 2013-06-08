@@ -12,7 +12,7 @@ def model_from_config_file(configfile):
 def model_from_config(config, relation_class=relation.Relation,
                       init='allone', rng=None):
 
-    types_config = config['types']
+    types_config = config['domains']
     relations_config = config['relations']
     data_config = config['data']
 
@@ -54,7 +54,7 @@ def model_from_config(config, relation_class=relation.Relation,
             for j in range(ti.entity_count()):
                 ti.add_entity_to_group(g, j)
         elif init == 'singleton':
-            for j in range(ti.entity_count()):
+            for j in8 range(ti.entity_count()):
                 g = ti.create_group(rng)
                 ti.add_entity_to_group(g, j)
         elif init == "crp": 
@@ -90,4 +90,19 @@ def init_domain(domain_obj, assign_vect):
             ai_to_gid[ai] = domain_obj.create_group(rng)
         domain_obj.add_entity_to_group(ai_to_gid[ai], ei)
     
+    
+def default_graph_init(connectivity, model = 'BetaBernoulli'):
+    """
+    Create a default IRM config from a graph connectivity matrix
+    """
+    T1_N = connectivity.shape[0]
+    assert connectivity.shape[0] == connectivity.shape[1]
+    config = {'domains' : {'t1' : {'hps' : 1.0, 
+                                 'N' : T1_N}},
+              'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
+                                      'model' : model, 
+                                      'hps' : {'alpha' : 1.0, 
+                                               'beta' : 1.0}}}, 
+              'data' : {'R1' : connectivity}}
+
     

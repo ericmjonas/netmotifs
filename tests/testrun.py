@@ -21,11 +21,17 @@ data = d['nodes']
 connectivity = d['connectivity']
 NODEN = connectivity.shape[0]
 
+CONJ = False
+
+if not CONJ: 
+    model_name = 'BetaBernoulliNonConj'
+else:
+    model_name = 'BetaBernoulli'
     
 config = {'types' : {'t1' : {'hps' : 1.0, 
                              'N' : NODEN}}, 
           'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
-                                  'model' : 'BetaBernoulliNonConj', 
+                                  'model' : model_name, 
                                   'hps' : {'alpha' : 1.0, 
                                            'beta' : 1.0}}}, 
           'data' : {'R1' : connectivity}}
@@ -53,7 +59,7 @@ for s in range(SAMPLES):
     print "sample", s
     for i in range(ITERS_PER_SAMPLE):
         print "sample", s, "iter", i
-        model.do_inference(irm_model, rng, conj = False)
+        model.do_inference(irm_model, rng, conj = CONJ)
         print util.count(t1_obj.get_assignments())
     print "score =", irm_model.total_score()
     

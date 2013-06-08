@@ -243,21 +243,30 @@ struct BetaBernoulliNonConj {
     static float score_likelihood(suffstats_t * ss, 
                            RandomAccessIterator data)
     {
-        int heads = 0; 
-        int tails = 0; 
-        if((ss->p > 1.0) || (ss->p < 0.0)) { 
-            return -std::numeric_limits<float>::infinity();
-        }
+        // int heads = 0; 
+        // int tails = 0; 
+        // if((ss->p > 1.0) || (ss->p < 0.0)) { 
+        //     return -std::numeric_limits<float>::infinity();
+        // }
 
+        // for(auto dpi : ss->datapoint_pos_) { 
+        //     if(data[dpi]) {
+        //         heads++; 
+        //     } else { 
+        //         tails++; 
+        //     }
+        // }
+        // boost::math::binomial_distribution<> dist(heads+tails, ss->p); 
+        // return logf(boost::math::pdf(dist, heads)); 
+        float score = 0.0; 
         for(auto dpi : ss->datapoint_pos_) { 
             if(data[dpi]) {
-                heads++; 
+                score += logf(ss->p); 
             } else { 
-                tails++; 
+                score += logf(1 - ss->p); 
             }
         }
-        boost::math::binomial_distribution<> dist(heads+tails, ss->p); 
-        return logf(boost::math::pdf(dist, heads)); 
+        return score; 
     }
     
     template<typename RandomAccessIterator>

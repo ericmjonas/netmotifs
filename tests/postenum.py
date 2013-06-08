@@ -18,7 +18,7 @@ RELATION_CLASS = irm.Relation # relation.FastRelation
 SAMPLE_SETS = 200
 SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
-SEEDS = 8
+SEEDS = 4
 
 def addelement(partlist, e):
     newpartlist = []
@@ -122,7 +122,7 @@ def create_data_t1t2(inputfile, outputfile, T1_N, T2_N, seed):
     np.random.seed(seed)
     data = np.random.rand(T1_N, T2_N) > 0.5
     
-    config = {'types' : {'t1' : {'hps' : 1.0, 
+    config = {'domains' : {'t1' : {'hps' : 1.0, 
                                  'N' : T1_N}, 
                          't2' : {'hps' : 1.0, 
                                  'N' : T2_N}}, 
@@ -146,7 +146,7 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
     np.random.seed(seed)
     data = np.random.rand(T1_N, T1_N) > 0.5
     
-    config = {'types' : {'t1' : {'hps' : 1.0, 
+    config = {'domains' : {'t1' : {'hps' : 1.0, 
                                  'N' : T1_N}},
               'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
                                       'model' : 'BetaBernoulli', 
@@ -256,11 +256,13 @@ def run_samples_nonconj(infile, outfile):
                 open(outfile, 'w'))
 
 @collate([run_samples, run_samples_nonconj],
-         regex(r"\.(.+).\d+.(.*)samples.pickle$"),  r'\1.\2kl.pdf')
-def summarize(infiles, summary_file):
-    PLOT_N = 5000
+         regex(r"\.(.+).\d+.(.*)samples.pickle$"),  [r'\1.\2kl.pdf', 
+                                                     r'\1.\2dists.pdf'])
+def summarize(infiles, (kl_summary_file, dist_summary_file) ):
+    KL_N = 500
 
     KLs = np.zeros((len(infiles), 1000))
+    lastplot = {}
     for infile_i, infile in enumerate(infiles):
         print "INFILE = ", infile
         data = pickle.load(open(infile, 'r'))
@@ -273,17 +275,41 @@ def summarize(infiles, summary_file):
             flat_bins = np.sum(bins[:sample_set_i+1], axis=0)
             emp_hist = flat_bins.astype(np.float)/np.sum(flat_bins)
             probs_idx = np.argsort(true_probs)[::-1].flatten()
-            prob_true = true_probs[probs_idx][:PLOT_N]
-            prob_emp = emp_hist[probs_idx][:PLOT_N]
+            prob_true = true_probs[probs_idx][:KL_N]
+            prob_emp = emp_hist[probs_idx][:KL_N]
             kl = util.kl(prob_true + 0.001, prob_emp + 0.001)
             KLs[infile_i, sample_set_i] = kl
+
     KLs = KLs[:, :SAMPLE_SETS]
     
     pylab.figure()
+
+    
     for row in KLs:
         pylab.plot(row)
     pylab.grid()
-    pylab.savefig(summary_file)
+    pylab.savefig(kl_summary_file)
+
+    PLOT_N = 40
+    pylab.figure()
+    for infile_i, infile in enumerate(infiles):
+        pylab.subplot(len(infiles), 1, infile_i + 1)
+
+        data = pickle.load(open(infile, 'r'))
+
+        bins = data['bins']
+        true_probs = data['true_probs']
+        SAMPLE_SETS = len(bins)
+        sample_set_i = SAMPLE_SETS - 1
+        flat_bins = np.sum(bins[:sample_set_i+1], axis=0)
+        emp_hist = flat_bins.astype(np.float)/np.sum(flat_bins)
+        probs_idx = np.argsort(true_probs)[::-1].flatten()
+        prob_true = true_probs[probs_idx][:PLOT_N]
+        prob_emp = emp_hist[probs_idx][:PLOT_N]
+        pylab.plot(prob_true)
+        pylab.scatter(range(PLOT_N), prob_emp)
+        pylab.grid()
+    pylab.savefig(dist_summary_file)
 
 if __name__ == "__main__":
     pipeline_run([create_data_t1t2, run_samples, run_samples_nonconj, 

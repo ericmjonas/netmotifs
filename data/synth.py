@@ -3,6 +3,9 @@ from matplotlib import pylab
 import cPickle as pickle
 
 
+NODE_POS_DTYPE = [('class',  np.uint32), 
+                  ('pos' ,  np.float32, (3, ))]
+
 def d(x, y):
     return np.sqrt(np.sum((x - y)**2))
 
@@ -63,7 +66,7 @@ def example():
             p = 0.2
         elif c1 == 2 and c2 == 3:
             p = 0.05
-        elif c1 == 3 and c2 == 1:
+        elif c1 == 3 and c2 == 0:
             p=0.7
         return np.random.rand() < p
 
@@ -92,6 +95,33 @@ def generate():
     pickle.dump({'nodes' : nodes, 
                  'connectivity' : connectivity}, 
                 open('data.pickle', 'w'))
+
+def connect(nodes, pred):
+    """
+    nodes: vector of class, 3pos nodes
+    pred: a function of (c1, pos1, c2, pos2) that returns prob of this connection
+    
+    """
+    NODEN = len(nodes)
+
+    connectivity = np.zeros((NODEN, NODEN), dtype=np.bool)
+    for ni in range(NODEN):
+        for nj in range(NODEN):
+            connectivity[ni, nj] = pred(nodes[ni]['class'], 
+                                        nodes[ni]['pos'], 
+                                        nodes[nj]['class'], 
+                                        nodes[nj]['pos'])
+    
+    return  connectivity
+    
+def add_class(nodes, classnum):
+    NODEN = len(nodes)
+    nodes_class = np.zeros(NODEN, dtype= NODE_POS_DTYPE)
+    nodes_class['class'] = classnum
+    nodes_class['pos'] = nodes
+    return nodes_class
+
+
 
 if __name__ == "__main__":
     generate()
