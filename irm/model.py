@@ -124,16 +124,16 @@ class DomainInterface(object):
         return np.sum(scores) + prior_score
 
 class IRM(object):
-    def __init__(self, types, relations):
+    def __init__(self, domains, relations):
         """
-        both types and relations are name->object mappings
+        both domains and relations are name->object mappings
         """
-        self.types = types
+        self.domains = domains
         self.relations = relations
     
     def total_score(self):
         score = 0
-        for t in self.types.values():
+        for t in self.domains.values():
             score += t.get_prior_score()
         for r in self.relations.values():
             score += r.total_score()

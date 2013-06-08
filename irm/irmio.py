@@ -4,13 +4,13 @@ import models
 import util
 import model
 import relation
-import pyirm 
+import pyirmutil
 
 def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_config(config, relation_class=pyirm.Relation, 
+def model_from_config(config, relation_class=pyirmutil.Relation, 
                       init='allone', rng=None):
 
     types_config = config['domains']
@@ -55,7 +55,7 @@ def model_from_config(config, relation_class=pyirm.Relation,
             for j in range(ti.entity_count()):
                 ti.add_entity_to_group(g, j)
         elif init == 'singleton':
-            for j in8 range(ti.entity_count()):
+            for j in range(ti.entity_count()):
                 g = ti.create_group(rng)
                 ti.add_entity_to_group(g, j)
         elif init == "crp": 
@@ -106,4 +106,4 @@ def default_graph_init(connectivity, model = 'BetaBernoulli'):
                                                'beta' : 1.0}}}, 
               'data' : {'R1' : connectivity}}
 
-    
+    return config
