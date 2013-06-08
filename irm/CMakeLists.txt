@@ -57,12 +57,15 @@ set(pyirm_install_DIR "${PYTHON_SITE_PACKAGES}/irm")
 message(STATUS "Installing python to ${PYTHON_SITE_PACKAGES}")
 
 install(TARGETS pyirm LIBRARY DESTINATION ${pyirm_install_DIR})
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py 
-              ${CMAKE_CURRENT_SOURCE_DIR}/util.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/pyirmutil.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/models.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/relation.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/model.py
-              ${CMAKE_CURRENT_SOURCE_DIR}/gibbs.py              
-              ${CMAKE_CURRENT_SOURCE_DIR}/irmio.py              
+
+FILE(GLOB py_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
+
+install(FILES ${py_files}
               DESTINATION ${pyirm_install_DIR})
+
+FILE(GLOB py_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/*.py")
+
+install(FILES ${py_files}
+              DESTINATION ${pyirm_install_DIR}/data)

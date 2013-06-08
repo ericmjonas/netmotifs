@@ -4,12 +4,13 @@ import models
 import util
 import model
 import relation
+import pyirm 
 
 def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_config(config, relation_class=relation.Relation,
+def model_from_config(config, relation_class=pyirm.Relation, 
                       init='allone', rng=None):
 
     types_config = config['domains']

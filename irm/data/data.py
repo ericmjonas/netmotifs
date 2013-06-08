@@ -1,6 +1,6 @@
 import synth
 
-def one_class_neighbors(SIDE_N, PROX=1.5, JITTER = 0.0, CONN_PROB):
+def one_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0.0, CONN_PROB=0.8):
     """
     A single class; each node connects to it's neighbors closer than 
     a certain distance
