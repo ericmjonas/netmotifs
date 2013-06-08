@@ -9,8 +9,8 @@ SIDE_N = 10
 
 nodes_with_class, connectivity = irm.data.generate.one_class_neighbors(SIDE_N, PROX=3.0, JITTER=0.5, CONN_PROB = 0.2) 
 
-model_name= "BetaBernoulli" 
-kc = irm.runner.default_kernel_config()
+model_name= "BetaBernoulliNonConj" 
+kc = irm.runner.default_kernel_nonconj_config()
 irm_config = irm.irmio.default_graph_init(connectivity, model_name)
 
 rng = irm.RNG()
