@@ -230,3 +230,9 @@ class BetaBernoulliNonConj(object):
             return np.log(p)
         else:
             return np.log(1-p)
+
+class LogisticDistance(object):
+    """
+    Just a placeholder
+    """
+    pass

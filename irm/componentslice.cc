@@ -57,4 +57,31 @@ void slice_sample_exec<BetaBernoulliNonConj>
 
 }
 
+template<>
+void slice_sample_exec<LogisticDistance>
+(rng_t & rng, float width, 
+ LogisticDistance::suffstats_t * ss, 
+ LogisticDistance::hypers_t * hps, 
+ std::vector<LogisticDistance::value_t>::iterator data){
+    auto mu = slice_sample<float>(ss->mu, 
+                                 [&ss, &hps, data](float x) -> float{
+                                     ss->mu = x; 
+                                     return LogisticDistance::score(ss, hps, data);
+                          }, 
+                          rng, width); 
+    
+    ss->mu = mu; 
+
+
+    auto lambda = slice_sample<float>(ss->lambda, 
+                                 [&ss, &hps, data](float x) -> float{
+                                     ss->lambda = x; 
+                                     return LogisticDistance::score(ss, hps, data);
+                          }, 
+                          rng, width); 
+    
+    ss->lambda = lambda; 
+
+}
+
 }

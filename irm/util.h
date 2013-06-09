@@ -140,6 +140,15 @@ inline float uniform_01(rng_t & rng) {
    return uniform(0, 1.0, rng); 
 }
 
+inline float log_exp_dist(float x, float lambda) {
+    if(x <0.0) { 
+            return -std::numeric_limits<float>::infinity();
+
+    }
+    return logf(lambda) + -lambda*x; 
+
+}
+
 }
 
 

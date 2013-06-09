@@ -29,6 +29,8 @@ def model_from_config(config, relation_class=pyirmutil.Relation,
             m = models.BetaBernoulli()
         elif rel_config['model'] == "BetaBernoulliNonConj":
             m = models.BetaBernoulliNonConj()
+        elif rel_config['model'] == "LogisticDistance":
+            m = models.LogisticDistance()
         else:
             raise NotImplementedError()
         rel = relation_class(typedef, data_config[rel_name], 

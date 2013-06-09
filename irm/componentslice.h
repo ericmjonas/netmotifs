@@ -40,6 +40,14 @@ void slice_sample_exec<BetaBernoulliNonConj>
  BetaBernoulliNonConj::suffstats_t * ss, 
  BetaBernoulliNonConj::hypers_t * hps, 
  std::vector<BetaBernoulliNonConj::value_t>::iterator data);
+
+
+template<>
+void slice_sample_exec<LogisticDistance>
+(rng_t & rng, float width, 
+ LogisticDistance::suffstats_t * ss, 
+ LogisticDistance::hypers_t * hps, 
+ std::vector<LogisticDistance::value_t>::iterator data);
 }
 
 

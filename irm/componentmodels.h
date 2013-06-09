@@ -231,7 +231,7 @@ struct BetaBernoulliNonConj {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float alpha = hps->alpha; 
         float beta = hps->beta; 
-        // std::cout << "score_prior " << alpha << " " << beta << std::endl; 
+
         boost::math::beta_distribution<> dist(alpha, beta);
         if((ss->p > 1.0) || (ss->p < 0.0)) { 
             return -std::numeric_limits<float>::infinity();
@@ -293,6 +293,150 @@ struct BetaBernoulliNonConj {
 
 }; 
 
+
+struct LogisticDistance { 
+    class value_t {
+    public:
+        char link; 
+        float distance; 
+    } __attribute__((packed)); 
+    
+    class suffstats_t { 
+    public:
+        std::vector<uint32_t> datapoint_pos_; 
+        float mu; 
+        float lambda; 
+    }; 
+
+    class hypers_t {
+    public:
+        float mu_hp; 
+        float lambda_hp; 
+        float p_min; 
+        float p_max; 
+    }; 
+
+    static float rev_logistic_scaled(float x, float mu, float lambda, 
+                                     float pmin, float pmax) { 
+        // reversed logistic function 
+        float p_unscaled = 1.0/(1.0 + expf((x-mu)/lambda)); 
+        return p_unscaled * (pmax-pmin) + pmin;         
+    }
+
+    static std::pair<float, float> sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float mu_hp = hps->mu_hp; 
+        float lambda_hp = hps->lambda_hp; 
+
+        boost::math::exponential_distribution<> mu_dist(mu_hp);
+        float mu = quantile(mu_dist, uniform_01(rng)); 
+        boost::math::exponential_distribution<> lamb_dist(lambda_hp);
+        float lamb = quantile(lamb_dist, uniform_01(rng)); 
+
+        return std::make_pair(mu, lamb); 
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->lambda = params.second; 
+        ss->datapoint_pos_.reserve(20); 
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->datapoint_pos_.push_back(dp_pos); 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        // FIXME linear search
+        auto i = std::find(ss->datapoint_pos_.begin(), 
+                           ss->datapoint_pos_.end(), dp_pos); 
+        *i = ss->datapoint_pos_.back(); 
+        ss->datapoint_pos_.pop_back(); 
+    }
+
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        float mu = ss->mu; 
+        float lambda = ss->lambda; 
+        
+        float p = rev_logistic_scaled(val.distance, mu, lambda, 
+                                      hps->p_min, hps->p_max); 
+
+        if (val.link) { 
+            return logf(p); 
+        } else { 
+            return logf(1-p); 
+        }
+        
+    }
+    
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        float mu = ss->mu; 
+        float lambda = ss->lambda; 
+        float mu_hp = hps->mu_hp; 
+        float lambda_hp = hps->lambda_hp; 
+        float score = 0.0; 
+        score += log_exp_dist(mu, mu_hp); 
+        score += log_exp_dist(lambda, lambda_hp); 
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                           RandomAccessIterator data)
+    {
+        float score = 0.0; 
+        for(auto dpi : ss->datapoint_pos_) { 
+            float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
+                                          ss->lambda, hps->p_min, 
+                                          hps->p_max); 
+            float lscore; 
+            if(data[dpi].link) {
+                lscore = logf(p); 
+            } else { 
+                lscore = logf(1 - p); 
+            }
+            score += lscore; 
+
+        }
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data) { 
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data); 
+
+        return prior_score + likelihood_score; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
+        hp.lambda_hp = bp::extract<float>(hps["lambda_hp"]);
+        hp.p_min = bp::extract<float>(hps["p_min"]);
+        hp.p_max = bp::extract<float>(hps["p_max"]);
+        return hp; 
+
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = ss->mu; 
+        d["lambda"] = ss->lambda; 
+        return d; 
+    }
+
+}; 
 
 
 

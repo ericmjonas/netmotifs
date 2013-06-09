@@ -10,6 +10,7 @@ T slice_sample(T x,
                float w) 
 {
     float Pstar = P(x); 
+
     T uprime = logf(uniform_01(rng)) + Pstar; 
     //T uprime = uniform(0, Pstar, rng); 
     T x_l, x_r; 
@@ -17,6 +18,7 @@ T slice_sample(T x,
     float r = uniform_01(rng); 
     x_l = x - r*w; 
     x_r = x + (1-r) * w; 
+
     
     while (P(x_l) > uprime) {
         x_l -= w; 
@@ -24,7 +26,6 @@ T slice_sample(T x,
     while (P(x_r) > uprime) { 
         x_r += w; 
     }
-
     while(true) { 
         T xprime = uniform(x_l, x_r, rng); 
 

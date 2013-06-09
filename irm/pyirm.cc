@@ -35,6 +35,10 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
         IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
         return cc; 
 
+    } else if(modeltype == "LogisticDistance") { 
+        IComponentContainer * cc = new ComponentContainer<LogisticDistance>(data, data_dims_v); 
+        return cc; 
+
     } else { 
         throw std::runtime_error("unknown model type"); 
     }

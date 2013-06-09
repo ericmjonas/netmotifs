@@ -11,6 +11,9 @@ class Relation(object):
             modeltypestr = "BetaBernoulliNonConj"
         elif isinstance(modeltype, models.AccumModel):
             modeltypestr = "AccumModel"
+        elif isinstance(modeltype, models.LogisticDistance):
+            modeltypestr = "LogisticDistance"
+
         else:
             raise NotImplementedError()
         self.compcontainer = pyirm.create_component_container(data.tostring(), 
