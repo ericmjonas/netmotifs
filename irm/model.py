@@ -74,7 +74,6 @@ class DomainInterface(object):
         
         Useful for then getting at relation components
         """
-        
         return self.gid_mapping[g][relpos]
 
     def delete_group(self, group_id):
@@ -139,3 +138,26 @@ class IRM(object):
             score += r.total_score()
         return score
 
+
+def get_components_in_relation(domains_as_axes, relation):
+    """
+    Return the components for a given relation indexed by
+    the axes tuples of the outer (python) domains
+
+    domains_as_axes: [(domain_obj, relpos)] 
+    
+    """
+    
+    possible_group_axes = [d[0].get_groups() for d in domains_as_axes]
+    domain_coords = util.cart_prod(possible_group_axes)
+
+    comp_vals = {}
+
+    for ci, coord in enumerate(domain_coords):
+        rel_coords = []
+        for di, (dobj, relpos) in enumerate(domains_as_axes):
+            r_gid = dobj.get_relation_groupid(relpos, coord[di])
+            rel_coords.append(r_gid)
+        c = relation.get_component(tuple(rel_coords))
+        comp_vals[coord] = c
+    return comp_vals

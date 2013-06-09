@@ -31,6 +31,13 @@ class Relation(object):
         self.relation = pyirm.PyRelation(self.axes_domain_num, 
                                          self.domain_sizes, 
                                          self.compcontainer)
+        self.relation_def = relation_def
+
+    def get_axes(self):
+        """
+        Return the names of the domains in axes order
+        """
+        return [d[0] for d in self.relation_def]
         
     # simple wrappers
     

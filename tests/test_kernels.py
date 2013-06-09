@@ -149,13 +149,15 @@ def test_slice_nonconj():
                     dps.append(data[e1, e2])
             heads = np.sum(np.array(dps)==1)
             tails = np.sum(np.array(dps)==0)
-            coords = ((tf_1.get_relation_groupid(0, t1_g), 
-                       tf_2.get_relation_groupid(0, t2_g)))
-            coord_data[coords] = (heads, tails)
+            # coords = ((tf_1.get_relation_groupid(0, t1_g), 
+            #            tf_2.get_relation_groupid(0, t2_g)))
+            coord_data[(t1_g, t2_g)] = (heads, tails)
+
+    # get all the components from this relation
     # now the histograms
 
-    for alpha, beta in [(1.0, 1.0), (10.0, 1.0), (1.0, 10.0), 
-                        (0.1, 5.0)]:
+    for alpha, beta in [(1.0, 1.0), (10.0, 1.0), 
+                        (1.0, 10.0),(0.1, 5.0)]:
         coords_hist = {k : [] for k in coord_data}
 
         print "alpha=", alpha, "beta=", beta, "="*50
@@ -167,8 +169,13 @@ def test_slice_nonconj():
         ITERS = 100000
         for i in range(ITERS):
             r.apply_comp_kernel("slice_sample", rng, {'width' : 0.2})
+
+            component_data = model.get_components_in_relation([(tf_1, 0), 
+                                                            (tf_2, 0)], 
+                                                              r)
+
             for c in coord_data:
-                coords_hist[c].append(r.get_component(c)['p'])
+                coords_hist[c].append(component_data[c]['p'])
         for c in coords_hist:
             heads, tails = coord_data[c]
             empirical_p = np.mean(coords_hist[c])
