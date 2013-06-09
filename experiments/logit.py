@@ -47,5 +47,20 @@ def prior_sample():
         pylab.plot(x, logistic(x, mu, lamb), c='k', alpha=0.5, linewidth=2)
     pylab.show()
 
-prior_sample()
 
+def single_plot():
+    MAXX = 10.0
+    x = np.linspace(0, MAXX, 1000)
+
+    mu = 3.0
+    lamb = 0.001
+    pylab.plot(x, logistic(x, mu, lamb), linewidth=3.0)
+    pylab.grid(1)
+    pylab.axis([0, MAXX, 0, 1])
+    pylab.show()
+
+#parametric_plot()
+#prior_sample()
+
+
+single_plot()

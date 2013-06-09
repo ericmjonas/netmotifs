@@ -314,6 +314,9 @@ struct LogisticDistance {
         float lambda_hp; 
         float p_min; 
         float p_max; 
+        float force_mu; 
+        float force_lambda; 
+        bool force; 
     }; 
 
     static float rev_logistic_scaled(float x, float mu, float lambda, 
@@ -337,10 +340,18 @@ struct LogisticDistance {
     
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
                               rng_t & rng) { 
-        std::pair<float, float> params = sample_from_prior(hps, rng); 
-        ss->mu = params.first; 
-        ss->lambda = params.second; 
-        ss->datapoint_pos_.reserve(20); 
+        if(hps->force) { 
+            ss->mu = hps->force_mu; 
+            ss->lambda = hps->force_lambda; 
+
+        } else { 
+            std::pair<float, float> params = sample_from_prior(hps, rng); 
+            ss->mu = params.first; 
+            ss->lambda = params.second; 
+        }
+
+            ss->datapoint_pos_.reserve(20); 
+
     }
 
     template<typename RandomAccessIterator>
@@ -425,6 +436,11 @@ struct LogisticDistance {
         hp.lambda_hp = bp::extract<float>(hps["lambda_hp"]);
         hp.p_min = bp::extract<float>(hps["p_min"]);
         hp.p_max = bp::extract<float>(hps["p_max"]);
+        if(hps.has_key("force_mu")) {
+            hp.force_mu = bp::extract<float>(hps["force_mu"]);
+            hp.force_lambda = bp::extract<float>(hps["force_lambda"]);
+            hp.force = true;
+        }
         return hp; 
 
     }
