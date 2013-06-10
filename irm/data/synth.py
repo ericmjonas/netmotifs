@@ -107,11 +107,12 @@ def connect(nodes, pred):
     connectivity = np.zeros((NODEN, NODEN), dtype=np.bool)
     for ni in range(NODEN):
         for nj in range(NODEN):
-            connectivity[ni, nj] = pred(nodes[ni]['class'], 
-                                        nodes[ni]['pos'], 
-                                        nodes[nj]['class'], 
-                                        nodes[nj]['pos'])
-    
+            p = pred(nodes[ni]['class'], 
+                     nodes[ni]['pos'], 
+                     nodes[nj]['class'], 
+                     nodes[nj]['pos'])
+            connectivity[ni, nj] = np.random.rand() < p
+        
     return  connectivity
     
 def add_class(nodes, classnum):

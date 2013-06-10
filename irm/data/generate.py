@@ -42,6 +42,61 @@ def one_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0.0, CONN_PROB=0.8,
     
     return nodes_with_class, connectivity
 
+def c_class_neighbors(SIDE_N, class_connectivity, 
+                      JITTER = 0.0, rand_conn_prob = 0.01):
+
+    """
+    for each of c classes, we create a grid of SIDE_N x SIDE_N
+    and then use the class_connectivity dictionary to set up 
+    threshold connectivity
+
+    class_connectivity = {(c1, c2) : (threshold, prob), 
+                          }
+    PROX: proximitiy of neighbors
+    
+    Planar
+
+    returns nodes, connectivity
+
+    """ 
+    GRID_SPACE_X = 1.0
+    GRID_SPACE_Y = 1.0
+    GRID_N_X = SIDE_N
+    GRID_N_Y = SIDE_N
+    
+    CLASS_N = np.max(np.array([class_connectivity.keys()]).flatten()) + 1
+    print "CLASS_N=", CLASS_N
+    X_DELTA = GRID_SPACE_X/CLASS_N
+    
+    all_nodes = []
+    for c in range(CLASS_N):
+        
+        nodes = tesselate.grid(GRID_N_X, GRID_N_Y, 
+                               GRID_SPACE_X, GRID_SPACE_Y)
+        nodes[:, 0] += X_DELTA * c
+
+        #nodes += np.random.rand(len(nodes), 3) * JITTER - JITTER/2
+        
+        n_c = synth.add_class(nodes, c)
+        all_nodes.append(n_c)
+
+    nodes = np.hstack(all_nodes)
+
+    def node_pred(c1, pos1, c2, pos2):
+
+        for (c1_t, c2_t), (thold, prob) in class_connectivity.iteritems():
+            if (c1 == c1_t) and (c2 == c2_t):
+                d = dist(pos1, pos2)
+                if d < thold:
+                    return prob
+            
+        return rand_conn_prob
+
+    connectivity = synth.connect(nodes, node_pred)
+
+    return nodes, connectivity
+
+
 def two_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0.0, CONN_PROB=0.8, 
                         cust_pred = None):
     """
@@ -93,13 +148,3 @@ def two_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0.0, CONN_PROB=0.8,
     connectivity = synth.connect(nodes, pred)
     
     return nodes, connectivity
-
-
-"""
-Workflow:
-1. generate data
-2. generate N inits
-3. Run for 100 iterations
-4. Save results
-"""
-
