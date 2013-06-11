@@ -65,7 +65,6 @@ def c_class_neighbors(SIDE_N, class_connectivity,
     GRID_N_Y = SIDE_N
     
     CLASS_N = np.max(np.array([class_connectivity.keys()]).flatten()) + 1
-    print "CLASS_N=", CLASS_N
     X_DELTA = GRID_SPACE_X/CLASS_N
     
     all_nodes = []
