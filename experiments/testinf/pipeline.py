@@ -203,36 +203,60 @@ def group_mass(group_sizes, thold):
     return len(gs_n)
     
 
+
+
 @transform(get_inference, regex(r"(.+).pickle$"),  
-         [r"\1.scores.pdf", 
+         [r"\1.scores.png", 
           r"\1.counts.pickle"])
 def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     print "INPUTFILE=", inputfile
     f = pylab.figure()
-    ax_score = f.add_subplot(1, 2, 1)
-    ax_groups =f.add_subplot(1, 2, 2) 
+    ax_score = f.add_subplot(2, 2, 1)
+    ax_groups =f.add_subplot(2, 2, 2) 
+    ax_params = f.add_subplot(2, 2, 3)
     groupcounts = []
     bins = np.arange(1, 7)
     filedata = pickle.load(open(inputfile))
     chains = filedata['chains']
     allscores = []
     meancounts = []
+    params_mu = []
+    params_lambda = []
+    params_comp_size = []
     for di, d in enumerate(chains):
         this_iter_gc = []
         assignments = d['states']
         for S in np.arange(BURN, len(assignments), SKIP):
             a = assignments[S]
-            gs = irm.util.count(a).values()
+            group_sizes = irm.util.count(a)
+            gs = group_sizes.values()
             this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
+            components = d['components'][S]
+
+            # this is fun and complex
+            unique_gids = np.unique(a)
+            for g1 in unique_gids:
+                for g2 in  unique_gids:
+                    c = components[(g1, g2)]
+                    comp_size = group_sizes[g1] * group_sizes[g2]
+                    params_lambda.append(c['lambda'])
+                    params_mu.append(c['mu'])
+                    params_comp_size.append(comp_size)
         meancounts.append(np.mean(this_iter_gc))
         groupcounts += this_iter_gc
+
+    ax_params.scatter(params_mu, params_lambda, alpha=0.5, 
+                      s= np.array(params_comp_size)/300., 
+                      edgecolor='none')
+    ax_params.set_xlabel('mu')
+    ax_params.set_ylabel('lambda')
 
     for di, d in enumerate(chains):
         gc_mean = meancounts[di]
         gc_min = np.min(groupcounts)
         gc_max = np.max(groupcounts)
         r = (gc_mean - gc_min) / (gc_max - gc_min)
-        ax_score.plot(d['scores'], c=pylab.cm.jet(r))
+        ax_score.plot(d['scores'][::10], c=pylab.cm.jet(r))
         allscores.append(d['scores'])
 
     all_s = np.hstack(allscores).flatten()
@@ -243,7 +267,11 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     print bins, hist
     ax_groups.bar(bins[:-1], hist)
     ax_groups.set_xlim(bins[0], bins[-1])
-    f.savefig(plot_outfile)
+
+    
+    pylab.tight_layout()
+
+    f.savefig(plot_outfile, dpi=300)
     
     pickle.dump({'counts' : groupcounts}, 
                 open(counts_outfile, 'w'))
@@ -253,6 +281,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
 def rand_collate(inputfiles, rand_plot_filename):
 
     all_aris = []
+    f = pylab.figure()
     for inputfile in  inputfiles:
         filedata = pickle.load(open(inputfile))
         start_inference_file =  filedata['infile']
