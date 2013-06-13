@@ -200,7 +200,7 @@ def ld_collate(inputfiles, (plot_outfile, counts_outfile)):
         d = pickle.load(open(infile))
         ax_score.plot(d['scores'])
         assignments = d['states']
-        for S in np.arange(SKIP, len(assignments), BURN):
+        for S in np.arange(BURN, len(assignments), SKIP):
             a = assignments[S]
             gs = irm.util.count(a).values()
             groupcounts.append(group_mass(gs, GROUP_SIZE_THOLD))
@@ -227,7 +227,7 @@ def bbconj_collate(inputfiles, (plot_outfile, counts_outfile)):
         d = pickle.load(open(infile))
         ax_score.plot(d['scores'])
         assignments = d['states']
-        for S in np.arange(SKIP, len(assignments), BURN):
+        for S in np.arange(BURN, len(assignments), SKIP):
             a = assignments[S]
             gs = irm.util.count(a).values()
             groupcounts.append(group_mass(gs, GROUP_SIZE_THOLD))

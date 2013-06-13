@@ -6,6 +6,7 @@ import irm
 import irm.data
 from matplotlib import pylab
 import cloud
+import rand
 
 #cloud.start_simulator()
 
@@ -35,9 +36,24 @@ def data_generator():
                     (2, 0) : (3.0, 0.8)}, 
             '3c1' : {(0, 1) : (2.0, 0.5), 
                      (1, 2) : (2.0, 0.3), 
-                     (0, 2) : (2.0, 0.7), 
-                     
-                     (2, 0) : (2.0, 0.8)}}
+                     (0, 2) : (2.0, 0.7),                      
+                     (2, 0) : (2.0, 0.8),
+                 },
+            # much lower probs
+            '3c2' : {(0, 1) : (2.0, 0.2), 
+                     (1, 2) : (2.0, 0.1), 
+                     (0, 2) : (2.0, 0.4),                      
+                     (2, 0) : (2.0, 0.2),
+                 },
+            # change the radius
+            '3c3' : {(0, 1) : (1.0, 0.5), 
+                     (1, 2) : (1.5, 0.3), 
+                     (0, 2) : (2.0, 0.7),                      
+                     (2, 0) : (2.5, 0.8),
+                 },
+            
+            
+    }
 
     SEEDS = np.arange(6)
     
@@ -204,7 +220,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     for di, d in enumerate(chains):
         this_iter_gc = []
         assignments = d['states']
-        for S in np.arange(SKIP, len(assignments), BURN):
+        for S in np.arange(BURN, len(assignments), SKIP):
             a = assignments[S]
             gs = irm.util.count(a).values()
             this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
@@ -216,8 +232,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
         gc_min = np.min(groupcounts)
         gc_max = np.max(groupcounts)
         r = (gc_mean - gc_min) / (gc_max - gc_min)
-        ax_score.plot(d['scores'], c=pylab.cm.jet(r),
-                      alpha=0.8)        
+        ax_score.plot(d['scores'], c=pylab.cm.jet(r))
         allscores.append(d['scores'])
 
     all_s = np.hstack(allscores).flatten()
@@ -233,5 +248,34 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     pickle.dump({'counts' : groupcounts}, 
                 open(counts_outfile, 'w'))
 
+@collate(get_inference, regex(r"(.+)\.\d+\.(.+)\.samples.+.pickle$"),  
+         r"\1.\2.rand.pdf")
+def rand_collate(inputfiles, rand_plot_filename):
+
+    all_aris = []
+    for inputfile in  inputfiles:
+        filedata = pickle.load(open(inputfile))
+        start_inference_file =  filedata['infile']
+        start_inference_data = pickle.load(open(start_inference_file))
+        orig_data = pickle.load(open(start_inference_data['infile'], 'r'))
+
+        nodes = orig_data['nodes']
+        orig_class = nodes['class']
+
+        chains = filedata['chains']
+        aris = []
+        for di, d in enumerate(chains):
+            assignments = d['states']
+            for S in np.arange(BURN, len(assignments), SKIP):
+                a = assignments[S]
+                c_a = rand.canonicalize_assignment_vector(a)
+                c_orig_class = rand.canonicalize_assignment_vector(orig_class)
+                ari = rand.compute_adj_rand_index(c_a, c_orig_class)
+                aris.append(ari)
+        all_aris.append(aris)
+    pylab.boxplot(all_aris)
+    pylab.savefig(rand_plot_filename)
+
 pipeline_run([create_data, start_inference, get_inference, 
-              plot_collate], multiprocess=4)
+              plot_collate, rand_collate],
+             multiprocess=4)
