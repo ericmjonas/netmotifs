@@ -229,4 +229,15 @@ bp::dict Relation::get_component(bp::tuple group_coords)
 }
 
 
+void Relation::set_component(bp::tuple group_coords, 
+                                 bp::dict val)
+{
+    group_coords_t gc = new_group_coords(DIMS_); 
+    for(int i = 0; i < bp::len(group_coords); ++i) { 
+        gc[i] = bp::extract<int>(group_coords[i]); 
+    }
+    return pCC_->set_component(gc, val); 
+}
+
+
 }

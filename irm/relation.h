@@ -39,7 +39,7 @@ public:
 
     float total_score(); 
     bp::dict get_component(bp::tuple group_coords); 
-
+    void set_component(bp::tuple group_coords, bp::dict params); 
 
 private:
     const axesdef_t axes_; 

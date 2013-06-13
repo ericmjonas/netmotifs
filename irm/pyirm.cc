@@ -91,7 +91,8 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("remove_entity_from_group", &Relation::remove_entity_from_group)
       .def("post_pred", &Relation::post_pred)
       .def("total_score", &Relation::total_score)
-      .def("get_component", &Relation::get_component); 
+      .def("get_component", &Relation::get_component) 
+      .def("set_component", &Relation::set_component); 
 
   def("slice_sample", &slice_sampler_wrapper); 
   def("uniform_01", &uniform_01); 

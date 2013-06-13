@@ -103,6 +103,12 @@ struct BetaBernoulli {
         d["tails"] = ss->tails; 
         return d; 
     }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->heads = bp::extract<uint32_t>(v["heads"]); 
+        ss->tails = bp::extract<uint32_t>(v["tails"]); 
+    }
+
 }; 
 
 struct AccumModel { 
@@ -165,6 +171,12 @@ struct AccumModel {
         d["count"] = ss->count; 
         return d; 
     }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        throw std::runtime_error("Not Implemented"); 
+    }
+
+
 
 }; 
 
@@ -289,6 +301,10 @@ struct BetaBernoulliNonConj {
         bp::dict d; 
         d["p"] = ss->p; 
         return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        throw std::runtime_error("Not Implemented"); 
     }
 
 }; 
@@ -450,6 +466,12 @@ struct LogisticDistance {
         d["mu"] = ss->mu; 
         d["lambda"] = ss->lambda; 
         return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = bp::extract<float>(v["mu"]); 
+        ss->lambda = bp::extract<float>(v["lambda"]); 
+            
     }
 
 }; 

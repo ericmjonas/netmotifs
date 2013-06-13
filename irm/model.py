@@ -161,3 +161,17 @@ def get_components_in_relation(domains_as_axes, relation):
         c = relation.get_component(tuple(rel_coords))
         comp_vals[coord] = c
     return comp_vals
+
+def set_components_in_relation(domains_as_axes, relation, 
+                               coord, val):
+    """
+    Set the component in the relation, nbut using the domain's
+    GIDs -- perform the mapping
+
+    """
+
+    rel_coords = []
+    for di, (dobj, relpos) in enumerate(domains_as_axes):
+        r_gid = dobj.get_relation_groupid(relpos, coord[di])
+        rel_coords.append(r_gid)
+    relation.set_component_value(tuple(rel_coords), val)

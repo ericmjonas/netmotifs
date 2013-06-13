@@ -32,7 +32,7 @@ public:
                               bp::dict params) = 0; 
 
     virtual bp::dict get_component(group_coords_t gc) = 0; 
-
+    virtual void set_component(group_coords_t gc, bp::dict val) = 0; 
 }; 
    
 template<typename CM>
@@ -173,6 +173,16 @@ public:
 
         sswrapper_t * ssw = i->second; 
         return CM::ss_to_dict(&(ssw->ss)); 
+    }
+
+    void set_component(group_coords_t gc, bp::dict val) {
+        group_hash_t gp = hash_coords(gc); 
+
+        auto i = components_.find(gp); 
+        assert(i != components_.end()); 
+        sswrapper_t * ssw = i->second; 
+        CM::ss_from_dict(&(ssw->ss), val); 
+        
     }
 
 private:
