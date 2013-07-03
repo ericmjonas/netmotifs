@@ -304,7 +304,8 @@ struct BetaBernoulliNonConj {
     }
 
     static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
-        throw std::runtime_error("Not Implemented"); 
+        ss->p = bp::extract<float>(v["p"]); 
+
     }
 
 }; 

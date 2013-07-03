@@ -5,6 +5,9 @@ import numpy as np
 import irm
 import irm.data
 from matplotlib import pylab
+
+from mpl_toolkits.axes_grid1 import Grid
+
 import cloud
 import rand
 
@@ -181,9 +184,67 @@ def get_inference(infilename, outfilename):
                  'infile' : infilename}, 
                 open(outfilename, 'w'))
 
+# @transform(start_inference, regex(r"(.+).wait$"), 
+#             r"\1.gt.pickle")
+# def compute_ground_truth(infilename, outfilename):
+#     d= pickle.load(open(infilename))
+#     infile = d['infile']
+    
+#     irm_config = d['irmconfig']
+#     datafile = pickle.load(open(infile))
+
+#     rng = irm.RNG()
+
+#     nodes = datafile['nodes']
+#     conn_config = datafile['conn_config']
+#     # augment the config with the ground truth assignment
+#     irm_config['t1']['assign'] = nodes['class']
+#     model = irm.irmio.model_from_config(irm_config, init='truth', 
+#                                         rng=rng)
+
+#     rel = model.relations['R1']
+#     do1 = model.domains['t1']
+#     doms = [(do1, 0), (do1, 0)]
+
+#     a = do1.get_assignments()
+#     # get class to group mapping: 
+#     class_to_gid = {}
+#     for i, c in enumerate(nodes['class']):
+#         class_to_gid[c] = a[i] # yes this gets a lot of redundant ones oh well
+
+#     # compute component parameters
+#     for c1, g1 in class_to_gid.iteritems():
+#         for c2, g2 in class_to_gid.iteritems():
+#             rg1 = do1.get_relation_groupid(0, g1)
+#             rg2 = do1.get_relation_groupid(0, g2)
+#             if c1, c2 in conn_config:
+#                 dist_thold, prob = conn_config[(c1, c2)]
+                
+#                 # FIXME what's the right thing to do here
+#                 # to incorporate prob + dist? 
+
+#                 vals = {'mu' : , 
+#                         'lambda' : 0.1}
+#             else:
+#                 # empty
+#                 mu = 0.0
+#                 lamb = 1.0
+
+#             rel.set_component((rg1, rg2), {'mu' : mu, 
+#                                            'lambda' : lamb})
+
+#     # perform the actual setting
+    
+#     # get score
+
+
+#     pickle.dump({'score' : score, 
+#                  'infile' : infilename}, 
+#                 open(outfilename, 'w'))
+
 GROUP_SIZE_THOLD = 0.85
 SKIP = 100
-BURN = 800
+BURN = 980
 def group_mass(group_sizes, thold):
     """
     What fraction of the groups account for thold of 
@@ -207,17 +268,30 @@ def group_mass(group_sizes, thold):
 
 @transform(get_inference, regex(r"(.+).pickle$"),  
          [r"\1.scores.png", 
-          r"\1.counts.pickle"])
-def plot_collate(inputfile, (plot_outfile, counts_outfile)):
+          r"\1.counts.pickle", 
+          r"\1.params.png"])
+def plot_collate(inputfile, (plot_outfile, counts_outfile, 
+                             params_outfile)):
+    filedata = pickle.load(open(inputfile))
+    chains = filedata['chains']
+    CHAINN = len(chains)
+    
     print "INPUTFILE=", inputfile
     f = pylab.figure()
     ax_score = f.add_subplot(2, 2, 1)
     ax_groups =f.add_subplot(2, 2, 2) 
     ax_params = f.add_subplot(2, 2, 3)
+
+    param_fig = pylab.figure(figsize=(2, CHAINN))
+    #ax_each_chain = [param_fig.add_subplot(CHAINN, 1, i) for i in range(CHAINN)]
+    ax_each_chain =  Grid(param_fig, 111, # similar to subplot(111)
+                          nrows_ncols = (CHAINN, 1), 
+                          axes_pad=0.1, # pad between axes in inch.
+                           )
+
     groupcounts = []
     bins = np.arange(1, 7)
-    filedata = pickle.load(open(inputfile))
-    chains = filedata['chains']
+
     allscores = []
     meancounts = []
     params_mu = []
@@ -226,6 +300,10 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     for di, d in enumerate(chains):
         this_iter_gc = []
         assignments = d['states']
+        chain_params = {'size' : [], 
+                        'lambda' : [], 
+                        'mu' : []} 
+
         for S in np.arange(BURN, len(assignments), SKIP):
             a = assignments[S]
             group_sizes = irm.util.count(a)
@@ -239,15 +317,29 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
                 for g2 in  unique_gids:
                     c = components[(g1, g2)]
                     comp_size = group_sizes[g1] * group_sizes[g2]
-                    params_lambda.append(c['lambda'])
-                    params_mu.append(c['mu'])
-                    params_comp_size.append(comp_size)
+                    chain_params['lambda'].append(c['lambda'])
+                    chain_params['mu'].append(c['mu'])
+                    chain_params['size'].append(comp_size)
+        params_mu += chain_params['mu']
+        params_lambda += chain_params['lambda']
+        params_comp_size += chain_params['size']
         meancounts.append(np.mean(this_iter_gc))
         groupcounts += this_iter_gc
 
+        ax_each_chain[di].scatter(chain_params['mu'], 
+                                  chain_params['lambda'], 
+                                  alpha = 0.5, s = np.array(chain_params['size'])/200., 
+                                  edgecolor='none')
+        ax_each_chain[di].set_ylim(0, 0.4)
+        ax_each_chain[di].tick_params(axis='both', which='minor',
+                                      labelsize=6.0)
+        ax_each_chain[di].tick_params(axis='both', which='major',
+                                      labelsize=6.0)
+
     ax_params.scatter(params_mu, params_lambda, alpha=0.5, 
-                      s= np.array(params_comp_size)/300., 
+                      s= np.array(params_comp_size)/200., 
                       edgecolor='none')
+    ax_params.grid(1)
     ax_params.set_xlabel('mu')
     ax_params.set_ylabel('lambda')
 
@@ -269,10 +361,14 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile)):
     ax_groups.set_xlim(bins[0], bins[-1])
 
     
-    pylab.tight_layout()
+    f.tight_layout()
 
     f.savefig(plot_outfile, dpi=300)
+
+    param_fig.tight_layout()
+    param_fig.savefig(params_outfile, dpi=300)
     
+
     pickle.dump({'counts' : groupcounts}, 
                 open(counts_outfile, 'w'))
 

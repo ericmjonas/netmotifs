@@ -49,13 +49,25 @@ def prior_sample():
 
 
 def single_plot():
-    MAXX = 10.0
+    MAXX = 5.0
     x = np.linspace(0, MAXX, 1000)
 
-    mu = 3.0
-    lamb = 0.001
-    pylab.plot(x, logistic(x, mu, lamb), linewidth=3.0)
+    mu = 0.7
+    lamb = 0.3
+    pmin = 0.1
+    pmax = 0.9
+    
+    y = logistic(x, mu, lamb)
+    scaled_y = y * (pmax - pmin) + pmin
+    
+    pylab.subplot(1, 2, 1)
+    pylab.plot(x, y, linewidth=3.0)
     pylab.grid(1)
+    pylab.axis([0, MAXX, 0, 1])
+    pylab.subplot(1, 2, 2)
+    pylab.plot(x, scaled_y, linewidth=3.0)
+    pylab.grid(1)
+
     pylab.axis([0, MAXX, 0, 1])
     pylab.show()
 

@@ -11,20 +11,22 @@ def model_from_config_file(configfile):
     return model_from_config(config)
 
 def model_from_config(config, relation_class=pyirmutil.Relation, 
-                      init='allone', rng=None):
+                      rng=None):
 
-    types_config = config['domains']
+    domains_config = config['domains']
     relations_config = config['relations']
     data_config = config['data']
+    ss_config = config.get('ss', {})
 
     # build the model
     relations = {}
-    types_to_relations = {}
-    for t in types_config:
-        types_to_relations[t] = []
-
+    domains_to_relations = {}
+    domains_to_relations_pos = {}
+    for t in domains_config:
+        domains_to_relations[t] = []
+        domains_to_relations_pos[t] = {}
     for rel_name, rel_config in config['relations'].iteritems():
-        typedef = [(tn, types_config[tn]['N']) for tn in rel_config['relation']]
+        domaindef = [(tn, domains_config[tn]['N']) for tn in rel_config['relation']]
         if rel_config['model'] == "BetaBernoulli":
             m = models.BetaBernoulli()
         elif rel_config['model'] == "BetaBernoulliNonConj":
@@ -33,46 +35,53 @@ def model_from_config(config, relation_class=pyirmutil.Relation,
             m = models.LogisticDistance()
         else:
             raise NotImplementedError()
-        rel = relation_class(typedef, data_config[rel_name], 
-                                     m)
+        rel = relation_class(domaindef, data_config[rel_name], 
+                             m)
         rel.set_hps(rel_config['hps'])
 
         relations[rel_name] = rel
-        # set because we only want to add each relation once to a type
+        # set because we only want to add each relation once to a domain
         for tn in set(rel_config['relation']):
-            types_to_relations[tn].append((tn, rel))
-    type_interfaces = {}
-    for t_name, t_config in types_config.iteritems():
-        T_N = t_config['N'] 
-        ti = model.DomainInterface(T_N, types_to_relations[t_name])
-        ti.set_hps(t_config['hps'])
-        type_interfaces[t_name] = ti
+            domains_to_relations[tn].append((tn, rel))
+            rl = len(domains_to_relations_pos[tn])
+            domains_to_relations_pos[tn][rel_name] = rl
 
-    irm_model = model.IRM(type_interfaces, relations)
+    domain_interfaces = {}
+    for d_name, d_config in domains_config.iteritems():
+        D_N = d_config['N'] 
+        ti = model.DomainInterface(D_N, domains_to_relations[d_name])
+        ti.set_hps(d_config['hps'])
+        domain_interfaces[d_name] = ti
 
-    # now initialize all to 1
-    for tn, ti in type_interfaces.iteritems():
-        if init == 'allone':
-            g = ti.create_group(rng)
-            for j in range(ti.entity_count()):
-                ti.add_entity_to_group(g, j)
-        elif init == 'singleton':
-            for j in range(ti.entity_count()):
-                g = ti.create_group(rng)
-                ti.add_entity_to_group(g, j)
-        elif init == "crp": 
-            perm = np.random.permutation(ti.entity_count())
-            # FIXME this should really be CRP
-            assign = perm % 16
-            gr = {}
-            for ai, a in enumerate(assign):
-                if a not in gr:
-                    gr[a] = ti.create_group(rng)
-                ti.add_entity_to_group(gr[a], ai)
-                
-        else:
-            raise NotImplementedError()
+        
+    irm_model = model.IRM(domain_interfaces, relations)
+
+    domain_assignvect_to_gids = {}
+    for dn, di in domain_interfaces.iteritems():
+        assign_vect = domains_config[dn]['assignment']
+        gr = {}
+        for ai, a in enumerate(assign_vect):
+            if a not in gr:
+                gr[a] = di.create_group(rng)
+            di.add_entity_to_group(gr[a], ai)
+        domain_assignvect_to_gids[dn] = gr
+
+    # now load / set the sufficient statistics
+    for relname, reldata in ss_config.iteritems():
+        rel_obj = relations[relname]
+        d_names = relations_config[relname]['relation']
+        domain_rel_pos = [domains_to_relations_pos[dn][relname] for dn  in d_names]
+        dr = zip([domain_interfaces[dn] for dn in d_names], domain_rel_pos)
+
+        for assignvect_group_coord, ss_val in reldata.iteritems():
+            gid_group_coord = []
+            for d, g in zip(d_names, assignvect_group_coord):
+                gid_group_coord.append(domain_assignvect_to_gids[d][g])
+            gid_group_coord = tuple(gid_group_coord)
             
+            model.set_components_in_relation(dr, rel_obj, 
+                                             gid_group_coord, ss_val)
+
     return irm_model
 
 def empty_domain(domain_obj):
@@ -85,6 +94,11 @@ def empty_domain(domain_obj):
             domain_obj.delete_group(gid)
             
 def init_domain(domain_obj, assign_vect):
+    """
+    initialize a domain to a particular assignment vector,
+    returning the mapping of assignment-vector-val to
+    new GID
+    """
     assert domain_obj.entity_count() == len(assign_vect)
     empty_domain(domain_obj)
     ai_to_gid = {}
@@ -92,7 +106,7 @@ def init_domain(domain_obj, assign_vect):
         if ai not in ai_to_gid:
             ai_to_gid[ai] = domain_obj.create_group(rng)
         domain_obj.add_entity_to_group(ai_to_gid[ai], ei)
-    
+    return ai_to_gid
     
 def default_graph_init(connectivity, model = 'BetaBernoulli'):
     """

@@ -27,7 +27,10 @@ class DomainInterface(object):
 
     def __init__(self, ENT_N, relations):
         """
-        relations : ('TYPENAME', rel_obj)
+        relations : ('DOMAINNAME', rel_obj)
+        where domainname is the name the relation knows this domain as
+
+
         """
         self.relations = relations
         self.gid_mapping = {}
@@ -168,10 +171,14 @@ def set_components_in_relation(domains_as_axes, relation,
     Set the component in the relation, nbut using the domain's
     GIDs -- perform the mapping
 
-    """
+    domains_as_axis = [(domain_object, what is the position in the 
+    domain for this relation)]
 
+    """
     rel_coords = []
     for di, (dobj, relpos) in enumerate(domains_as_axes):
         r_gid = dobj.get_relation_groupid(relpos, coord[di])
         rel_coords.append(r_gid)
-    relation.set_component_value(tuple(rel_coords), val)
+
+    relation.set_component(tuple(rel_coords), val)
+    
