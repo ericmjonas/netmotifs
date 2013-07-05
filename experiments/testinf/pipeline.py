@@ -1,11 +1,12 @@
 from ruffus import *
 import cPickle as pickle
 import numpy as np
+import copy
 
 import irm
 import irm.data
 from matplotlib import pylab
-
+import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import Grid
 
 import cloud
@@ -27,6 +28,11 @@ for M seeds
 
 CHAINS_TO_RUN = 10
 SAMPLER_ITERS = 1000
+
+cloud
+
+SKIP = 100
+BURN = 700
 def data_generator():
 
     POSSIBLE_SIDE_N = [10]
@@ -53,6 +59,14 @@ def data_generator():
                      (1, 2) : (1.5, 0.3), 
                      (0, 2) : (2.0, 0.7),                      
                      (2, 0) : (2.5, 0.8),
+                 },
+            '5c0' : {(0, 1) : (1.0, 0.5), 
+                     (1, 2) : (1.5, 0.3), 
+                     (0, 2) : (2.0, 0.7),                      
+                     (2, 0) : (2.5, 0.8),
+                     (2, 3) : (2.5, 0.8),
+                     (3, 4) : (2.5, 0.8),
+                     (1, 4) : (1.5, 0.4),
                  },
             
             
@@ -105,18 +119,20 @@ def inference_run_ld(irm_config, kernel_config,  ITERS, seed):
     rng = irm.RNG()
     np.random.seed(seed)
 
-    model = irm.irmio.model_from_config(irm_config, init='crp', 
+    # perform seed_based random assignment
+
+    model = irm.irmio.model_from_config(irm_config, 
                                         rng=rng)
 
     rel = model.relations['R1']
-    doms = [(model.domains['t1'], 0), (model.domains['t1'], 0)]
+    doms = [(model.domains['d1'], 0), (model.domains['d1'], 0)]
     scores = []
     states = []
     comps = []
     for i in range(ITERS):
         print "iteration", i
         irm.runner.do_inference(model, rng, kernel_config)
-        a = model.domains['t1'].get_assignments()
+        a = model.domains['d1'].get_assignments()
 
         components = irm.model.get_components_in_relation(doms, rel)
 
@@ -129,6 +145,7 @@ def inference_run_ld(irm_config, kernel_config,  ITERS, seed):
 @transform(create_data, regex(r"(.+).pickle$"), 
             r"\1.samples." + ("%d" %(SAMPLER_ITERS)) + ".wait")
 def start_inference(infilename, outfilename):
+
     ITERS = SAMPLER_ITERS
 
     indata = pickle.load(open(infilename, 'r'))
@@ -138,6 +155,7 @@ def start_inference(infilename, outfilename):
     kernel_config[0][1]['M'] = 30
 
     data = indata['conn_and_dist']
+    nodes = indata['nodes']
 
 
     irm_config = irm.irmio.default_graph_init(data, model_name)
@@ -147,18 +165,34 @@ def start_inference(infilename, outfilename):
            'p_min' : 0.1, 
            'p_max' : 0.9}
     irm_config['relations']['R1']['hps'] = HPS
+    irm_configs = []
+    kernel_configs = []
+    for c in range(CHAINS_TO_RUN):
+        np.random.seed(c)
 
+        conf = copy.deepcopy(irm_config)
+
+        GRP = 10
+        a = np.arange(conf['domains']['d1']['N']) % GRP
+        a = np.random.permutation(a)
     
-    # scores, states, comps = inference_run_ld(irm_config, kernel_config, 
-    #                                          ITERS, 
-    #                                          seed)
-    jids = cloud.map(inference_run_ld, [irm_config]*CHAINS_TO_RUN, 
-                    [kernel_config]*CHAINS_TO_RUN, 
-                    [ITERS] * CHAINS_TO_RUN, 
-                    range(CHAINS_TO_RUN), 
-                    _env='connectivitymotif', 
+        conf['domains']['d1']['assignment'] = a
+        irm_configs.append(conf)
+        kernel_configs.append(kernel_config)
+
+    # the ground truth one
+    irm_config_true = copy.deepcopy(irm_config)
+    conf['domains']['d1']['assignment'] = nodes['class']
+    irm_configs[0] = conf
+    
+    jids = cloud.map(inference_run_ld, irm_configs, 
+                     kernel_configs, 
+                     [ITERS] * CHAINS_TO_RUN, 
+                     range(CHAINS_TO_RUN), 
+                     _env='connectivitymotif', 
                      _type='f2')
 
+    # fixme save all inputs
     pickle.dump({'infile' : infilename, 
                  'irm_config' : irm_config, 
                  'hps' : HPS, 
@@ -170,11 +204,11 @@ def start_inference(infilename, outfilename):
             r"\1.pickle")
 def get_inference(infilename, outfilename):
     d= pickle.load(open(infilename))
-    res = cloud.result(d['jids'])
-     
+    
     chains = []
     # reorg on a per-seed basis
-    for chain_data in cloud.iresult(d['jids']):
+    for chain_data in cloud.iresult(d['jids'], ignore_errors=True):
+        
         chains.append({'scores' : chain_data[0], 
                        'states' : chain_data[1], 
                        'components' : chain_data[2]})
@@ -198,7 +232,7 @@ def get_inference(infilename, outfilename):
 #     nodes = datafile['nodes']
 #     conn_config = datafile['conn_config']
 #     # augment the config with the ground truth assignment
-#     irm_config['t1']['assign'] = nodes['class']
+#     irm_config['d1']['assign'] = nodes['class']
 #     model = irm.irmio.model_from_config(irm_config, init='truth', 
 #                                         rng=rng)
 
@@ -243,8 +277,7 @@ def get_inference(infilename, outfilename):
 #                 open(outfilename, 'w'))
 
 GROUP_SIZE_THOLD = 0.85
-SKIP = 100
-BURN = 980
+
 def group_mass(group_sizes, thold):
     """
     What fraction of the groups account for thold of 
@@ -274,6 +307,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
                              params_outfile)):
     filedata = pickle.load(open(inputfile))
     chains = filedata['chains']
+    chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
     
     print "INPUTFILE=", inputfile
@@ -281,6 +315,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     ax_score = f.add_subplot(2, 2, 1)
     ax_groups =f.add_subplot(2, 2, 2) 
     ax_params = f.add_subplot(2, 2, 3)
+    ax_score_groupcount = f.add_subplot(2, 2, 4)
 
     param_fig = pylab.figure(figsize=(2, CHAINN))
     #ax_each_chain = [param_fig.add_subplot(CHAINN, 1, i) for i in range(CHAINN)]
@@ -343,22 +378,43 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     ax_params.set_xlabel('mu')
     ax_params.set_ylabel('lambda')
 
+    mymap = mpl.colors.LinearSegmentedColormap.from_list('mycolors',['blue','red'])
+
     for di, d in enumerate(chains):
         gc_mean = meancounts[di]
         gc_min = np.min(groupcounts)
         gc_max = np.max(groupcounts)
-        r = (gc_mean - gc_min) / (gc_max - gc_min)
-        ax_score.plot(d['scores'][::10], c=pylab.cm.jet(r))
+        ax_score.plot(d['scores'][::10], c=mymap(gc_mean/5.0))
         allscores.append(d['scores'])
+    sm = pylab.cm.ScalarMappable(cmap=mymap, 
+                                 norm=pylab.normalize(vmin=1, vmax=5.0))
+    sm._A = []
 
+    f.colorbar(sm)
     all_s = np.hstack(allscores).flatten()
-    r = np.max(all_s) - np.min(all_s)
-    ax_score.set_ylim(np.min(all_s) + r*0.95, np.max(all_s)+r*0.05)
+    #r = np.max(all_s) - np.min(all_s)
+    #ax_score.set_ylim(np.min(all_s) + r*0.95, np.max(all_s)+r*0.05)
     
     hist, _ = np.histogram(groupcounts, bins)
     print bins, hist
     ax_groups.bar(bins[:-1], hist)
     ax_groups.set_xlim(bins[0], bins[-1])
+
+    scoregroup = []
+    for di, d in enumerate(chains):
+        assignments = d['states']
+        scores = d['scores']
+        for S in np.arange(BURN, len(assignments), SKIP):
+            a = assignments[S]
+            group_sizes = irm.util.count(a)
+            scoregroup.append((len(group_sizes), scores[S]))
+            #gs = group_sizes.values()
+            #this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
+    scoregroup = np.array(scoregroup)
+    print scoregroup[:, 0].shape, scoregroup[:, 0].dtype
+    jitter_counts = scoregroup[:, 0] + np.random.rand(len(scoregroup[:, 0])) * 0.2 -0.1
+    ax_score_groupcount.scatter(jitter_counts, 
+                                scoregroup[:, 1])
 
     
     f.tight_layout()
