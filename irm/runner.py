@@ -44,9 +44,11 @@ class Runner(object):
         # create the model
         self.rng = pyirm.RNG()
         
-        self.model = irmio.model_from_config(latent, data)
+        self.model = irmio.model_from_latent(latent, data, rng=self.rng)
         self.iters = 0
         
+        self.kernel_config = kernel_config
+
     def get_score(self):
         self.model.total_score()
         

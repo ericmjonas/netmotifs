@@ -68,3 +68,11 @@ def test_simple_nonconj_inout():
     latent = irmio.get_latent(irm_model)
     print latent['ss']['R1']
     irmio.latent_equality(latent, latent_simple_nonconj)
+
+def test_runner():
+    run = irm.runner.Runner(latent_simple_nonconj, data_simple_nonconj, 
+                            irm.runner.default_kernel_nonconj_config())
+    run.get_score()
+    run.run_iters(10)
+    run.get_score()
+    run.get_state()
