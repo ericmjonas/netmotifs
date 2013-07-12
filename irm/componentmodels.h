@@ -6,6 +6,8 @@
 #include <math.h>
 #include <boost/python.hpp>
 #include <boost/math/distributions.hpp>
+#include <unordered_set>
+#include <boost/container/flat_set.hpp>
 
 #include "util.h"
 
@@ -320,7 +322,7 @@ struct LogisticDistance {
     
     class suffstats_t { 
     public:
-        std::vector<uint32_t> datapoint_pos_; 
+        std::unordered_set<uint32_t> datapoint_pos_; 
         float mu; 
         float lambda; 
     }; 
@@ -367,25 +369,20 @@ struct LogisticDistance {
             ss->lambda = params.second; 
         }
 
-            ss->datapoint_pos_.reserve(20); 
 
     }
 
     template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        ss->datapoint_pos_.push_back(dp_pos); 
+        ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
     template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        // FIXME linear search
-        auto i = std::find(ss->datapoint_pos_.begin(), 
-                           ss->datapoint_pos_.end(), dp_pos); 
-        *i = ss->datapoint_pos_.back(); 
-        ss->datapoint_pos_.pop_back(); 
+        ss->datapoint_pos_.erase(dp_pos); 
     }
 
 
