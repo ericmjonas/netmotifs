@@ -36,7 +36,7 @@ def do_inference(irm_model, rng, kernel_config):
 
 
 class Runner(object):
-    def __init__(latent, data, kernel_config, seed=0):
+    def __init__(self, latent, data, kernel_config, seed=0):
 
         # FIXME add seed
 
@@ -46,10 +46,10 @@ class Runner(object):
         self.model = irmio.model_from_config(latent, data)
         self.iters = 0
         
-    def get_score():
+    def get_score(self):
         self.model.total_score()
         
-    def run_iters(N, logger=None):
+    def run_iters(self, N, logger=None):
         """
         Run for N iters, per the kernel config
         """
