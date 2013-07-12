@@ -35,9 +35,9 @@ def test_gibbs_simple(rng=None):
     r.set_hps(hps)
 
     tf_1 = model.DomainInterface(T1_N, {'r': ('T1', r)})
-    tf_1.set_hps(1.0)
+    tf_1.set_hps({'alpha' : 1.0})
     tf_2 = model.DomainInterface(T2_N, {'r': ('T2', r)})
-    tf_2.set_hps(1.0)
+    tf_2.set_hps({'alpha' : 1.0})
 
     ### All one group for everyone
     t1_g1 = tf_1.create_group(rng)
@@ -99,9 +99,9 @@ def gibbs_beta_bernoulli(relation_class, rng=None):
     r.set_hps(hps)
 
     tf_1 = model.DomainInterface(T1_N, {'r' : ('T1', r)})
-    tf_1.set_hps(1.0)
+    tf_1.set_hps({'alpha' : 1.0})
     tf_2 = model.DomainInterface(T2_N, {'r': ('T2', r)})
-    tf_2.set_hps(1.0)
+    tf_2.set_hps({'alpha': 1.0})
 
 
     ### All one group for everyone
