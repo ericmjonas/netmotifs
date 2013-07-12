@@ -10,22 +10,22 @@ def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_config(config, relation_class=pyirmutil.Relation, 
+def model_from_latent(latent, data, relation_class=pyirmutil.Relation, 
                       rng=None):
 
-    domains_config = config['domains']
-    relations_config = config['relations']
-    data_config = config['data']
-    ss_config = config.get('ss', {})
+    domains_config = latent['domains']
+    relations_config = latent['relations']
+
+    ss_config = latent.get('ss', {})
 
     # build the model
     relations = {}
     domains_to_relations = {}
     domains_to_relations_pos = {}
     for t in domains_config:
-        domains_to_relations[t] = []
-        domains_to_relations_pos[t] = {}
-    for rel_name, rel_config in config['relations'].iteritems():
+        domains_to_relations[t] = {}
+        #domains_to_relations_pos[t] = {}
+    for rel_name, rel_config in relations_config.iteritems():
         domaindef = [(tn, domains_config[tn]['N']) for tn in rel_config['relation']]
         if rel_config['model'] == "BetaBernoulli":
             m = models.BetaBernoulli()
@@ -35,16 +35,16 @@ def model_from_config(config, relation_class=pyirmutil.Relation,
             m = models.LogisticDistance()
         else:
             raise NotImplementedError()
-        rel = relation_class(domaindef, data_config[rel_name], 
+        rel = relation_class(domaindef, data[rel_name], 
                              m)
         rel.set_hps(rel_config['hps'])
 
         relations[rel_name] = rel
         # set because we only want to add each relation once to a domain
         for tn in set(rel_config['relation']):
-            domains_to_relations[tn].append((tn, rel))
-            rl = len(domains_to_relations_pos[tn])
-            domains_to_relations_pos[tn][rel_name] = rl
+            domains_to_relations[tn][rel_name] = (tn, rel)
+            #rl = len(domains_to_relations_pos[tn])
+            #domains_to_relations_pos[tn][rel_name] = rl
 
     domain_interfaces = {}
     for d_name, d_config in domains_config.iteritems():
@@ -70,7 +70,7 @@ def model_from_config(config, relation_class=pyirmutil.Relation,
     for relname, reldata in ss_config.iteritems():
         rel_obj = relations[relname]
         d_names = relations_config[relname]['relation']
-        domain_rel_pos = [domains_to_relations_pos[dn][relname] for dn  in d_names]
+        domain_rel_pos = [domain_interfaces[dn].get_relation_pos(relname) for dn  in d_names]
         dr = zip([domain_interfaces[dn] for dn in d_names], domain_rel_pos)
 
         for assignvect_group_coord, ss_val in reldata.iteritems():
@@ -123,3 +123,32 @@ def default_graph_init(connectivity, model = 'BetaBernoulli'):
               'data' : {'R1' : connectivity}}
 
     return config
+
+def get_latent(model):
+    domains_out = {}
+    for domain_name, domain_obj in model.domains.iteritems():
+        hps = domain_obj.get_hps()
+        a = domain_obj.get_assignments()
+        N = len(a)
+        domain = {'hps' : hps, 
+                  'N' : N, 
+                  'assignment' : a.tolist()}
+        domains_out[domain_name] = domain
+    relations_out = {}
+    ss_out = {}
+
+    for relation_name, rel_obj in model.relations.iteritems():
+        model = rel_obj.modeltypestr
+        # relation def
+        r_d = ('a', 'b') # FIXME
+        hps = rel_obj.get_hps()
+        relations_out[relation_name] = {'relation' : r_d, 
+                                        'model' : model, 
+                                        'hps' : hps}
+        doms = [(model.domains['d1'], 0), (model.domains['d1'], 0)]
+
+        ss_out[relation_name] = irm.model.get_components_in_relation(doms, rel_obj)
+
+    return {'domains' : domains_out, 
+            'relations' : relations_out, 
+            'ss' : ss_out}

@@ -16,6 +16,8 @@ class Relation(object):
 
         else:
             raise NotImplementedError()
+        self.modeltypestr = modeltypestr
+
         self.compcontainer = pyirm.create_component_container(data.tostring(), 
                                                               data.shape, 
                                                               modeltypestr)

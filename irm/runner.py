@@ -1,6 +1,7 @@
 import numpy as np
 import cPickle as pickle
 import gibbs
+import irmio
 
 
 def default_kernel_config():
@@ -32,3 +33,32 @@ def do_inference(irm_model, rng, kernel_config):
 
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
+
+
+class Runner(object):
+    def __init__(init_state, kernel_config):
+
+
+        # create the model
+        self.rng = irm.RNG()
+        
+        self.model = irmio.model_from_config(irm_config)
+        self.iters = 0
+        
+    def get_score():
+        self.model.total_score()
+        
+    def run_iters(N, logger=None):
+        """
+        Run for N iters, per the kernel config
+        """
+        for i in range(N):
+            do_inference(self.model, self.rng, self.kernel_config)
+            if logger:
+                logger(self.model)
+            self.iters += 1
+
+    def get_state():
+        pass
+        
+        

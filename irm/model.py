@@ -25,18 +25,27 @@ class DomainInterface(object):
     Also computes the CRP
     """
 
-    def __init__(self, ENT_N, relations):
+    def __init__(self, ENT_N, relations_dict):
         """
-        relations : ('DOMAINNAME', rel_obj)
+        relations : {'relationname' : ('DOMAINNAME', rel_obj)}
         where domainname is the name the relation knows this domain as
 
 
         """
-        self.relations = relations
+        self.relation_pos = {}
+        relation_list = []
+        for ri, (relation_name, relation_def) in enumerate(relations_dict.iteritems()):
+            self.relation_pos[relation_name] = ri
+            relation_list.append(relation_def)
+
+        self.relations = relation_list
         self.gid_mapping = {}
         self.g_pos = 0
         self.assignments = np.ones(ENT_N, dtype=np.int)
         self.assignments[:] = NOT_ASSIGNED
+
+    def get_relation_pos(self, relation_name):
+        return self.relation_pos[relation_name]
 
     def entity_count(self):
         return len(self.assignments)

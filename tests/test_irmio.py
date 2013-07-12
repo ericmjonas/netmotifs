@@ -10,14 +10,13 @@ Tests of the IRM IO
 """
 np.random.seed(0)
 
-config_simple_nonconj = {'domains' : {'d1' :{ 'hps' : {'alpha': 1.0}, 
+latent_simple_nonconj = {'domains' : {'d1' :{ 'hps' : {'alpha': 1.0}, 
                                              'N' : 5, 
                                              'assignment' : [0, 0, 1, 1, 2]}}, 
                         'relations' : {'R1' : {'relation' :  ('d1', 'd1'), 
                                                'model' : "BetaBernoulliNonConj", 
                                                'hps' : {'alpha' : 1.0, 
                                                         'beta' : 1.0}}},
-                         'data' : {'R1' : np.random.rand(5, 5) > 0.5}, 
                          'ss' : {'R1' : {(0, 0) : {'p' : 0.0}, 
                                          (0, 1) : {'p' : 0.01}, 
                                          (0, 2) : {'p' : 0.02}, 
@@ -28,14 +27,21 @@ config_simple_nonconj = {'domains' : {'d1' :{ 'hps' : {'alpha': 1.0},
                                          (2, 1) : {'p' : 0.21}, 
                                          (2, 2) : {'p' : 0.22}}}}
 
+data_simple_nonconj = {'R1' : np.random.rand(5, 5) > 0.5}
+
+
 def test_simple_nonconj():
     rng = irm.RNG()
-    irm_model = irmio.model_from_config(config_simple_nonconj, rng=rng)
+    irm_model = irmio.model_from_latent(latent_simple_nonconj, 
+                                        data_simple_nonconj, rng=rng)
     
     a = irm_model.domains['d1'].get_assignments()
+    axes = irm_model.relations['R1'].get_axes()
+    axes_objs = [(irm_model.domains[dn], irm_model.domains[dn].get_relation_pos('R1')) 
+                 for dn in axes]
 
-    comps = model.get_components_in_relation([(irm_model.domains['d1'], 0), 
-                                              (irm_model.domains['d1'], 0)], irm_model.relations['R1'])
+    comps = model.get_components_in_relation(axes_objs,
+                                             irm_model.relations['R1'])
 
     g0 = a[0]
     g1 = a[2]
@@ -53,3 +59,11 @@ def test_simple_nonconj():
     assert_approx_equal(comps[g2, g0]['p'], 0.2)
     assert_approx_equal(comps[g2, g1]['p'], 0.21)
     assert_approx_equal(comps[g2, g2]['p'], 0.22)
+
+
+# def test_simple_nonconj_inout():
+#     rng = irm.RNG()
+#     irm_model = irmio.model_from_latent(latent_simple_nonconj, 
+#                                         data_simple_nonconj, rng=rng)
+#     latent = irmio.get_latent(irm_model)
+#     print latent
