@@ -27,7 +27,7 @@ for M seeds
 """
 
 CHAINS_TO_RUN = 2
-SAMPLER_ITERS = 1000
+SAMPLER_ITERS = 10
 
 #SKIP = 100
 #BURN = 700
@@ -120,9 +120,10 @@ def inference_run_ld(latent, data, kernel_config,  ITERS, seed):
 
     scores = []
     def logger(iter, model):
+        print "Iter", iter
         scores.append(model.total_score())
 
-    chain_runner.run(ITERS, logger)
+    chain_runner.run_iters(ITERS, logger)
         
     return scores, chain_runner.get_state()
 

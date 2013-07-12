@@ -50,7 +50,7 @@ class Runner(object):
         self.kernel_config = kernel_config
 
     def get_score(self):
-        self.model.total_score()
+        return self.model.total_score()
         
     def run_iters(self, N, logger=None):
         """
@@ -64,6 +64,6 @@ class Runner(object):
                 logger(self.iters, self.model)
 
     def get_state(self):
-        irmio.get_latent(self.model)
+        return irmio.get_latent(self.model)
         
         
