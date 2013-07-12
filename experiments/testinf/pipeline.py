@@ -26,48 +26,46 @@ for M seeds
 
 """
 
-CHAINS_TO_RUN = 10
+CHAINS_TO_RUN = 2
 SAMPLER_ITERS = 1000
 
-cloud
-
-SKIP = 100
-BURN = 700
+#SKIP = 100
+#BURN = 700
 def data_generator():
 
     POSSIBLE_SIDE_N = [10]
     
     conn = {'twoclass': {(0, 1) : (2.0, 0.7), 
                          (1, 0) : (3.0, 0.8)},
-            'oneclass': {(0, 0) : (2.0, 0.8)}, 
-            '3c0' : {(0, 1) : (1.5, 0.5), 
-                    (1, 2) : (2.0, 0.3), 
-                    (2, 0) : (3.0, 0.8)}, 
-            '3c1' : {(0, 1) : (2.0, 0.5), 
-                     (1, 2) : (2.0, 0.3), 
-                     (0, 2) : (2.0, 0.7),                      
-                     (2, 0) : (2.0, 0.8),
-                 },
-            # much lower probs
-            '3c2' : {(0, 1) : (2.0, 0.2), 
-                     (1, 2) : (2.0, 0.1), 
-                     (0, 2) : (2.0, 0.4),                      
-                     (2, 0) : (2.0, 0.2),
-                 },
-            # change the radius
-            '3c3' : {(0, 1) : (1.0, 0.5), 
-                     (1, 2) : (1.5, 0.3), 
-                     (0, 2) : (2.0, 0.7),                      
-                     (2, 0) : (2.5, 0.8),
-                 },
-            '5c0' : {(0, 1) : (1.0, 0.5), 
-                     (1, 2) : (1.5, 0.3), 
-                     (0, 2) : (2.0, 0.7),                      
-                     (2, 0) : (2.5, 0.8),
-                     (2, 3) : (2.5, 0.8),
-                     (3, 4) : (2.5, 0.8),
-                     (1, 4) : (1.5, 0.4),
-                 },
+            # 'oneclass': {(0, 0) : (2.0, 0.8)}, 
+            # '3c0' : {(0, 1) : (1.5, 0.5), 
+            #         (1, 2) : (2.0, 0.3), 
+            #         (2, 0) : (3.0, 0.8)}, 
+            # '3c1' : {(0, 1) : (2.0, 0.5), 
+            #          (1, 2) : (2.0, 0.3), 
+            #          (0, 2) : (2.0, 0.7),                      
+            #          (2, 0) : (2.0, 0.8),
+            #      },
+            # # much lower probs
+            # '3c2' : {(0, 1) : (2.0, 0.2), 
+            #          (1, 2) : (2.0, 0.1), 
+            #          (0, 2) : (2.0, 0.4),                      
+            #          (2, 0) : (2.0, 0.2),
+            #      },
+            # # change the radius
+            # '3c3' : {(0, 1) : (1.0, 0.5), 
+            #          (1, 2) : (1.5, 0.3), 
+            #          (0, 2) : (2.0, 0.7),                      
+            #          (2, 0) : (2.5, 0.8),
+            #      },
+            # '5c0' : {(0, 1) : (1.0, 0.5), 
+            #          (1, 2) : (1.5, 0.3), 
+            #          (0, 2) : (2.0, 0.7),                      
+            #          (2, 0) : (2.5, 0.8),
+            #          (2, 3) : (2.5, 0.8),
+            #          (3, 4) : (2.5, 0.8),
+            #          (1, 4) : (1.5, 0.4),
+            #      },
             
             
     }
@@ -114,33 +112,19 @@ def create_data(inputfile, outputfile, SIDE_N, seed, conn_name, conn_config):
 #             yield filename, outfilename, init
 
 
-def inference_run_ld(irm_config, kernel_config,  ITERS, seed):
+def inference_run_ld(latent, data, kernel_config,  ITERS, seed):
 
-    rng = irm.RNG()
-    np.random.seed(seed)
 
-    # perform seed_based random assignment
+    SAVE_EVERY = 100
+    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
 
-    model = irm.irmio.model_from_config(irm_config, 
-                                        rng=rng)
-
-    rel = model.relations['R1']
-    doms = [(model.domains['d1'], 0), (model.domains['d1'], 0)]
     scores = []
-    states = []
-    comps = []
-    for i in range(ITERS):
-        print "iteration", i
-        irm.runner.do_inference(model, rng, kernel_config)
-        a = model.domains['d1'].get_assignments()
-
-        components = irm.model.get_components_in_relation(doms, rel)
-
+    def logger(iter, model):
         scores.append(model.total_score())
-        states.append(a)
-        comps.append(components)
 
-    return scores, states, comps
+    chain_runner.run(ITERS, logger)
+        
+    return scores, chain_runner.get_state()
 
 @transform(create_data, regex(r"(.+).pickle$"), 
             r"\1.samples." + ("%d" %(SAMPLER_ITERS)) + ".wait")
@@ -158,35 +142,36 @@ def start_inference(infilename, outfilename):
     nodes = indata['nodes']
 
 
-    irm_config = irm.irmio.default_graph_init(data, model_name)
+    irm_latent, irm_data = irm.irmio.default_graph_init(data, model_name)
 
     HPS = {'mu_hp' : 1.0, 
            'lambda_hp' : 1.0, 
            'p_min' : 0.1, 
            'p_max' : 0.9}
-    irm_config['relations']['R1']['hps'] = HPS
-    irm_configs = []
+    irm_latent['relations']['R1']['hps'] = HPS
+    irm_latents = []
     kernel_configs = []
     for c in range(CHAINS_TO_RUN):
         np.random.seed(c)
 
-        conf = copy.deepcopy(irm_config)
+        latent = copy.deepcopy(irm_latent)
 
         GRP = 10
-        a = np.arange(conf['domains']['d1']['N']) % GRP
+        a = np.arange(latent['domains']['d1']['N']) % GRP
         a = np.random.permutation(a)
     
-        conf['domains']['d1']['assignment'] = a
-        irm_configs.append(conf)
+        latent['domains']['d1']['assignment'] = a
+        irm_latents.append(latent)
         kernel_configs.append(kernel_config)
 
     # the ground truth one
-    irm_config_true = copy.deepcopy(irm_config)
-    conf['domains']['d1']['assignment'] = nodes['class']
-    irm_configs[0] = conf
+    irm_latent_true = copy.deepcopy(irm_latent)
+    irm_latent_true['domains']['d1']['assignment'] = nodes['class']
+    irm_latents[0] = irm_latent_true
     
-    jids = cloud.map(inference_run_ld, irm_configs, 
-                     kernel_configs, 
+    jids = cloud.map(inference_run_ld, irm_latents,
+                     [irm_data]*CHAINS_TO_RUN, 
+                     kernel_configs,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      _env='connectivitymotif', 
@@ -194,7 +179,8 @@ def start_inference(infilename, outfilename):
 
     # fixme save all inputs
     pickle.dump({'infile' : infilename, 
-                 'irm_config' : irm_config, 
+                 'irm_latents' : irm_latents, 
+                 'irm_data' : irm_data, 
                  'hps' : HPS, 
                  'kernel_config' : kernel_config, 
                  'jids' : jids}, 
@@ -210,71 +196,12 @@ def get_inference(infilename, outfilename):
     for chain_data in cloud.iresult(d['jids'], ignore_errors=True):
         
         chains.append({'scores' : chain_data[0], 
-                       'states' : chain_data[1], 
-                       'components' : chain_data[2]})
+                       'state' : chain_data[1]})
         
         
     pickle.dump({'chains' : chains, 
                  'infile' : infilename}, 
                 open(outfilename, 'w'))
-
-# @transform(start_inference, regex(r"(.+).wait$"), 
-#             r"\1.gt.pickle")
-# def compute_ground_truth(infilename, outfilename):
-#     d= pickle.load(open(infilename))
-#     infile = d['infile']
-    
-#     irm_config = d['irmconfig']
-#     datafile = pickle.load(open(infile))
-
-#     rng = irm.RNG()
-
-#     nodes = datafile['nodes']
-#     conn_config = datafile['conn_config']
-#     # augment the config with the ground truth assignment
-#     irm_config['d1']['assign'] = nodes['class']
-#     model = irm.irmio.model_from_config(irm_config, init='truth', 
-#                                         rng=rng)
-
-#     rel = model.relations['R1']
-#     do1 = model.domains['t1']
-#     doms = [(do1, 0), (do1, 0)]
-
-#     a = do1.get_assignments()
-#     # get class to group mapping: 
-#     class_to_gid = {}
-#     for i, c in enumerate(nodes['class']):
-#         class_to_gid[c] = a[i] # yes this gets a lot of redundant ones oh well
-
-#     # compute component parameters
-#     for c1, g1 in class_to_gid.iteritems():
-#         for c2, g2 in class_to_gid.iteritems():
-#             rg1 = do1.get_relation_groupid(0, g1)
-#             rg2 = do1.get_relation_groupid(0, g2)
-#             if c1, c2 in conn_config:
-#                 dist_thold, prob = conn_config[(c1, c2)]
-                
-#                 # FIXME what's the right thing to do here
-#                 # to incorporate prob + dist? 
-
-#                 vals = {'mu' : , 
-#                         'lambda' : 0.1}
-#             else:
-#                 # empty
-#                 mu = 0.0
-#                 lamb = 1.0
-
-#             rel.set_component((rg1, rg2), {'mu' : mu, 
-#                                            'lambda' : lamb})
-
-#     # perform the actual setting
-    
-#     # get score
-
-
-#     pickle.dump({'score' : score, 
-#                  'infile' : infilename}, 
-#                 open(outfilename, 'w'))
 
 GROUP_SIZE_THOLD = 0.85
 
@@ -334,27 +261,26 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     params_comp_size = []
     for di, d in enumerate(chains):
         this_iter_gc = []
-        assignments = d['states']
+        sample_latent = d['state']
         chain_params = {'size' : [], 
                         'lambda' : [], 
                         'mu' : []} 
 
-        for S in np.arange(BURN, len(assignments), SKIP):
-            a = assignments[S]
-            group_sizes = irm.util.count(a)
-            gs = group_sizes.values()
-            this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
-            components = d['components'][S]
+        a = sample_latent['d1']['assigments']
+        group_sizes = irm.util.count(a)
+        gs = group_sizes.values()
+        this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
+        components = sample_latent['ss']['R1']
 
-            # this is fun and complex
-            unique_gids = np.unique(a)
-            for g1 in unique_gids:
-                for g2 in  unique_gids:
-                    c = components[(g1, g2)]
-                    comp_size = group_sizes[g1] * group_sizes[g2]
-                    chain_params['lambda'].append(c['lambda'])
-                    chain_params['mu'].append(c['mu'])
-                    chain_params['size'].append(comp_size)
+        # this is fun and complex
+        unique_gids = np.unique(a)
+        for g1 in unique_gids:
+            for g2 in  unique_gids:
+                c = components[(g1, g2)]
+                comp_size = group_sizes[g1] * group_sizes[g2]
+                chain_params['lambda'].append(c['lambda'])
+                chain_params['mu'].append(c['mu'])
+                chain_params['size'].append(comp_size)
         params_mu += chain_params['mu']
         params_lambda += chain_params['lambda']
         params_comp_size += chain_params['size']
