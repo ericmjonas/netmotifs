@@ -2,6 +2,7 @@ import numpy as np
 import cPickle as pickle
 import gibbs
 import irmio
+import pyirm
 
 
 def default_kernel_config():
@@ -41,7 +42,7 @@ class Runner(object):
         # FIXME add seed
 
         # create the model
-        self.rng = irm.RNG()
+        self.rng = pyirm.RNG()
         
         self.model = irmio.model_from_config(latent, data)
         self.iters = 0
