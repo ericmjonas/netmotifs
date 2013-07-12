@@ -61,9 +61,10 @@ def test_simple_nonconj():
     assert_approx_equal(comps[g2, g2]['p'], 0.22)
 
 
-# def test_simple_nonconj_inout():
-#     rng = irm.RNG()
-#     irm_model = irmio.model_from_latent(latent_simple_nonconj, 
-#                                         data_simple_nonconj, rng=rng)
-#     latent = irmio.get_latent(irm_model)
-#     print latent
+def test_simple_nonconj_inout():
+    rng = irm.RNG()
+    irm_model = irmio.model_from_latent(latent_simple_nonconj, 
+                                        data_simple_nonconj, rng=rng)
+    latent = irmio.get_latent(irm_model)
+    print latent['ss']['R1']
+    irmio.latent_equality(latent, latent_simple_nonconj)

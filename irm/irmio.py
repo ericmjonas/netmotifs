@@ -5,6 +5,7 @@ import util
 import model
 import relation
 import pyirmutil
+import irm
 
 def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
@@ -124,9 +125,9 @@ def default_graph_init(connectivity, model = 'BetaBernoulli'):
 
     return config
 
-def get_latent(model):
+def get_latent(model_obj):
     domains_out = {}
-    for domain_name, domain_obj in model.domains.iteritems():
+    for domain_name, domain_obj in model_obj.domains.iteritems():
         hps = domain_obj.get_hps()
         a = domain_obj.get_assignments()
         N = len(a)
@@ -137,18 +138,82 @@ def get_latent(model):
     relations_out = {}
     ss_out = {}
 
-    for relation_name, rel_obj in model.relations.iteritems():
-        model = rel_obj.modeltypestr
+    for relation_name, rel_obj in model_obj.relations.iteritems():
+        model_str = rel_obj.modeltypestr
         # relation def
-        r_d = ('a', 'b') # FIXME
-        hps = rel_obj.get_hps()
-        relations_out[relation_name] = {'relation' : r_d, 
-                                        'model' : model, 
-                                        'hps' : hps}
-        doms = [(model.domains['d1'], 0), (model.domains['d1'], 0)]
 
-        ss_out[relation_name] = irm.model.get_components_in_relation(doms, rel_obj)
+        hps = rel_obj.get_hps()
+
+        dom_names = rel_obj.get_axes()
+
+
+        relations_out[relation_name] = {'relation' : tuple(dom_names), 
+                                        'model' : model_str, 
+                                        'hps' : hps}
+        
+        doms = [(model_obj.domains[dn], model_obj.domains[dn].get_relation_pos(relation_name)) for dn in dom_names]
+
+        ss_out[relation_name] = model.get_components_in_relation(doms, rel_obj)
 
     return {'domains' : domains_out, 
             'relations' : relations_out, 
             'ss' : ss_out}
+
+def delta_thold(x, y, tol = 0.0001):
+    "Is the delta greater than the threshold?"
+
+    if np.abs(x -y) > tol:
+        return True
+    else:
+        return False
+
+def latent_equality(l1, l2, include_ss=True, tol = 0.0001):
+    domains1= l1['domains']
+    domains2 = l2['domains']
+    if set(domains1.keys()) != set(domains2.keys()):
+        return False
+
+    domain_groupid_maps = {}
+    for d in domains1.keys():
+        d1 = domains1[d]
+        d2 = domains2[d]
+        for hp in d1['hps'].keys():
+            if delta_thold(d1['hps'][hp], d2['hps'][hp]):
+                return False
+        if d1['N'] != d2['N'] :
+            return False
+        if (util.canonicalize_assignment(d1['assignment']) != util.canonicalize_assignment(d2['assignment'])).all():
+            return False
+
+        gid_map = {}
+        
+        domain_groupid_maps[d] = {k: v for k, v in zip(d1['assignment'], d2['assignment'])}
+    relations1 = l1['relations']
+    relations2 = l2['relations']
+    for r in relations1.keys():
+        r1 = relations1[r]
+        r2 = relations2[r]
+        if r1['relation'] != r2['relation']:
+            return False
+        if r1['model'] != r2['model']:
+            return False
+        for hp in r1['hps'].keys():
+            if delta_thold(r1['hps'][hp], r2['hps'][hp]):
+                return False
+    if not include_ss:
+        return True
+
+    # god this is going to be a bitch
+    for r in relations1.keys():
+        rdef = relations1[r]['relation']
+        ss1 = l1['ss'][r]
+        ss2 = l2['ss'][r]
+        for g1 in ss1.keys():
+            comp1 = ss1[g1]
+            g2 = tuple([domain_groupid_maps[rn][g] for rn, g in zip(rdef, g1)])
+            comp2 = ss2[g2]
+            for param in comp1.keys():
+                if delta_thold(comp1[param], comp2[param]):
+                    return False
+    return True
+

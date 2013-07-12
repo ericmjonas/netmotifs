@@ -73,6 +73,7 @@ BOOST_PYTHON_MODULE(pyirm)
   class_<IComponentContainer, boost::noncopyable>("ComponentContainer", no_init)
       .def("dpcount", &IComponentContainer::dpcount)
       .def("set_hps", &IComponentContainer::set_hps)
+      .def("get_hps", &IComponentContainer::get_hps)
       .def("apply_kernel", &IComponentContainer::apply_kernel); 
 
   def("helloworld", &helloworld); 

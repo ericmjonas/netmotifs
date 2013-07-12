@@ -28,6 +28,7 @@ public:
     virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
     virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
     virtual void set_hps(bp::dict & hps) = 0; 
+    virtual bp::dict get_hps() = 0; 
     virtual void apply_kernel(std::string name, rng_t & rng, 
                               bp::dict params) = 0; 
 
@@ -147,6 +148,11 @@ public:
 
     void set_hps(bp::dict & hps) { 
         hps_ = CM::bp_dict_to_hps(hps); 
+
+    }
+
+    bp::dict get_hps() { 
+        return CM::hps_to_bp_dict(hps_); 
 
     }
 

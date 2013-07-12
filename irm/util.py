@@ -111,3 +111,36 @@ def log_norm_dens(x, mu, var):
     v = -(x-mu)**2 / (2*var)
     return c + v 
 
+
+def canonicalize_assignment(assignments):
+    """
+    Canonicalize an assignment vector. this works as follows:
+    largest group is group 0, 
+    next largest is group 1, etc. 
+
+    For two identically-sized groups, The lower one is
+    the one with the smallest row
+    
+    """
+    groups = {}
+    for gi, g in enumerate(assignments):
+        if g not in groups:
+            groups[g] = []
+        groups[g].append(gi)
+    orig_ids = np.array(groups.keys())
+    sizes = np.array([len(groups[k]) for k in orig_ids])
+
+    unique_sizes = np.sort(np.unique(sizes))[::-1]
+    out_assign = np.zeros(len(assignments), dtype=np.uint32)
+
+    # unique_sizes is in big-to-small
+    outpos = 0
+    for size in unique_sizes:
+        # get the groups of this size
+        tgt_ids = orig_ids[sizes == size]
+        minvals = [np.min(groups[tid]) for tid in tgt_ids]
+        min_idx = np.argsort(minvals)
+        for grp_id  in tgt_ids[min_idx]:
+            out_assign[groups[grp_id]] = outpos
+            outpos +=1 
+    return out_assign

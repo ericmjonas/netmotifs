@@ -67,7 +67,10 @@ class Relation(object):
         
     def set_hps(self, hps):
         self.compcontainer.set_hps(hps)
-        
+    
+    def get_hps(self):
+        return self.compcontainer.get_hps()
+
     def get_all_groups(self, domainname):
         dpos = self.domain_mapper[domainname]
         return self.relation.get_all_groups(dpos)

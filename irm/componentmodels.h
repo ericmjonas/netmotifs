@@ -98,6 +98,14 @@ struct BetaBernoulli {
         return hp; 
 
     }
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["alpha"] = hps.alpha; 
+        hp["beta"] = hps.beta; 
+
+        return hp; 
+
+    }
 
     static bp::dict ss_to_dict(suffstats_t * ss) { 
         bp::dict d; 
@@ -165,6 +173,12 @@ struct AccumModel {
 
         return hp; 
 
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["offset"] = hps.offset; 
+        return hp; 
     }
 
     static bp::dict ss_to_dict(suffstats_t * ss) { 
@@ -297,6 +311,13 @@ struct BetaBernoulliNonConj {
         hp.beta = bp::extract<float>(hps["beta"]);
         return hp; 
 
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["alpha"] = hps.alpha; 
+        hp["beta"] = hps.beta; 
+        return hp; 
     }
 
     static bp::dict ss_to_dict(suffstats_t * ss) { 
@@ -457,6 +478,19 @@ struct LogisticDistance {
         }
         return hp; 
 
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu_hp"] = hps.mu_hp; 
+        hp["lambda_hp"] = hps.lambda_hp; 
+        hp["p_min"] = hps.p_min; 
+        hp["p_max"] = hps.p_max; 
+        if(hps.force) { 
+            hp["force_mu"] = hps.force_mu; 
+            hp["force_lambda"] = hps.force_lambda; 
+        }
+        return hp; 
     }
 
     static bp::dict ss_to_dict(suffstats_t * ss) { 

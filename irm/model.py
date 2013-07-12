@@ -50,8 +50,11 @@ class DomainInterface(object):
     def entity_count(self):
         return len(self.assignments)
 
-    def set_hps(self, alpha):
-        self.alpha = alpha
+    def set_hps(self, hps):
+        self.alpha = hps['alpha']
+    
+    def get_hps(self):
+        return {'alpha' : self.alpha}
 
     def get_groups(self):
         return self.gid_mapping.keys()

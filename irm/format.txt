@@ -1,0 +1,25 @@
+
+Latent format: 
+
+{'domains' : {'domainname' : {'hps' : {'alpha' : 1.0}, 
+                              'N': T1_N, 
+                              'assignment' : [assignvect]}},
+ 'relations' : { 'R1' : {'relation' : ('domainname', 'domainname'), 
+                         'model' : modelname, 
+                        'hps' : {'alpha' : 1.0}, 
+                                             }
+            }, 
+ 'ss' : {'relationame' : {(g1, g2) : {'ss1' : blah}}}}}
+
+Data format: 
+
+ {'Relation' : np.ndarray}
+
+
+
+
+
+
+
+
+              
