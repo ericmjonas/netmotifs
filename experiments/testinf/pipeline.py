@@ -2,6 +2,8 @@ from ruffus import *
 import cPickle as pickle
 import numpy as np
 import copy
+import os
+import time
 
 import irm
 import irm.data
@@ -11,6 +13,8 @@ from mpl_toolkits.axes_grid1 import Grid
 
 import cloud
 import rand
+
+BUCKET_BASE="srm/experiments/testinf/"
 
 #cloud.start_simulator()
 
@@ -26,8 +30,15 @@ for M seeds
 
 """
 
-CHAINS_TO_RUN = 2
-SAMPLER_ITERS = 10
+def to_bucket(filename):
+    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
+
+def from_bucket(filename):
+    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
+
+CHAINS_TO_RUN = 4
+SAMPLER_ITERS = 1000
+SEEDS = np.arange(2)
 
 #SKIP = 100
 #BURN = 700
@@ -58,19 +69,34 @@ def data_generator():
             #          (0, 2) : (2.0, 0.7),                      
             #          (2, 0) : (2.5, 0.8),
             #      },
-            # '5c0' : {(0, 1) : (1.0, 0.5), 
-            #          (1, 2) : (1.5, 0.3), 
-            #          (0, 2) : (2.0, 0.7),                      
-            #          (2, 0) : (2.5, 0.8),
-            #          (2, 3) : (2.5, 0.8),
-            #          (3, 4) : (2.5, 0.8),
-            #          (1, 4) : (1.5, 0.4),
-            #      },
-            
+            '5c0' : {(0, 1) : (1.0, 0.5), 
+                     (1, 2) : (1.5, 0.3), 
+                     (0, 2) : (2.0, 0.7),                      
+                     (2, 0) : (2.5, 0.8),
+                     (2, 3) : (2.5, 0.8),
+                     (3, 4) : (2.5, 0.8),
+                     (1, 4) : (1.5, 0.4),
+                 },
+            '10c0' : {(0, 1) : (1.0, 0.5), 
+                      (1, 2) : (1.5, 0.3), 
+                      (0, 2) : (2.0, 0.7),                      
+                      (2, 0) : (2.5, 0.6),
+                      (2, 3) : (2.1, 0.8),
+                      (3, 4) : (2.5, 0.8),
+                      (1, 4) : (1.5, 0.4),
+                      (0, 8) : (2.0, 0.7), 
+                      (0, 3) : (1.0, 0.7),                      
+                      (2, 0) : (2.5, 0.6),
+                      (2, 7) : (3.0, 0.7),
+                      (3, 4) : (2.5, 0.8),
+                      (1, 4) : (1.5, 0.4),
+                      (7, 4) : (1.2, 0.9), 
+                      (9, 8) : (1.0, 0.7), 
+                      (9, 1) : (2.3, 0.3),
+                      (6, 1) : (0.5, 0.9),},             
             
     }
 
-    SEEDS = np.arange(6)
     
     for SIDE_N in POSSIBLE_SIDE_N:
         for seed in SEEDS:
@@ -112,24 +138,34 @@ def create_data(inputfile, outputfile, SIDE_N, seed, conn_name, conn_config):
 #             yield filename, outfilename, init
 
 
-def inference_run_ld(latent, data, kernel_config,  ITERS, seed):
+def inference_run_ld(latent_filename, 
+                     data_filename, 
+                     config_filename,  ITERS, seed):
 
+    latent = from_bucket(latent_filename)
+    data = from_bucket(data_filename)
+    config = from_bucket(config_filename)
 
     SAVE_EVERY = 100
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
+    chain_runner = irm.runner.Runner(latent, data, config, seed)
 
     scores = []
+    times = []
     def logger(iter, model):
         print "Iter", iter
         scores.append(model.total_score())
-
+        times.append(time.time())
     chain_runner.run_iters(ITERS, logger)
         
-    return scores, chain_runner.get_state()
+    return scores, chain_runner.get_state(), times
+
 
 @transform(create_data, regex(r"(.+).pickle$"), 
-            r"\1.samples." + ("%d" %(SAMPLER_ITERS)) + ".wait")
-def start_inference(infilename, outfilename):
+            r"\1.samples." + ("%d" %(SAMPLER_ITERS)) + ".exp")
+def create_rundata(infilename, outfilename):
+    """
+    Create the data to run the experiments
+    """
 
     ITERS = SAMPLER_ITERS
 
@@ -170,20 +206,66 @@ def start_inference(infilename, outfilename):
     irm_latent_true['domains']['d1']['assignment'] = nodes['class']
     irm_latents[0] = irm_latent_true
     
-    jids = cloud.map(inference_run_ld, irm_latents,
-                     [irm_data]*CHAINS_TO_RUN, 
-                     kernel_configs,
+    filenames = {}
+    data_filename = outfilename + ".data"
+
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    to_bucket(data_filename)
+    filenames['data'] = data_filename
+    filenames['chains'] = {}
+    # filenames
+    for c in range(CHAINS_TO_RUN):
+        s = outfilename + (".%d" % c)
+        latent_filename = s + ".latent"
+        config_filename = s + ".config"
+        pickle.dump(irm_latents[c], open(latent_filename, 'w'))
+        to_bucket(latent_filename)
+        pickle.dump(kernel_configs[c], open(config_filename, 'w'))
+        to_bucket(config_filename)
+
+        filenames['chains'][c] = {'latent' : latent_filename, 
+                                  'config' : config_filename}
+
+
+    # jids = cloud.map(inference_run_ld, irm_latents,
+    #                  [irm_data]*CHAINS_TO_RUN, 
+    #                  kernel_configs,
+    #                  [ITERS] * CHAINS_TO_RUN, 
+    #                  range(CHAINS_TO_RUN), 
+    #                  _env='connectivitymotif', 
+    #                  _type='f2')
+
+    # fixme save all inputs
+    pickle.dump({'infile' : infilename, 
+                 'hps' : HPS, 
+                 'filenames' : filenames}, 
+                open(outfilename, 'w'))
+
+@transform(create_rundata, suffix(".exp"), ".exp.wait")
+def start_inference(infilename, outfilename):
+
+    ITERS = SAMPLER_ITERS
+
+    indata = pickle.load(open(infilename, 'r'))
+    filenames = indata['filenames']
+    data_filename = filenames['data']
+    latent_filenames = []
+    config_filenames = []
+    for chain, v in filenames['chains'].iteritems():
+        latent_filenames.append(v['latent'])
+        config_filenames.append(v['config'])
+    
+    jids = cloud.map(inference_run_ld, latent_filenames,
+                     [data_filename]*CHAINS_TO_RUN, 
+                     config_filenames,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      _env='connectivitymotif', 
                      _type='f2')
 
     # fixme save all inputs
-    pickle.dump({'infile' : infilename, 
-                 'irm_latents' : irm_latents, 
-                 'irm_data' : irm_data, 
-                 'hps' : HPS, 
-                 'kernel_config' : kernel_config, 
+    pickle.dump({'infile' : indata['infile'],
+                 'filenames' : filenames,
                  'jids' : jids}, 
                 open(outfilename, 'w'))
 
@@ -197,7 +279,8 @@ def get_inference(infilename, outfilename):
     for chain_data in cloud.iresult(d['jids'], ignore_errors=True):
         
         chains.append({'scores' : chain_data[0], 
-                       'state' : chain_data[1]})
+                       'state' : chain_data[1], 
+                       'times' : chain_data[2]})
         
         
     pickle.dump({'chains' : chains, 
@@ -267,7 +350,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
                         'lambda' : [], 
                         'mu' : []} 
 
-        a = sample_latent['d1']['assigments']
+        a = sample_latent['domains']['d1']['assignment']
         group_sizes = irm.util.count(a)
         gs = group_sizes.values()
         this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
@@ -311,7 +394,8 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
         gc_mean = meancounts[di]
         gc_min = np.min(groupcounts)
         gc_max = np.max(groupcounts)
-        ax_score.plot(d['scores'][::10], c=mymap(gc_mean/5.0))
+        ax_score.plot(d['scores'][::4], c=mymap(gc_mean/5.0))
+        print d['scores']
         allscores.append(d['scores'])
     sm = pylab.cm.ScalarMappable(cmap=mymap, 
                                  norm=pylab.normalize(vmin=1, vmax=5.0))
@@ -329,14 +413,12 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
 
     scoregroup = []
     for di, d in enumerate(chains):
-        assignments = d['states']
+        assignment = d['state']['domains']['d1']['assignment']
         scores = d['scores']
-        for S in np.arange(BURN, len(assignments), SKIP):
-            a = assignments[S]
-            group_sizes = irm.util.count(a)
-            scoregroup.append((len(group_sizes), scores[S]))
-            #gs = group_sizes.values()
-            #this_iter_gc.append(group_mass(gs, GROUP_SIZE_THOLD))
+        a = assignment
+        group_sizes = irm.util.count(a)
+        scoregroup.append((len(group_sizes), scores[-1]))
+
     scoregroup = np.array(scoregroup)
     print scoregroup[:, 0].shape, scoregroup[:, 0].dtype
     jitter_counts = scoregroup[:, 0] + np.random.rand(len(scoregroup[:, 0])) * 0.2 -0.1
@@ -355,35 +437,37 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     pickle.dump({'counts' : groupcounts}, 
                 open(counts_outfile, 'w'))
 
-@collate(get_inference, regex(r"(.+)\.\d+\.(.+)\.samples.+.pickle$"),  
-         r"\1.\2.rand.pdf")
-def rand_collate(inputfiles, rand_plot_filename):
+# @collate(get_inference, regex(r"(.+)\.\d+\.(.+)\.sampleas.+.pickle$"),  
+#          r"\1.\2.rand.pdf")
+# def rand_collate(inputfiles, rand_plot_filename):
 
-    all_aris = []
-    f = pylab.figure()
-    for inputfile in  inputfiles:
-        filedata = pickle.load(open(inputfile))
-        start_inference_file =  filedata['infile']
-        start_inference_data = pickle.load(open(start_inference_file))
-        orig_data = pickle.load(open(start_inference_data['infile'], 'r'))
+#     all_aris = []
+#     f = pylab.figure()
+#     for inputfile in  inputfiles:
+#         filedata = pickle.load(open(inputfile))
+#         start_inference_file =  filedata['infile']
+#         start_inference_data = pickle.load(open(start_inference_file))
+#         orig_data = pickle.load(open(start_inference_data['infile'], 'r'))
 
-        nodes = orig_data['nodes']
-        orig_class = nodes['class']
+#         nodes = orig_data['nodes']
+#         orig_class = nodes['class']
 
-        chains = filedata['chains']
-        aris = []
-        for di, d in enumerate(chains):
-            assignments = d['states']
-            for S in np.arange(BURN, len(assignments), SKIP):
-                a = assignments[S]
-                c_a = rand.canonicalize_assignment_vector(a)
-                c_orig_class = rand.canonicalize_assignment_vector(orig_class)
-                ari = rand.compute_adj_rand_index(c_a, c_orig_class)
-                aris.append(ari)
-        all_aris.append(aris)
-    pylab.boxplot(all_aris)
-    pylab.savefig(rand_plot_filename)
+#         chains = filedata['chains']
+#         aris = []
+#         for di, d in enumerate(chains):
+#             assignments = d['states']
+#             for S in np.arange(BURN, len(assignments), SKIP):
+#                 a = assignments[S]
+#                 c_a = rand.canonicalize_assignment_vector(a)
+#                 c_orig_class = rand.canonicalize_assignment_vector(orig_class)
+#                 ari = rand.compute_adj_rand_index(c_a, c_orig_class)
+#                 aris.append(ari)
+#         all_aris.append(aris)
+#     pylab.boxplot(all_aris)
+#     pylab.savefig(rand_plot_filename)
 
 pipeline_run([create_data, start_inference, get_inference, 
-              plot_collate, rand_collate],
+              plot_collate, 
+              #rand_collate
+          ],
              multiprocess=4)

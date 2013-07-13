@@ -1,9 +1,10 @@
 import numpy as np
 import cPickle as pickle
+import time
 import gibbs
 import irmio
 import pyirm
-
+import sys
 
 def default_kernel_config():
     return [('conj_gibbs', {})]
@@ -12,7 +13,6 @@ def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
             ('slice_params', {'width' : 0.5})]
     
-
 def do_inference(irm_model, rng, kernel_config):
 
     """
@@ -20,6 +20,7 @@ def do_inference(irm_model, rng, kernel_config):
     We assume a homogeneous model for the moment. 
     """
     for kernel_name, params in kernel_config:
+        t1 = time.time()
         if kernel_name == 'conj_gibbs':
             for domain_name, domain_inf in irm_model.domains.iteritems():
                 gibbs.gibbs_sample_type(domain_inf, rng)
@@ -34,7 +35,8 @@ def do_inference(irm_model, rng, kernel_config):
 
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
-
+        t2 = time.time()
+        print "kernels:", kernel_name, "%3.2f sec" % (t2-t1)
 
 class Runner(object):
     def __init__(self, latent, data, kernel_config, seed=0):
@@ -67,3 +69,20 @@ class Runner(object):
         return irmio.get_latent(self.model)
         
         
+if __name__ == "__main__":
+    # command-line runner
+
+    latent_filename = sys.argv[1]
+    data_filename = sys.argv[2]
+    config_filename = sys.argv[3]
+    iters = int(sys.argv[4])
+    latent = pickle.load(open(latent_filename))
+    data = pickle.load(open(data_filename))
+    config = pickle.load(open(config_filename))
+    
+    run = Runner(latent, data, config)
+    def logger(iter, model):
+        print iter
+
+    run.run_iters(iters, logger)
+
