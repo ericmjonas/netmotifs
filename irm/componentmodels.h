@@ -357,6 +357,16 @@ struct LogisticDistance {
         float force_mu; 
         float force_lambda; 
         bool force; 
+        inline hypers_t() : 
+            mu_hp(1.0), 
+            lambda_hp(1.0), 
+            p_min(0.1), 
+            p_max(0.9), 
+            force(false)
+        { 
+
+
+        }
     }; 
 
     static float rev_logistic_scaled(float x, float mu, float lambda, 
