@@ -7,7 +7,7 @@
 namespace irm { 
 
 typedef int16_t groupid_t; 
-static const int MAX_AXES = 4; 
+static const int MAX_AXES = 2; 
 
 #ifdef GROUP_COORDS_ARRAY
 
