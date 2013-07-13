@@ -17,6 +17,8 @@ namespace bp=boost::python;
 
 namespace irm { 
 
+const static int MAX_GROUPS_PER_AXIS = 256; 
+
 class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
@@ -52,9 +54,19 @@ public:
     ComponentContainer(const std::string & data, 
                        std::vector<size_t> data_shape) :
         NDIM_(data_shape.size()), 
-        data_shape_(data_shape), 
-        components_(256*256)
+        data_shape_(data_shape) 
     {
+        
+        int s = 1; 
+        for(int i = 0; i < NDIM_; ++i) { 
+            s = s * MAX_GROUPS_PER_AXIS; 
+        }
+
+        components_.resize(s); 
+        for(int i = 0; i < s; i++) { 
+            components_[i] = 0; 
+        }
+
         size_t data_size = 1; 
         for(int i = 0; i < NDIM_; i++) { 
             data_size *= data_shape_[i]; 
@@ -193,10 +205,14 @@ private:
     std::vector< typename CM::value_t> data_; 
     components_t components_; 
 
+
     group_hash_t hash_coords(group_coords_t group_coords) { 
         size_t hash = 0; 
         size_t multiplier = 1; 
         for (int i = 0; i < NDIM_; ++i) { 
+            if(group_coords[i] > (MAX_GROUPS_PER_AXIS-1)) { 
+                throw std::runtime_error("Too many groups"); 
+            }
             hash += multiplier * (group_coords[i]); 
             multiplier = multiplier * (1<<8);
         }
