@@ -11,8 +11,8 @@ using namespace irm;
 int main()
 {
 
-    const int ENTITY_N = 512; 
-    const int GROUPS = 32; 
+    const int ENTITY_N = 8192; 
+    const int GROUPS = 64; 
 
     rng_t rng; 
 
@@ -48,7 +48,7 @@ int main()
 
     float totalscore = 0; 
     // fake gibbs scan
-    const int ITERS = 10; 
+    const int ITERS = 5; 
     for(int iter = 0; iter < ITERS; ++iter) { 
         std::cout << "iter " << iter << std::endl; 
         for(int ei = 0; ei < ENTITY_N; ++ei) { 

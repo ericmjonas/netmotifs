@@ -81,7 +81,8 @@ struct BetaBernoulli {
 
     template<typename RandomAccessIterator>
     static float score(suffstats_t * ss, hypers_t * hps, 
-                       RandomAccessIterator data) { 
+                       RandomAccessIterator data,
+                       const std::vector<dppos_t> & dppos) { 
         float heads = ss->heads; 
         float tails = ss->tails; 
         float alpha = hps->alpha; 
@@ -163,7 +164,8 @@ struct AccumModel {
 
     template<typename RandomAccessIterator>
     static float score(suffstats_t * ss, hypers_t * hps, 
-                       RandomAccessIterator data) { 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos) { 
         return ss->sum + hps->offset; 
     }
 
@@ -269,7 +271,8 @@ struct BetaBernoulliNonConj {
     
     template<typename RandomAccessIterator> 
     static float score_likelihood(suffstats_t * ss, 
-                           RandomAccessIterator data)
+                                  RandomAccessIterator data, 
+                                  const std::vector<dppos_t> & dppos)
     {
         // int heads = 0; 
         // int tails = 0; 
@@ -287,7 +290,7 @@ struct BetaBernoulliNonConj {
         // boost::math::binomial_distribution<> dist(heads+tails, ss->p); 
         // return logf(boost::math::pdf(dist, heads)); 
         float score = 0.0; 
-        for(auto dpi : ss->datapoint_pos_) { 
+        for(auto dpi : dppos) { 
             if(data[dpi]) {
                 score += logf(ss->p); 
             } else { 
@@ -299,9 +302,10 @@ struct BetaBernoulliNonConj {
     
     template<typename RandomAccessIterator>
     static float score(suffstats_t * ss, hypers_t * hps, 
-                       RandomAccessIterator data) { 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos) { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, data); 
+        float likelihood_score = score_likelihood(ss, data, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -343,7 +347,7 @@ struct LogisticDistance {
     
     class suffstats_t { 
     public:
-        std::unordered_set<uint32_t> datapoint_pos_; 
+        //std::unordered_set<uint32_t> datapoint_pos_; 
         float mu; 
         float lambda; 
     }; 
@@ -406,14 +410,14 @@ struct LogisticDistance {
     template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        ss->datapoint_pos_.insert(dp_pos); 
+        //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
     template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        ss->datapoint_pos_.erase(dp_pos); 
+        //ss->datapoint_pos_.erase(dp_pos); 
     }
 
 
@@ -447,10 +451,10 @@ struct LogisticDistance {
     
     template<typename RandomAccessIterator> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                           RandomAccessIterator data)
+                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
-        for(auto dpi : ss->datapoint_pos_) { 
+        for(auto dpi : dppos) { 
             float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
                                           ss->lambda, hps->p_min, 
                                           hps->p_max); 
@@ -468,9 +472,11 @@ struct LogisticDistance {
     
     template<typename RandomAccessIterator>
     static float score(suffstats_t * ss, hypers_t * hps, 
-                       RandomAccessIterator data) { 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos)
+    { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
 
         return prior_score + likelihood_score; 
     }

@@ -37,6 +37,8 @@ public:
     void remove_entity_from_group(domainpos_t, groupid_t, entitypos_t); 
     float post_pred(domainpos_t, groupid_t, entitypos_t); 
 
+    group_dp_map_t get_datapoints_per_group(); 
+
     float total_score(); 
     bp::dict get_component(bp::tuple group_coords); 
     void set_component(bp::tuple group_coords, bp::dict params); 

@@ -79,7 +79,9 @@ class Relation(object):
         return self.relation.get_component(group_coords)
 
     def apply_comp_kernel(self, kernel_name, rng, params):
-        self.compcontainer.apply_kernel(kernel_name, rng, params)
+        dp_per_g = self.relation.get_datapoints_per_group()
+                    
+        self.compcontainer.apply_kernel(kernel_name, rng, params, dp_per_g)
 
     def set_component(self, group_coords, val): 
         return self.relation.set_component(group_coords, val)

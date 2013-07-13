@@ -210,7 +210,7 @@ float Relation::post_pred(domainpos_t domain, groupid_t group_id,
 float Relation::total_score()
 {
 
-    return pCC_->total_score(); 
+    return pCC_->total_score(get_datapoints_per_group()); 
 
 }
 
@@ -237,6 +237,18 @@ void Relation::set_component(bp::tuple group_coords,
         gc[i] = bp::extract<int>(group_coords[i]); 
     }
     return pCC_->set_component(gc, val); 
+}
+
+group_dp_map_t Relation::get_datapoints_per_group()
+{
+    group_dp_map_t out; 
+    
+    for(size_t i = 0; i < datapoint_groups_.size(); ++i) { 
+        group_coords_t gc = get_dp_group_coords(i); 
+        out[gc].push_back(i); 
+    }
+    return out; 
+
 }
 
 

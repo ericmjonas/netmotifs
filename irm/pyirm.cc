@@ -93,10 +93,15 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("post_pred", &Relation::post_pred)
       .def("total_score", &Relation::total_score)
       .def("get_component", &Relation::get_component) 
-      .def("set_component", &Relation::set_component); 
+      .def("set_component", &Relation::set_component)
+      .def("get_datapoints_per_group", &Relation::get_datapoints_per_group)
+      ; 
 
   def("slice_sample", &slice_sampler_wrapper); 
   def("uniform_01", &uniform_01); 
 
+  // helper class
+  class_<group_dp_map_t>("group_dp_map_t", no_init); 
+  
 }
 

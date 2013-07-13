@@ -19,10 +19,13 @@ namespace irm {
 
 const static int MAX_GROUPS_PER_AXIS = 256; 
 
+// we could use a multimap
+typedef std::map<group_coords_t, std::vector<dppos_t> > group_dp_map_t; 
+
 class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
-    virtual float total_score() = 0; 
+    virtual float total_score(const group_dp_map_t & gm) = 0; 
     virtual void create_component(group_coords_t group_coords, 
                                   rng_t & rng) = 0; 
     virtual void delete_component(group_coords_t group_coords) = 0; 
@@ -33,7 +36,8 @@ public:
     virtual void set_hps(bp::dict & hps) = 0; 
     virtual bp::dict get_hps() = 0; 
     virtual void apply_kernel(std::string name, rng_t & rng, 
-                              bp::dict params) = 0; 
+                              bp::dict params, 
+                              const group_dp_map_t & dppos) = 0; 
 
     virtual bp::dict get_component(group_coords_t gc) = 0; 
     virtual void set_component(group_coords_t gc, bp::dict val) = 0; 
@@ -103,15 +107,16 @@ public:
         components_[gp] = 0; 
     }
     
-    float total_score() {
-        typename components_t::iterator i = components_.begin(); 
+    float total_score(const group_dp_map_t & dpmap) {
+        typename group_dp_map_t::const_iterator i = dpmap.begin(); 
+
         float score = 0.0; 
-        for(; i != components_.end(); ++i) { 
-            if(*i != 0) { 
-                if((*i)->count > 0) { 
-                    score += CM::score(&((*i)->ss), &hps_, 
-                                       data_.begin()); 
-                }
+        for(; i != dpmap.end(); ++i) { 
+            auto gp = hash_coords(i->first); 
+            sswrapper_t * ssw = components_[gp];
+            if(ssw->count > 0) { 
+                score += CM::score(&(ssw->ss), &hps_, 
+                                   data_.begin(), i->second); 
             }
         }
         return score; 
@@ -164,15 +169,17 @@ public:
 
     }
 
-    void apply_kernel(std::string name, rng_t & rng, bp::dict config) { 
+    void apply_kernel(std::string name, rng_t & rng, bp::dict config, 
+                      const group_dp_map_t & dppos) { 
         if(name == "slice_sample") { 
             float width = bp::extract<float>(config["width"]); 
-            for(auto c : components_) { 
-                if(c != 0) { 
-                    slice_sample_exec<CM>(rng, width, 
-                                          &(c->ss), 
-                                          &hps_, data_.begin()); 
-                }
+            for(auto c : dppos) { 
+                group_hash_t gh = hash_coords(c.first); 
+                sswrapper_t * ssw = components_[gh]; 
+                slice_sample_exec<CM>(rng, width, 
+                                      &(ssw->ss), 
+                                      &hps_, data_.begin(), 
+                                      c.second); 
             }
         } else { 
             throw std::runtime_error("unknown kernel name"); 
