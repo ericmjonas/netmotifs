@@ -383,7 +383,8 @@ struct LogisticDistance {
     static std::pair<float, float> sample_from_prior(hypers_t * hps, rng_t & rng) {
         float mu_hp = hps->mu_hp; 
         float lambda_hp = hps->lambda_hp; 
-
+        std::cout << "mu_hp=" << mu_hp << " lambda_hp=" << lambda_hp
+                  << "force=" << hps->force << std::endl; 
         boost::math::exponential_distribution<> mu_dist(mu_hp);
         float mu = quantile(mu_dist, uniform_01(rng)); 
         boost::math::exponential_distribution<> lamb_dist(lambda_hp);
