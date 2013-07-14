@@ -28,7 +28,8 @@ def do_inference(irm_model, rng, kernel_config):
             for domain_name, domain_inf in irm_model.domains.iteritems():
                 gibbs.gibbs_sample_type_nonconj(domain_inf, 
                                                 params.get("M", 10), 
-                                                rng)
+                                                rng, 
+                                                params.get("impotent", False))
         elif kernel_name == "slice_params":
             for relation_name, relation in irm_model.relations.iteritems():
                 relation.apply_comp_kernel("slice_sample", rng, params)

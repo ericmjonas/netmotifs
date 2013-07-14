@@ -29,13 +29,16 @@ def gibbs_sample_type(domain_inf, rng):
             assert domain_inf.group_size(temp_group) == 0
             domain_inf.delete_group(temp_group)
 
-def gibbs_sample_type_nonconj(domain_inf, M, rng):
+def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
     """
     Radford neal Algo 8 for non-conj models
     
     M is the number of ephemeral clusters
     
     We assume that every cluster in the model is currently used
+    
+    impotent: if true, we always assign the object back to its original
+    cluster. Useful for benchmarking
     
     """
     T_N = domain_inf.entity_count()
@@ -57,7 +60,10 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng):
                 scores[gi] -= np.log(M)
         #print entity_pos, scores
         sample_i = util.sample_from_scores(scores)
-        new_group = groups[sample_i]
+        if impotent: 
+            new_group = g
+        else:
+            new_group = groups[sample_i]
 
         domain_inf.add_entity_to_group(new_group, entity_pos)
         for eg in extra_groups:
