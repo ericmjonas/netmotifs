@@ -1,0 +1,6 @@
+Experiments to measure how our runtime varies with 
+# of latent groups
+# of rows per group
+
+We're comparing BB nonconj and conj kernels
+
