@@ -383,14 +383,24 @@ struct LogisticDistance {
     static std::pair<float, float> sample_from_prior(hypers_t * hps, rng_t & rng) {
         float mu_hp = hps->mu_hp; 
         float lambda_hp = hps->lambda_hp; 
-        std::cout << "mu_hp=" << mu_hp << " lambda_hp=" << lambda_hp
-                  << "force=" << hps->force << std::endl; 
-        boost::math::exponential_distribution<> mu_dist(mu_hp);
-        float mu = quantile(mu_dist, uniform_01(rng)); 
-        boost::math::exponential_distribution<> lamb_dist(lambda_hp);
-        float lamb = quantile(lamb_dist, uniform_01(rng)); 
+        float r1 = uniform_01(rng); 
+        float r2 = uniform_01(rng); 
+        
+        try { 
+            boost::math::exponential_distribution<> mu_dist(mu_hp);
+            float mu = quantile(mu_dist, r1); 
+            boost::math::exponential_distribution<> lamb_dist(lambda_hp);
+            float lamb = quantile(lamb_dist, r2); 
+            return std::make_pair(mu, lamb); 
 
-        return std::make_pair(mu, lamb); 
+        } catch (...){
+            
+            std::cout << "mu_hp=" << mu_hp << " lambda_hp=" << lambda_hp
+                      << "force=" << hps->force << std::endl; 
+            std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
+            throw std::runtime_error("Sample from prior error"); 
+
+        }
     }
     
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
