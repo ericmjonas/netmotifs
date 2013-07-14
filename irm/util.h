@@ -137,7 +137,7 @@ return real(rng);
 inline float uniform_01(rng_t & rng) { 
  // boost::uniform_01<rng_t> dist(rng);  NEVER USE THIS IT DOES NOT ADVANCE THE RNG STATE
     // because uniform() above is [a, b], and we want [0, 1)
-   return uniform(0, 1.0-1e-9, rng); 
+   return uniform(0, 0.999999f, rng); 
 }
 
 inline float log_exp_dist(float x, float lambda) {
