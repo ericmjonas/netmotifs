@@ -23,7 +23,7 @@ def do_inference(irm_model, rng, kernel_config):
         t1 = time.time()
         if kernel_name == 'conj_gibbs':
             for domain_name, domain_inf in irm_model.domains.iteritems():
-                gibbs.gibbs_sample_type(domain_inf, rng)
+                gibbs.gibbs_sample_type(domain_inf, rng, params.get("impotent", False))
         elif kernel_name == 'nonconj_gibbs':
             for domain_name, domain_inf in irm_model.domains.iteritems():
                 gibbs.gibbs_sample_type_nonconj(domain_inf, 

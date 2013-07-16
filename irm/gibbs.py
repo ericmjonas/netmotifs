@@ -4,9 +4,12 @@ import util
 # GIBBS SAMPLING
 
 
-def gibbs_sample_type(domain_inf, rng):
+def gibbs_sample_type(domain_inf, rng, impotent=False):
 
     T_N = domain_inf.entity_count()
+
+    if impotent:
+        print "gibbs_sample_type: IMPOTENT"
 
     for entity_pos in np.random.permutation(T_N):
         g = domain_inf.remove_entity_from_group(entity_pos)
@@ -23,6 +26,9 @@ def gibbs_sample_type(domain_inf, rng):
         #print entity_pos, scores
         sample_i = util.sample_from_scores(scores)
         new_group = groups[sample_i]
+
+        if impotent:
+            new_group = g
 
         domain_inf.add_entity_to_group(new_group, entity_pos)
         if new_group != temp_group:
@@ -42,6 +48,9 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
     
     """
     T_N = domain_inf.entity_count()
+
+    if impotent:
+        print "gibbs_sample_type_nonconj IMPOTENT"
 
     for entity_pos in range(T_N):
         g = domain_inf.remove_entity_from_group(entity_pos)
