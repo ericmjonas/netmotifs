@@ -22,7 +22,7 @@ ITERS = 3
 def datasets():
     for dt in data_types: 
         for groups in [2, 4, 8, 12, 16, 20]:
-            for dp_in_group in [2, 4, 8, 16, 24, 32, 64]:
+            for dp_in_group in [2, 4, 8, 16, 24, 28, 32, 48, 64]:
                 for iters in [ITERS]:
                     outfilename = "%s.%d.%d.%d" % (dt, groups, dp_in_group, iters)
                     yield None, (outfilename + ".latent", 
@@ -89,13 +89,13 @@ def plot_times(infile, outfile):
     for dt_name, dt_grp in df.groupby('dt'):
         f = pylab.figure(figsize=(8,6))
         for grp_x, groups_grp in dt_grp.groupby('groups'):
-            dp_in_group = np.array(groups_grp['dp_in_group'])
+            dp_in_group = np.array(groups_grp['dp_in_group'])**2
             means = np.array(groups_grp['t.means'])
             ai = np.argsort(dp_in_group)
             pylab.plot(dp_in_group[ai], means[ai], label=grp_x)
             pylab.text(dp_in_group[ai][-1], means[ai][-1], grp_x)
             pylab.scatter(dp_in_group, means)
-        pylab.xlabel("datapoints in group")
+        pylab.xlabel("observations per class")
         f.savefig(dt_name+ ".pdf")
     
 pipeline_run([create_data, run_data, merge_runs, plot_times])
