@@ -438,15 +438,15 @@ struct LogisticDistance {
         float mu = ss->mu; 
         float lambda = ss->lambda; 
         
-        float p = rev_logistic_scaled(val.distance, mu, lambda, 
-                                      hps->p_min, hps->p_max); 
+        // float p = rev_logistic_scaled(val.distance, mu, lambda, 
+        //                               hps->p_min, hps->p_max); 
 
-        if (val.link) { 
-            return logf(p); 
-        } else { 
-            return logf(1-p); 
-        }
-        
+        // if (val.link) { 
+        //     return logf(p); 
+        // } else { 
+        //     return logf(1-p); 
+        // }
+        return mu + lambda + val.distance; 
     }
     
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
