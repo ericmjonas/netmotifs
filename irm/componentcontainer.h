@@ -26,21 +26,21 @@ class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
     virtual float total_score(const group_dp_map_t & gm) = 0; 
-    virtual void create_component(group_coords_t group_coords, 
+    virtual void create_component(const group_coords_t &  group_coords, 
                                   rng_t & rng) = 0; 
-    virtual void delete_component(group_coords_t group_coords) = 0; 
+    virtual void delete_component(const group_coords_t &  group_coords) = 0; 
 
-    virtual float post_pred(group_coords_t group_coords, dppos_t dp_pos) = 0;  
-    virtual void add_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
-    virtual void rem_dp(group_coords_t group_coords, dppos_t dp_pos) = 0; 
+    virtual float post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) = 0;  
+    virtual void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) = 0; 
+    virtual void rem_dp(const group_coords_t &  group_coords, dppos_t dp_pos) = 0; 
     virtual void set_hps(bp::dict & hps) = 0; 
     virtual bp::dict get_hps() = 0; 
     virtual void apply_kernel(std::string name, rng_t & rng, 
                               bp::dict params, 
                               const group_dp_map_t & dppos) = 0; 
 
-    virtual bp::dict get_component(group_coords_t gc) = 0; 
-    virtual void set_component(group_coords_t gc, bp::dict val) = 0; 
+    virtual bp::dict get_component(const group_coords_t &  gc) = 0; 
+    virtual void set_component(const group_coords_t &  gc, bp::dict val) = 0; 
 }; 
    
 template<typename CM>
@@ -88,7 +88,7 @@ public:
         
     }
         
-    void create_component(group_coords_t group_coords, 
+    void create_component(const group_coords_t &  group_coords, 
                           rng_t & rng) { 
         group_hash_t gp = hash_coords(group_coords); 
         // auto i = components_.find(gp); 
@@ -100,7 +100,7 @@ public:
         components_[gp] =  ssw; 
     }
 
-    void delete_component(group_coords_t group_coords) {
+    void delete_component(const group_coords_t &  group_coords) {
         group_hash_t gp = hash_coords(group_coords); 
         
         delete components_[gp]; 
@@ -124,7 +124,7 @@ public:
     }
     
 
-    float post_pred(group_coords_t group_coords, dppos_t dp_pos)
+    float post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) 
     {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
@@ -133,7 +133,7 @@ public:
                              dp_pos, data_.begin()); 
     }
     
-    void add_dp(group_coords_t group_coords, dppos_t dp_pos) {
+    void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
@@ -144,7 +144,7 @@ public:
     }
 
 
-    void rem_dp(group_coords_t group_coords, dppos_t dp_pos) {
+    void rem_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
 
         typename CM::value_t val = data_[dp_pos]; 
@@ -188,14 +188,14 @@ public:
 
     }
 
-    bp::dict get_component(group_coords_t gc) { 
+    bp::dict get_component(const group_coords_t &  gc) { 
         group_hash_t gh = hash_coords(gc); 
 
         sswrapper_t * ssw = components_[gh]; 
         return CM::ss_to_dict(&(ssw->ss)); 
     }
 
-    void set_component(group_coords_t gc, bp::dict val) {
+    void set_component(const group_coords_t &  gc, bp::dict val) {
         group_hash_t gh = hash_coords(gc); 
 
         sswrapper_t * ssw = components_[gh]; 
@@ -213,7 +213,7 @@ private:
     components_t components_; 
 
 
-    group_hash_t hash_coords(group_coords_t group_coords) { 
+    group_hash_t hash_coords(const group_coords_t &  group_coords) const { 
         size_t hash = 0; 
         size_t multiplier = 1; 
         for (int i = 0; i < NDIM_; ++i) { 
