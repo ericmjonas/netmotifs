@@ -231,9 +231,9 @@ private:
         size_t hash = 0; 
         size_t multiplier = 1; 
         for (int i = 0; i < NDIM_; ++i) { 
-            if(group_coords[i] > (MAX_GROUPS_PER_AXIS-1)) { 
-                throw std::runtime_error("Too many groups"); 
-            }
+            // if(group_coords[i] > (MAX_GROUPS_PER_AXIS-1)) { 
+            //     throw std::runtime_error("Too many groups"); 
+            // }
             hash += multiplier * (group_coords[i]); 
             multiplier = multiplier * (1<<8);
         }
