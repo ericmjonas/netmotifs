@@ -32,6 +32,7 @@ public:
 
     virtual float post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) = 0;  
     virtual void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) = 0; 
+    virtual float add_dp_post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) = 0; 
     virtual void rem_dp(const group_coords_t &  group_coords, dppos_t dp_pos) = 0; 
     virtual void set_hps(bp::dict & hps) = 0; 
     virtual bp::dict get_hps() = 0; 
@@ -131,6 +132,19 @@ public:
         sswrapper_t * ssw = components_[gp];
         return CM::post_pred(&(ssw->ss), &hps_, val, 
                              dp_pos, data_.begin()); 
+    }
+
+    float add_dp_post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) {
+        group_hash_t gp = hash_coords(group_coords); 
+        typename CM::value_t val = data_[dp_pos]; 
+
+        sswrapper_t * ssw = components_[gp]; 
+        float score = CM::post_pred(&(ssw->ss), &hps_, val, 
+                                    dp_pos, data_.begin());
+
+        CM::ss_add(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
+        ssw->count++; 
+        return score; 
     }
     
     void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {

@@ -162,8 +162,7 @@ float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id,
         }
         if (fully_assigned(new_group_coords) and !fully_assigned(current_group_coords))
             {
-                score += pCC_->post_pred(new_group_coords, dp); 
-                pCC_->add_dp(new_group_coords, dp); 
+                score += pCC_->add_dp_post_pred(new_group_coords, dp); 
             }
 
         set_dp_group_coords(dp, new_group_coords); 
