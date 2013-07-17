@@ -17,8 +17,6 @@ namespace bp=boost::python;
 
 namespace irm { 
 
-const static int MAX_GROUPS_PER_AXIS = 256; 
-
 // we could use a multimap
 typedef std::map<group_coords_t, std::vector<dppos_t> > group_dp_map_t; 
 
@@ -64,7 +62,7 @@ public:
         
         int s = 1; 
         for(int i = 0; i < NDIM_; ++i) { 
-            s = s * MAX_GROUPS_PER_AXIS; 
+            s = s * MAX_GROUPS_PER_DOMAIN; 
         }
 
         components_.resize(s); 

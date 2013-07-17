@@ -91,6 +91,9 @@ size_t Relation::assigned_dp_count()
 
 groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
 {
+    if(group_ids_[domain].empty()) { 
+        throw std::runtime_error("too many groups!"); 
+    }
     groupid_t new_gid = group_ids_[domain].back(); 
     domain_groups_[domain].insert(new_gid); 
     // domains by 
