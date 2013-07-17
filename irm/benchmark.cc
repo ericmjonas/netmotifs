@@ -1,18 +1,20 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 #include "componentcontainer.h"
 #include "componentmodels.h"
 #include "relation.h"
-
 
 using namespace irm; 
 
 int main()
 {
 
-    const int ENTITY_N = 8192; 
-    const int GROUPS = 64; 
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+
+    const int ENTITY_N = 1000; 
+    const int GROUPS = 32; 
 
     rng_t rng; 
 
@@ -50,7 +52,8 @@ int main()
     // fake gibbs scan
     const int ITERS = 5; 
     for(int iter = 0; iter < ITERS; ++iter) { 
-        std::cout << "iter " << iter << std::endl; 
+        start = std::chrono::system_clock::now();
+
         for(int ei = 0; ei < ENTITY_N; ++ei) { 
             auto init_gid = assignments[ei]; 
             rel.remove_entity_from_group(0, init_gid, ei); 
@@ -68,6 +71,13 @@ int main()
             rel.delete_group(0, groups[GROUPS]); 
 
         }
+        end = std::chrono::system_clock::now();
+        auto dur = end - start; 
+
+        std::cout << "iter " << iter << ": "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count()/1000.
+                  << " sec"  << std::endl; 
+
     }
     std::cout << "done" << std::endl; 
     
