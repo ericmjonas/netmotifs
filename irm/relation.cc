@@ -45,7 +45,7 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
     }
 
     dppos_t dppos = 0; 
-    for(auto dp_coord : cart_prod<std::vector<size_t> >(axes_sizes)) { 
+    for(auto dp_coord : cart_prod<entity_coords_t >(axes_sizes)) { 
         datapoint_entity_index_[dppos] = dp_coord; 
         
         for(int ai = 0; ai < DIMS_; ai++) { 
