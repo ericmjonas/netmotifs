@@ -129,3 +129,15 @@ mutate hyperparam value (which we know must be real)
 slice_sample_params<component_container>(comp_container,  rngs, width)
 
 from python we will be calling this as: 
+
+Building attempt 2
+
+
+./bootstrap.sh --prefix=/Users/jonas/anaconda/
+./b2 toolset=gcc=c11
+./b2 toolset=gcc-c11  install
+using gcc
+   : c11
+   : "/usr/local/bin/g++-4.7" # your path to the C++0x compiler
+   : <cxxflags>-std=c++11
+   ;
