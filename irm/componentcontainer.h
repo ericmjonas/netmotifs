@@ -233,7 +233,7 @@ private:
             //     throw std::runtime_error("Too many groups"); 
             // }
             hash += multiplier * (group_coords[i]); 
-            multiplier = multiplier * (1<<8);
+            multiplier = multiplier * (MAX_GROUPS_PER_DOMAIN);
         }
         return hash; 
 
