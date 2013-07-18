@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include "fast_static_vect.h"
 
 namespace irm { 
 
@@ -36,6 +37,24 @@ inline group_coords_t new_group_coords(int size, groupid_t defval)
 #ifdef GROUP_COORDS_VECT
 
 typedef std::vector<groupid_t> group_coords_t; 
+inline group_coords_t new_group_coords(int size) 
+{
+    return group_coords_t(size); 
+    
+}
+
+inline group_coords_t new_group_coords(int size, groupid_t defval) 
+{
+    return group_coords_t(size, defval); 
+
+}
+#endif
+
+
+#ifdef GROUP_COORDS_FAST_STATIC_VECTOR
+
+typedef fast_static_vector<groupid_t, MAX_AXES> group_coords_t; 
+
 inline group_coords_t new_group_coords(int size) 
 {
     return group_coords_t(size); 

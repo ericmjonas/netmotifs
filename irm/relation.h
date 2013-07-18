@@ -102,8 +102,8 @@ private:
     }
 
     inline bool fully_assigned(const group_coords_t & gc) const { 
-        for(auto g : gc) { 
-            if (g == NOT_ASSIGNED) 
+        for (int i = 0; i < DIMS_; ++i) { 
+            if (gc[i] == NOT_ASSIGNED) 
                 return false; 
         }
         return true; 

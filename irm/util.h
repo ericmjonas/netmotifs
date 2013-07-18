@@ -10,6 +10,7 @@
 #include <boost/random/uniform_real_distribution.hpp>
 #include <stdlib.h>
 
+//#define GROUP_COORDS_FAST_STATIC_VECTOR
 #define GROUP_COORDS_ARRAY
 #include "group_coords.h"
 
@@ -29,7 +30,7 @@ typedef std::set<groupid_t> group_set_t;
 
 
 
-typedef std::vector<entitypos_t> entity_coords_t; 
+typedef fast_static_vector<entitypos_t, MAX_AXES> entity_coords_t; 
 
 const static int MAX_GROUPS_PER_DOMAIN = 256; 
 #define NOT_ASSIGNED -1
