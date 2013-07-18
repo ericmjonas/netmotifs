@@ -89,7 +89,7 @@ private:
     }
 
     inline void
-    set_dp_group_coords(dppos_t dp, group_coords_t gc) { 
+    set_dp_group_coords(dppos_t dp, const group_coords_t &  gc) { 
          datapoint_groups_[dp] = gc; 
     }
     
@@ -101,7 +101,7 @@ private:
         domain_entity_assignment_[domain][ep] = g; 
     }
 
-    inline bool fully_assigned(group_coords_t gc) { 
+    inline bool fully_assigned(const group_coords_t & gc) const { 
         for(auto g : gc) { 
             if (g == NOT_ASSIGNED) 
                 return false; 
