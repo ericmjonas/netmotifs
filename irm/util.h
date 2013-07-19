@@ -10,8 +10,8 @@
 #include <boost/random/uniform_real_distribution.hpp>
 #include <stdlib.h>
 
-//#define GROUP_COORDS_FAST_STATIC_VECTOR
-#define GROUP_COORDS_ARRAY
+#define GROUP_COORDS_FAST_STATIC_VECTOR
+//#define GROUP_COORDS_ARRAY
 #include "group_coords.h"
 
 
