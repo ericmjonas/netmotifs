@@ -39,6 +39,10 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
         IComponentContainer * cc = new ComponentContainer<LogisticDistance>(data, data_dims_v); 
         return cc; 
 
+    } else if(modeltype == "SigmoidDistance") { 
+        IComponentContainer * cc = new ComponentContainer<SigmoidDistance>(data, data_dims_v); 
+        return cc; 
+
     } else { 
         throw std::runtime_error("unknown model type"); 
     }

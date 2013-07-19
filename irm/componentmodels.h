@@ -10,7 +10,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include "util.h"
-
+#include "fastonebigheader.h"
 
 namespace bp=boost::python; 
 
@@ -376,7 +376,7 @@ struct LogisticDistance {
     static float rev_logistic_scaled(float x, float mu, float lambda, 
                                      float pmin, float pmax) { 
         // reversed logistic function 
-        float p_unscaled = 1.0/(1.0 + expf((x-mu)/lambda)); 
+        float p_unscaled = 1.0/(1.0 + MYEXP((x-mu)/lambda)); 
         return p_unscaled * (pmax-pmin) + pmin;         
     }
 
@@ -442,9 +442,9 @@ struct LogisticDistance {
                                       hps->p_min, hps->p_max); 
 
         if (val.link) { 
-            return logf(p); 
+            return MYLOG(p); 
         } else { 
-            return logf(1-p); 
+            return MYLOG(1-p); 
         }
     }
     
@@ -516,6 +516,179 @@ struct LogisticDistance {
             hp["force_mu"] = hps.force_mu; 
             hp["force_lambda"] = hps.force_lambda; 
         }
+        return hp; 
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = ss->mu; 
+        d["lambda"] = ss->lambda; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = bp::extract<float>(v["mu"]); 
+        ss->lambda = bp::extract<float>(v["lambda"]); 
+            
+    }
+
+}; 
+
+
+struct SigmoidDistance { 
+    class value_t {
+    public:
+        char link; 
+        float distance; 
+    } __attribute__((packed)); 
+    
+    class suffstats_t { 
+    public:
+        float mu; 
+        float lambda; 
+    }; 
+
+    class hypers_t {
+    public:
+        float mu_hp; 
+        float lambda_hp; 
+        float p_min; 
+        float p_max; 
+        inline hypers_t() : 
+            mu_hp(1.0), 
+            lambda_hp(1.0), 
+            p_min(0.1), 
+            p_max(0.9)
+        { 
+
+
+        }
+    }; 
+
+    static float sigmoid_scaled(float x, float mu, float lambda, 
+                                float pmin, float pmax) { 
+        float p_unscaled = (x-mu)/(lambda + fabsf((x-mu))) * 0.5 + 0.5; 
+        return p_unscaled * (pmax-pmin) + pmin;         
+    }
+
+    static std::pair<float, float> sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float mu_hp = hps->mu_hp; 
+        float lambda_hp = hps->lambda_hp; 
+        float r1 = uniform_01(rng); 
+        float r2 = uniform_01(rng); 
+        
+        try { 
+            boost::math::exponential_distribution<> mu_dist(mu_hp);
+            float mu = quantile(mu_dist, r1); 
+            boost::math::exponential_distribution<> lamb_dist(lambda_hp);
+            float lamb = quantile(lamb_dist, r2); 
+            return std::make_pair(mu, lamb); 
+
+        } catch (...){
+            
+            std::cout << "mu_hp=" << mu_hp << " lambda_hp=" << lambda_hp << std::endl; 
+            std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
+            throw std::runtime_error("Sample from prior error"); 
+
+        }
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->lambda = params.second; 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+    }
+
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        float mu = ss->mu; 
+        float lambda = ss->lambda; 
+        
+        float p = sigmoid_scaled(val.distance, mu, lambda, 
+                                      hps->p_min, hps->p_max); 
+
+        if (val.link) { 
+            return MYLOG(p); 
+        } else { 
+            return MYLOG(1-p); 
+        }
+    }
+    
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        float mu = ss->mu; 
+        float lambda = ss->lambda; 
+        float mu_hp = hps->mu_hp; 
+        float lambda_hp = hps->lambda_hp; 
+        float score = 0.0; 
+        score += log_exp_dist(mu, mu_hp); 
+        score += log_exp_dist(lambda, lambda_hp); 
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+    {
+        float score = 0.0; 
+        for(auto dpi : dppos) { 
+            float p = sigmoid_scaled(data[dpi].distance, ss->mu, 
+                                     ss->lambda, hps->p_min, 
+                                     hps->p_max); 
+            float lscore; 
+            if(data[dpi].link) {
+                lscore = logf(p); 
+            } else { 
+                lscore = logf(1 - p); 
+            }
+            score += lscore; 
+
+        }
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos)
+    { 
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+
+        return prior_score + likelihood_score; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
+        hp.lambda_hp = bp::extract<float>(hps["lambda_hp"]);
+        hp.p_min = bp::extract<float>(hps["p_min"]);
+        hp.p_max = bp::extract<float>(hps["p_max"]);
+
+        return hp; 
+
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu_hp"] = hps.mu_hp; 
+        hp["lambda_hp"] = hps.lambda_hp; 
+        hp["p_min"] = hps.p_min; 
+        hp["p_max"] = hps.p_max; 
+
         return hp; 
     }
 

@@ -148,6 +148,18 @@ inline float log_exp_dist(float x, float lambda) {
 
 }
 
+#ifdef USE_LOGEXP_APPROX
+#define MYLOG fasterlog
+#define MYEXP fasterexp
+
+#endif 
+
+#ifndef USE_LOGEXP_APPROX
+#define MYLOG logf
+#define MYEXP expf
+
+#endif
+
 }
 
 
