@@ -34,7 +34,7 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
     }
     
     for(size_t dpi = 0; dpi < pCC_->dpcount(); ++dpi) { 
-        datapoint_groups_[dpi] = new_group_coords(DIMS_, NOT_ASSIGNED); 
+        datapoint_groups_[dpi] = group_coords_t(DIMS_, NOT_ASSIGNED); 
     }
     
     // do enttiy_to_dp
@@ -223,7 +223,7 @@ Relation::~Relation()
 
 bp::dict Relation::get_component(bp::tuple group_coords)
 {
-    group_coords_t gc = new_group_coords(DIMS_); 
+    group_coords_t gc(DIMS_); 
     for(int i = 0; i < bp::len(group_coords); ++i) { 
         gc[i] = bp::extract<int>(group_coords[i]); 
     }
@@ -234,7 +234,7 @@ bp::dict Relation::get_component(bp::tuple group_coords)
 void Relation::set_component(bp::tuple group_coords, 
                                  bp::dict val)
 {
-    group_coords_t gc = new_group_coords(DIMS_); 
+    group_coords_t gc(DIMS_); 
     for(int i = 0; i < bp::len(group_coords); ++i) { 
         gc[i] = bp::extract<int>(group_coords[i]); 
     }

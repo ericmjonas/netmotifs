@@ -446,7 +446,6 @@ struct LogisticDistance {
         } else { 
             return logf(1-p); 
         }
-        
     }
     
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 

@@ -10,8 +10,6 @@
 #include <boost/random/uniform_real_distribution.hpp>
 #include <stdlib.h>
 
-#define GROUP_COORDS_FAST_STATIC_VECTOR
-//#define GROUP_COORDS_ARRAY
 #include "group_coords.h"
 
 
@@ -30,7 +28,7 @@ typedef std::set<groupid_t> group_set_t;
 
 
 
-typedef fast_static_vector<entitypos_t, MAX_AXES> entity_coords_t; 
+typedef fast_static_vector<entitypos_t, 2> entity_coords_t; 
 
 const static int MAX_GROUPS_PER_DOMAIN = 256; 
 #define NOT_ASSIGNED -1
@@ -95,7 +93,7 @@ std::set<group_coords_t> unique_axes_pos(std::vector<int> axis_pos, size_t val,
     */ 
     std::set<group_coords_t> outset; 
     std::vector<group_coords_t> output; 
-    group_coords_t o = new_group_coords(axes.size()); 
+    group_coords_t o(axes.size()); 
 
     cart_prod_helper<group_coords_t>(output, axes, o, 0); 
 
