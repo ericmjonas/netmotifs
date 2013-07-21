@@ -144,3 +144,14 @@ def canonicalize_assignment(assignments):
             out_assign[groups[grp_id]] = outpos
             outpos +=1 
     return out_assign
+
+def compute_zmatrix(list_of_assignment):
+    N = len(list_of_assignment[0])
+    z = np.zeros((N, N), dtype=np.uint32)
+    
+    for a in list_of_assignment:
+        for i in range(N):
+            for j in range(N):
+                if a[i] == a[j]:
+                    z[i, j] +=1 
+    return z
