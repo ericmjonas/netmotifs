@@ -301,7 +301,7 @@ def get_inference(infilename, outfilename):
                  'infile' : infilename}, 
                 open(outfilename, 'w'))
 
-GROUP_SIZE_THOLD = 0.85
+GROUP_SIZE_THOLD = 0.97
 
 def group_mass(group_sizes, thold):
     """
@@ -325,22 +325,32 @@ def group_mass(group_sizes, thold):
 
 
 @transform(get_inference, regex(r"(.+).pickle$"),  
-         [r"\1.scores.png", 
+         [r"\1.scores.pdf", 
           r"\1.counts.pickle", 
           r"\1.params.png"])
 def plot_collate(inputfile, (plot_outfile, counts_outfile, 
                              params_outfile)):
     filedata = pickle.load(open(inputfile))
     chains = filedata['chains']
+    chains_infile = filedata['infile']
+    print "CHAINS_INFILE=", chains_infile
+
+    d = pickle.load(open(chains_infile, 'r'))
+    d_infile = d['infile']
+    print "D_INFILE=", d_infile
+    original_data = pickle.load(open(d_infile, 'r'))
+    nodes_with_class = original_data['nodes']
+    true_assignvect = nodes_with_class['class']
+
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
-    
-    print "INPUTFILE=", inputfile
-    f = pylab.figure()
-    ax_score = f.add_subplot(2, 2, 1)
-    ax_groups =f.add_subplot(2, 2, 2) 
-    ax_params = f.add_subplot(2, 2, 3)
-    ax_score_groupcount = f.add_subplot(2, 2, 4)
+
+    f = pylab.figure(figsize= (12, 8))
+    ax_score = f.add_subplot(2, 3, 1)
+    ax_groups =f.add_subplot(2, 3, 2) 
+    ax_params = f.add_subplot(2, 3, 3)
+    ax_score_groupcount = f.add_subplot(2, 3, 4)
+    ax_purity_control = f.add_subplot(2, 3, 5)
 
     param_fig = pylab.figure(figsize=(2, CHAINN))
     #ax_each_chain = [param_fig.add_subplot(CHAINN, 1, i) for i in range(CHAINN)]
@@ -350,10 +360,9 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
                            )
 
     groupcounts = []
-    bins = np.arange(1, 7)
 
     allscores = []
-    meancounts = []
+
     params_mu = []
     params_lambda = []
     params_comp_size = []
@@ -363,7 +372,7 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
         chain_params = {'size' : [], 
                         'lambda' : [], 
                         'mu' : []} 
-
+        
         a = sample_latent['domains']['d1']['assignment']
         group_sizes = irm.util.count(a)
         gs = group_sizes.values()
@@ -382,8 +391,8 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
         params_mu += chain_params['mu']
         params_lambda += chain_params['lambda']
         params_comp_size += chain_params['size']
-        meancounts.append(np.mean(this_iter_gc))
-        groupcounts += this_iter_gc
+
+        groupcounts.append(len(group_sizes) )
 
         ax_each_chain[di].scatter(chain_params['mu'], 
                                   chain_params['lambda'], 
@@ -405,26 +414,23 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     mymap = mpl.colors.LinearSegmentedColormap.from_list('mycolors',['blue','red'])
 
     for di, d in enumerate(chains):
-        gc_mean = meancounts[di]
-        gc_min = np.min(groupcounts)
-        gc_max = np.max(groupcounts)
         subsamp = 4
         s = np.array(d['scores'])[::subsamp]
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
-        print d['scores']
+
         allscores.append(d['scores'])
     sm = pylab.cm.ScalarMappable(cmap=mymap, 
                                  norm=pylab.normalize(vmin=1, vmax=5.0))
     sm._A = []
 
-    f.colorbar(sm)
     all_s = np.hstack(allscores).flatten()
     #r = np.max(all_s) - np.min(all_s)
     #ax_score.set_ylim(np.min(all_s) + r*0.95, np.max(all_s)+r*0.05)
     
+    bins = np.arange(1, 11)
     hist, _ = np.histogram(groupcounts, bins)
-    print bins, hist
+
     ax_groups.bar(bins[:-1], hist)
     ax_groups.set_xlim(bins[0], bins[-1])
 
@@ -437,15 +443,35 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
         scoregroup.append((len(group_sizes), scores[-1]))
 
     scoregroup = np.array(scoregroup)
-    print scoregroup[:, 0].shape, scoregroup[:, 0].dtype
+
     jitter_counts = scoregroup[:, 0] + np.random.rand(len(scoregroup[:, 0])) * 0.2 -0.1
     ax_score_groupcount.scatter(jitter_counts, 
                                 scoregroup[:, 1])
 
     
+    ###### plot purity #######################
+    ###
+    tv = true_assignvect.argsort()
+    tv_i = true_assignvect[tv]
+    vals = [tv_i]
+    # get the chain order 
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    for di in chains_sorted_order: 
+        d = chains[di] 
+        sample_latent = d['state']
+        a = np.array(sample_latent['domains']['d1']['assignment'])
+        print "LEN=", len(np.unique(a))
+        a_s = a.argsort(kind='heapsort')
+        vals.append(true_assignvect[a_s])
+    vals_img = np.vstack(vals)
+    ax_purity_control.imshow(vals_img, interpolation='nearest')
+    ax_purity_control.set_xticks([])
+    ax_purity_control.set_yticks([])
+    ax_purity_control.set_aspect(30)
+
     f.tight_layout()
 
-    f.savefig(plot_outfile, dpi=300)
+    f.savefig(plot_outfile)
 
     param_fig.tight_layout()
     param_fig.savefig(params_outfile, dpi=300)
@@ -454,37 +480,112 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     pickle.dump({'counts' : groupcounts}, 
                 open(counts_outfile, 'w'))
 
-# @collate(get_inference, regex(r"(.+)\.\d+\.(.+)\.sampleas.+.pickle$"),  
-#          r"\1.\2.rand.pdf")
-# def rand_collate(inputfiles, rand_plot_filename):
+@transform(get_inference, regex(r"(.+).pickle$"),  
+           [r"\1.latent.pdf", r"\1.sample.truth.pdf", 
+            r"\1.sample.map.pdf"])
+def plot_latent(inputfile, (latent_plot, true_sample, 
+                            map_sample)):
+    filedata = pickle.load(open(inputfile))
+    chains = filedata['chains']
+    chains_infile = filedata['infile']
+    print "CHAINS_INFILE=", chains_infile
 
-#     all_aris = []
-#     f = pylab.figure()
-#     for inputfile in  inputfiles:
-#         filedata = pickle.load(open(inputfile))
-#         start_inference_file =  filedata['infile']
-#         start_inference_data = pickle.load(open(start_inference_file))
-#         orig_data = pickle.load(open(start_inference_data['infile'], 'r'))
+    d = pickle.load(open(chains_infile, 'r'))
+    d_infile = d['infile']
+    print "D_INFILE=", d_infile
+    original_data = pickle.load(open(d_infile, 'r'))
+    nodes_with_class = original_data['nodes']
+    conn_and_dist = original_data['conn_and_dist']
 
-#         nodes = orig_data['nodes']
-#         orig_class = nodes['class']
+    true_assignvect = nodes_with_class['class']
 
-#         chains = filedata['chains']
-#         aris = []
-#         for di, d in enumerate(chains):
-#             assignments = d['states']
-#             for S in np.arange(BURN, len(assignments), SKIP):
-#                 a = assignments[S]
-#                 c_a = rand.canonicalize_assignment_vector(a)
-#                 c_orig_class = rand.canonicalize_assignment_vector(orig_class)
-#                 ari = rand.compute_adj_rand_index(c_a, c_orig_class)
-#                 aris.append(ari)
-#         all_aris.append(aris)
-#     pylab.boxplot(all_aris)
-#     pylab.savefig(rand_plot_filename)
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
 
+    f = pylab.figure(figsize= (12, 8))
+    ax_purity_control = f.add_subplot(2, 2, 1)
+    ax_z = f.add_subplot(2, 2, 2)
+
+    ###### plot purity #######################
+    ###
+    tv = true_assignvect.argsort()
+    tv_i = true_assignvect[tv]
+    vals = [tv_i]
+    # get the chain order 
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    for di in chains_sorted_order: 
+        d = chains[di] 
+        sample_latent = d['state']
+        a = np.array(sample_latent['domains']['d1']['assignment'])
+        print "LEN=", len(np.unique(a))
+        a_s = a.argsort(kind='heapsort')
+        vals.append(true_assignvect[a_s])
+    vals_img = np.vstack(vals)
+    ax_purity_control.imshow(vals_img, interpolation='nearest')
+    ax_purity_control.set_xticks([])
+    ax_purity_control.set_yticks([])
+    ax_purity_control.set_aspect(30)
+
+
+    # zmatrix
+    av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
+    z = irm.util.compute_zmatrix(av)    
+
+    import scipy.cluster.hierarchy as hier
+    lm = hier.linkage(z)
+    ord = np.array(hier.leaves_list(lm))
+    
+    ax_z.imshow((z[ord])[:, ord], interpolation='nearest', cmap=pylab.cm.Greys)
+    
+    f.tight_layout()
+
+    f.savefig(latent_plot)
+
+    f = pylab.figure()
+    plot_latent_sample(f, true_assignvect, conn_and_dist)
+    f.savefig(true_sample)
+
+    f = pylab.figure()
+    plot_latent_sample(f, np.array(chains[0]['state']['domains']['d1']['assignment']),
+                       conn_and_dist)
+    f.savefig(map_sample)
+
+    
+def plot_latent_sample(fig, assign_vect, conn_and_dist):
+
+
+    #from mpl_toolkits.axes_grid1 import ImageGrid
+
+    CLASSES = np.unique(assign_vect)
+    CLASSN = len(CLASSES)
+    
+    # ax_grid = ImageGrid(fig, 111, # similar to subplot(111)
+    #                     nrows_ncols = (CLASSN, CLASSN),
+    #                     axes_pad = 0.1,
+    #                     add_all=True,
+    #                     label_mode = "L",
+    #                 )
+    for c1i, c1 in enumerate(CLASSES):
+        for c2i, c2 in enumerate(CLASSES):
+            ax = fig.add_subplot(CLASSN, CLASSN, c1i * CLASSN + c2i +1)
+            nodes_1 = np.argwhere(assign_vect == c1).flatten()
+            nodes_2 = np.argwhere(assign_vect == c2).flatten()
+            dist_hist = []
+            for n1 in nodes_1:
+                for n2 in nodes_2:
+                    if conn_and_dist[n1, n2]['link']:
+                        dist_hist.append(conn_and_dist[n1, n2]['distance'])
+            bins = np.linspace(0, 10, 20)
+            if len(dist_hist) > 0:
+                ax.hist(dist_hist, bins=bins)
+            ax.set_xlim(0, 10.0)
+            ax.set_ylim(0, 400.0)
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            
 pipeline_run([create_data, start_inference, get_inference, 
-              plot_collate, 
+              plot_collate, plot_latent 
               #rand_collate
           ],
              multiprocess=4)
