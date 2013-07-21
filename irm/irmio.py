@@ -34,6 +34,8 @@ def model_from_latent(latent, data, relation_class=pyirmutil.Relation,
             m = models.BetaBernoulliNonConj()
         elif rel_config['model'] == "LogisticDistance":
             m = models.LogisticDistance()
+        elif rel_config['model'] == "SigmoidDistance":
+            m = models.SigmoidDistance()
         else:
             raise NotImplementedError()
         rel = relation_class(domaindef, data[rel_name], 

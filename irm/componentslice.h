@@ -51,6 +51,16 @@ void slice_sample_exec<LogisticDistance>
  LogisticDistance::hypers_t * hps, 
  std::vector<LogisticDistance::value_t>::iterator data, 
  const std::vector<dppos_t> & dppos);
+
+
+template<>
+void slice_sample_exec<SigmoidDistance>
+(rng_t & rng, float width, 
+ SigmoidDistance::suffstats_t * ss, 
+ SigmoidDistance::hypers_t * hps, 
+ std::vector<SigmoidDistance::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos);
+
 }
 
 

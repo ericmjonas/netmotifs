@@ -236,3 +236,9 @@ class LogisticDistance(object):
     Just a placeholder
     """
     pass
+
+class SigmoidDistance(object):
+    """
+    Just a placeholder
+    """
+    pass
