@@ -11,7 +11,7 @@ else(APPLE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif(APPLE)
 
-find_package(Boost 1.53.0 COMPONENTS  python system  REQUIRED)
+find_package(Boost 1.54.0 COMPONENTS  python system  REQUIRED)
 
 # notes: 
 # http://stackoverflow.com/questions/1937232/linking-to-a-dynamic-library-on-a-mac-with-full-path
