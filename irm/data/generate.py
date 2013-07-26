@@ -74,7 +74,8 @@ def c_class_neighbors(SIDE_N, class_connectivity,
                                GRID_SPACE_X, GRID_SPACE_Y)
         nodes[:, 0] += X_DELTA * c
 
-        #nodes += np.random.rand(len(nodes), 3) * JITTER - JITTER/2
+        if JITTER > 0:
+            nodes += np.random.normal(0, JITTER, size=(len(nodes), 2))
         
         n_c = synth.add_class(nodes, c)
         all_nodes.append(n_c)
