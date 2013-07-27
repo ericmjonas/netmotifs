@@ -38,6 +38,10 @@ public:
         return data_[pos]; 
     }
 
+    int size() { 
+        return size_; 
+    }
+
     bool operator <(const fast_static_vector<T, MAX_SIZE> & b) const { 
         if(size_ == b.size_) { 
             for(int i = 0; i < size_; ++i) { 
@@ -51,6 +55,8 @@ public:
 
 
         } else { 
+            std::cout << "size_=" << size_ << " b.size_=" << b.size_ 
+                      << std::endl; 
             throw std::runtime_error("can't compare unequal size"); 
         }
 

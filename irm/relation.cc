@@ -246,10 +246,12 @@ group_dp_map_t Relation::get_datapoints_per_group()
     group_dp_map_t out; 
     
     for(size_t i = 0; i < datapoint_groups_.size(); ++i) { 
+        
         group_coords_t gc = get_dp_group_coords(i); 
+
         if (fully_assigned(gc)) { 
             if(out.find(gc) == out.end()){ 
-                out[gc] = std::vector<dppos_t>(); 
+                out.insert(std::make_pair(gc, std::vector<dppos_t>())); 
             }
             out[gc].push_back(i); 
         }
