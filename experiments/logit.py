@@ -8,6 +8,9 @@ def logistic(x, mu, lamb):
 def sigmoid(x, mu, lamb):
     return -(x-mu) / (lamb + np.abs(x-mu))*0.5  + 0.5
 
+def log_exp_dist(x, lamb):
+    return np.log(lamb) - lamb * x
+
 def parametric_plot(func):
     """
     Plot the example curves
@@ -74,8 +77,31 @@ def single_plot(func):
     pylab.axis([0, MAXX, 0, 1])
     pylab.show()
 
-parametric_plot(sigmoid)
-prior_sample(sigmoid)
+#parametric_plot(sigmoid)
+#prior_sample(sigmoid)
 
 
 #single_plot()
+mu = np.linspace(0.01, 10.0, 1000)
+lamb = 1.0
+
+N = 100
+xs = np.abs(np.random.normal(0, 10, N))
+ys = np.random.rand(N) > 0.5
+print xs
+print ys
+
+score = np.zeros_like(mu)
+mu_prior = 1.0
+for x, y in zip(xs, ys):
+    if y:
+        score += np.log(logistic(x, 1.0, mu) )
+    else:
+        score += np.log(1-logistic(x,1.0, mu) )
+
+score += log_exp_dist(mu, mu_prior)
+pylab.plot(mu, score)
+pylab.plot(mu, np.exp(score))
+pylab.xlabel('mu')
+pylab.show()
+

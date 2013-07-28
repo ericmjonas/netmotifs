@@ -5,7 +5,7 @@ import tesselate
 def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
 
-def one_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0.0, CONN_PROB=0.8, 
+def one_class_neighbors(SIDE_N, PROX=2.0, JITTER = 0sy.0, CONN_PROB=0.8, 
                         cust_pred = None):
     """
     A single class; each node connects to it's neighbors closer than 
@@ -75,7 +75,7 @@ def c_class_neighbors(SIDE_N, class_connectivity,
         nodes[:, 0] += X_DELTA * c
 
         if JITTER > 0:
-            nodes += np.random.normal(0, JITTER, size=(len(nodes), 2))
+            nodes += np.random.normal(0, JITTER, size=(len(nodes), 3))
         
         n_c = synth.add_class(nodes, c)
         all_nodes.append(n_c)

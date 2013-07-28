@@ -38,7 +38,9 @@ def from_bucket(filename):
 
 CHAINS_TO_RUN = 10
 SAMPLER_ITERS = 2000
-SEEDS = np.arange(6)
+SEEDS = np.arange(2)
+
+JITTERS = [0, 0.01, 0.1]
 
 #SKIP = 100
 #BURN = 700
@@ -78,7 +80,7 @@ def data_generator():
                      (3, 4) : (2.5, 0.8),
                      (1, 4) : (1.5, 0.4),
                  },
-            '10c1' : {(0, 1) : (1.0, 0.5), 
+            '10c2' : {(0, 1) : (1.0, 0.5), 
                       (0, 2) : (2.0, 0.7),                      
                       (0, 8) : (2.0, 0.7), 
                       (0, 3) : (1.0, 0.7),                      
@@ -89,7 +91,9 @@ def data_generator():
                       (2, 3) : (2.1, 0.8),
                       (2, 0) : (2.5, 0.6),
                       (2, 7) : (3.0, 0.7),
+                      (3, 1) : (0.9, 0.7), 
                       (3, 4) : (2.5, 0.8),
+                      (3, 6) : (2.2, 0.4), 
                       (3, 8) : (2.5, 0.8),
                       (4, 2) : (1.5, 0.3), 
                       (4, 0) : (2.0, 0.8), 
@@ -99,8 +103,10 @@ def data_generator():
                       (5, 5) : (1.0, 0.5), 
                       (6, 2) : (1.5, 0.8), 
                       (6, 7) : (2.1, 0.6), 
+                      (6, 0) : (1.5, 0.2), 
                       (7, 0) : (1.5, 0.3), 
                       (7, 4) : (1.2, 0.9), 
+                      (7, 7) : (0.9, 0.6), 
                       (8, 2) : (3.0, 0.6), 
                       (8, 5) : (2.0, 0.4), 
                       (9, 8) : (1.0, 0.7), 
@@ -115,14 +121,18 @@ def data_generator():
     for SIDE_N in POSSIBLE_SIDE_N:
         for seed in SEEDS:
             for conn_name, conn_config in conn.iteritems():
-                filename = "data.%d.%d.%s.pickle" % (SIDE_N, seed, conn_name)
-                yield None, filename, SIDE_N, seed, conn_name, conn_config
+                for jitteri in range(len(JITTERS)):
+                    filename = "data.%d.%d.%d.%s.pickle" % (SIDE_N, seed, jitteri, 
+                                                            conn_name)
+                    yield None, filename, SIDE_N, seed, conn_name, conn_config, jitteri
 
 @files(data_generator)
-def create_data(inputfile, outputfile, SIDE_N, seed, conn_name, conn_config):
+def create_data(inputfile, outputfile, SIDE_N, seed, conn_name, conn_config, jitteri):
     
     np.random.seed(seed)
-    nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(SIDE_N, conn_config)
+    nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(SIDE_N, 
+                                                                         conn_config,
+                                                                         JITTER=JITTERS[jitteri])
     
                 
     conn_and_dist = np.zeros(connectivity.shape, 
@@ -207,7 +217,7 @@ def create_rundata(infilename, outfilename):
 
         latent = copy.deepcopy(irm_latent)
 
-        GRP = 10
+        GRP = 20
         a = np.arange(latent['domains']['d1']['N']) % GRP
         a = np.random.permutation(a)
     
@@ -546,12 +556,20 @@ def plot_latent(inputfile, (latent_plot, true_sample,
     f.savefig(true_sample)
 
     f = pylab.figure()
-    plot_latent_sample(f, np.array(chains[0]['state']['domains']['d1']['assignment']),
-                       conn_and_dist)
+    ci = chains_sorted_order[0]
+    cs = chains[ci]['state']
+    plot_latent_sample(f, np.array(cs['domains']['d1']['assignment']),
+                       conn_and_dist, 
+                       model="LogisticDistance", 
+                       comps = cs['ss']['R1'])
+
     f.savefig(map_sample)
 
+def logistic(x, mu, lamb):
+    return 1.0/(1 + np.exp((x - mu)/lamb))
     
-def plot_latent_sample(fig, assign_vect, conn_and_dist):
+def plot_latent_sample(fig, assign_vect, conn_and_dist, model=None, 
+                       comps = None):
 
 
     #from mpl_toolkits.axes_grid1 import ImageGrid
@@ -570,19 +588,39 @@ def plot_latent_sample(fig, assign_vect, conn_and_dist):
             ax = fig.add_subplot(CLASSN, CLASSN, c1i * CLASSN + c2i +1)
             nodes_1 = np.argwhere(assign_vect == c1).flatten()
             nodes_2 = np.argwhere(assign_vect == c2).flatten()
-            dist_hist = []
+            conn_dist_hist = []
+            noconn_dist_hist = []
             for n1 in nodes_1:
                 for n2 in nodes_2:
+                    d = conn_and_dist[n1, n2]['distance']
                     if conn_and_dist[n1, n2]['link']:
-                        dist_hist.append(conn_and_dist[n1, n2]['distance'])
+                        conn_dist_hist.append(d)
+                    else:
+                        noconn_dist_hist.append(d)
+
             bins = np.linspace(0, 10, 20)
-            if len(dist_hist) > 0:
-                ax.hist(dist_hist, bins=bins)
+            fine_bins = np.linspace(0, 10, 100)
+
+            # compute prob as a function of distance for this class
+            htrue, _ = np.histogram(conn_dist_hist, bins)
+            print htrue
+            hfalse, _ = np.histogram(noconn_dist_hist, bins)
+
+            p = htrue.astype(float) / (hfalse + htrue)
+            print p
+            ax.plot(bins[:-1], p)
             ax.set_xlim(0, 10.0)
-            ax.set_ylim(0, 400.0)
+            ax.set_ylim(0, 1.0)
             ax.set_xticks([])
             ax.set_yticks([])
 
+            if model == "LogisticDistance":
+                c = comps[(c1, c2)]
+                print "c=", c
+                ax.plot(fine_bins, 
+                        logistic(fine_bins, c['mu'], c['lambda']), 
+                        c='r') 
+                ax.axvline(c['mu'], c='k')
             
 pipeline_run([create_data, start_inference, get_inference, 
               plot_collate, plot_latent 

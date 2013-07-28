@@ -50,7 +50,7 @@ int main()
 
     float totalscore = 0; 
     // fake gibbs scan
-    const int ITERS = 5; 
+    const int ITERS = 50; 
     for(int iter = 0; iter < ITERS; ++iter) { 
         start = std::chrono::system_clock::now();
 
@@ -77,7 +77,7 @@ int main()
         std::cout << "iter " << iter << ": "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count()/1000.
                   << " sec"  << std::endl; 
-
+        rel.get_datapoints_per_group(); 
     }
     std::cout << "done" << std::endl; 
     
