@@ -433,7 +433,10 @@ def plot_collate(inputfile, (plot_outfile, counts_outfile,
     sm = pylab.cm.ScalarMappable(cmap=mymap, 
                                  norm=pylab.normalize(vmin=1, vmax=5.0))
     sm._A = []
-
+    ax_score.tick_params(axis='both', which='major', labelsize=6)
+    ax_score.tick_params(axis='both', which='minor', labelsize=6)
+    ax_score.set_xlabel('time (s)')
+    ax_score.grid(1)
     all_s = np.hstack(allscores).flatten()
     #r = np.max(all_s) - np.min(all_s)
     #ax_score.set_ylim(np.min(all_s) + r*0.95, np.max(all_s)+r*0.05)

@@ -13,9 +13,7 @@ from irm import irmio
 
 from irm import relation
 
-RELATION_CLASS = irm.Relation # relation.FastRelation
-
-SAMPLE_SETS = 200
+SAMPLE_SETS = 20
 SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
 SEEDS = 4
@@ -122,14 +120,18 @@ def create_data_t1t2(inputfile, outputfile, T1_N, T2_N, seed):
     np.random.seed(seed)
     data = np.random.rand(T1_N, T2_N) > 0.5
     
-    config = {'domains' : {'t1' : {'hps' : 1.0, 
-                                 'N' : T1_N}, 
-                         't2' : {'hps' : 1.0, 
-                                 'N' : T2_N}}, 
-              'relations' : { 'R1' : {'relation' : ('t1', 't2'), 
-                                      'model' : 'BetaBernoulli', 
-                                      'hps' : {'alpha' : 1.0, 
-                                               'beta' : 1.0}}}, 
+    config = {'latent' : { 'domains' : {'t1' : {'hps' : {'alpha' : 1.0}, 
+                                                'N' : T1_N, 
+                                                'assignment' : range(T1_N)}, 
+                                        't2' : {'hps' : {'alpha' : 1.0}, 
+                                                'N' : T2_N, 
+                                                'assignment' : range(T2_N)}}, 
+                           'relations' : { 'R1' : {'relation' : ('t1', 't2'), 
+                                                   'model' : 'BetaBernoulli', 
+                                                   'hps' : {'alpha' : 1.0, 
+                                                            'beta' : 1.0}}}, 
+                           },
+
               'data' : {'R1' : data}}
 
     pickle.dump(config, open(outputfile, 'w'))
@@ -146,12 +148,15 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
     np.random.seed(seed)
     data = np.random.rand(T1_N, T1_N) > 0.5
     
-    config = {'domains' : {'t1' : {'hps' : 1.0, 
-                                 'N' : T1_N}},
-              'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
-                                      'model' : 'BetaBernoulli', 
-                                      'hps' : {'alpha' : 1.0, 
-                                               'beta' : 1.0}}}, 
+    config = {'latent' : { 'domains' : {'t1' : {'hps' : {'alpha' : 1.0}, 
+                                                'N' : T1_N, 
+                                                'assignment' : range(T1_N)}},
+                           'relations' : { 'R1' : {'relation' : ('t1', 't1'), 
+                                                   'model' : 'BetaBernoulli', 
+                                                   'hps' : {'alpha' : 1.0, 
+                                                            'beta' : 1.0}}}, 
+                       }, 
+              
               'data' : {'R1' : data}}
 
     pickle.dump(config, open(outputfile, 'w'))
@@ -161,15 +166,16 @@ def create_data_t1t1(inputfile, outputfile, T1_N,  seed):
            suffix(".pickle"), ".samples.pickle")
 def run_samples(infile, outfile):
     config = pickle.load(open(infile))
-
+    latent = config['latent']
+    data = config['data']
     rng = irm.RNG()
 
-    irm_model = irmio.model_from_config(config, relation_class = RELATION_CLASS,
+    irm_model = irmio.model_from_latent(latent, data, 
                                         rng = rng)
 
     # pick what the T1 is that we're going to use
-    t1_name = sorted(irm_model.types.keys())[0]
-    t1_obj = irm_model.types[t1_name]
+    t1_name = sorted(irm_model.domains.keys())[0]
+    t1_obj = irm_model.domains[t1_name]
     T1_N = t1_obj.entity_count()
     print "RUNNING FOR", t1_name
 
@@ -207,18 +213,20 @@ def run_samples(infile, outfile):
            suffix(".pickle"), ".nonconj.samples.pickle")
 def run_samples_nonconj(infile, outfile):
     config = pickle.load(open(infile))
-
+    latent = config['latent']
+    data = config['data']
     rng = irm.RNG()
     
-    irm_model = irmio.model_from_config(config, relation_class=RELATION_CLASS, 
+    irm_model = irmio.model_from_latent(latent, data, 
                                         rng = rng)
-    config['relations']['R1']['model'] = "BetaBernoulliNonConj"
+    latent['relations']['R1']['model'] = "BetaBernoulliNonConj"
 
-    irm_model_nonconj = irmio.model_from_config(config, relation_class=RELATION_CLASS, rng=rng)
+    irm_model_nonconj = irmio.model_from_latent(latent, data,
+                                                rng=rng)
 
     # pick what the T1 is that we're going to use
-    t1_name = sorted(irm_model.types.keys())[0]
-    t1_obj = irm_model.types[t1_name]
+    t1_name = sorted(irm_model.domains.keys())[0]
+    t1_obj = irm_model.domains[t1_name]
     T1_N = t1_obj.entity_count()
     print "RUNNING FOR", t1_name
 
@@ -235,7 +243,7 @@ def run_samples_nonconj(infile, outfile):
     true_probs = util.scores_to_prob(scores)
     bins = np.zeros((SAMPLE_SETS, len(assignments)), dtype=np.uint32)
     print "SAMPLING"
-    t1_obj_nonconj = irm_model_nonconj.types[t1_name]
+    t1_obj_nonconj = irm_model_nonconj.domains[t1_name]
     
     M = 10
     for samp_set in range(SAMPLE_SETS):
