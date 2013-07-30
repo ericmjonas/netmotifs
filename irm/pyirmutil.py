@@ -66,7 +66,10 @@ class Relation(object):
         
     def total_score(self):
         return self.relation.total_score()
-        
+
+    def set_temp(self, temp):
+        self.compcontainer.set_temp(temp)
+
     def set_hps(self, hps):
         self.compcontainer.set_hps(hps)
     

@@ -44,11 +44,12 @@ void slice_sample_exec<BetaBernoulliNonConj>
  BetaBernoulliNonConj::suffstats_t * ss, 
  BetaBernoulliNonConj::hypers_t * hps, 
  std::vector<BetaBernoulliNonConj::value_t>::iterator data,
- const std::vector<dppos_t> & dppos){
+ const std::vector<dppos_t> & dppos, 
+ float temp){
     auto p = slice_sample<float>(ss->p, 
-                                 [&ss, &hps, data, &dppos](float x) -> float{
+                                 [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->p = x; 
-                                     return BetaBernoulliNonConj::score(ss, hps, data, dppos);
+                                     return BetaBernoulliNonConj::score(ss, hps, data, dppos)/temp;
                           }, 
                           rng, width); 
     
@@ -62,12 +63,13 @@ void slice_sample_exec<LogisticDistance>
  LogisticDistance::suffstats_t * ss, 
  LogisticDistance::hypers_t * hps, 
  std::vector<LogisticDistance::value_t>::iterator data,
- const std::vector<dppos_t> & dppos){
+ const std::vector<dppos_t> & dppos,
+ float temp){
     auto mu = slice_sample<float>(ss->mu, 
-                                  [&ss, &hps, data, &dppos](float x) -> float{
+                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
                                      return LogisticDistance::score(ss, hps, data, 
-                                                                    dppos);
+                                                                    dppos) /temp;
                           }, 
                           rng, width); 
     
@@ -75,7 +77,7 @@ void slice_sample_exec<LogisticDistance>
 
 
     auto lambda = slice_sample<float>(ss->lambda, 
-                                      [&ss, &hps, data, &dppos](float x) -> float{
+                                      [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return LogisticDistance::score(ss, hps, data, 
                                                                     dppos);
@@ -92,12 +94,13 @@ void slice_sample_exec<SigmoidDistance>
  SigmoidDistance::suffstats_t * ss, 
  SigmoidDistance::hypers_t * hps, 
  std::vector<SigmoidDistance::value_t>::iterator data,
- const std::vector<dppos_t> & dppos){
+ const std::vector<dppos_t> & dppos, 
+ float temp){
     auto mu = slice_sample<float>(ss->mu, 
-                                  [&ss, &hps, data, &dppos](float x) -> float{
+                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
-                                                                    dppos);
+                                                                    dppos)/temp;
                           }, 
                           rng, width); 
     
@@ -105,7 +108,7 @@ void slice_sample_exec<SigmoidDistance>
 
 
     auto lambda = slice_sample<float>(ss->lambda, 
-                                      [&ss, &hps, data, &dppos](float x) -> float{
+                                      [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
                                                                     dppos);

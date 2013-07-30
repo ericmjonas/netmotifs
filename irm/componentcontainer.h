@@ -40,6 +40,7 @@ public:
 
     virtual bp::dict get_component(const group_coords_t &  gc) = 0; 
     virtual void set_component(const group_coords_t &  gc, bp::dict val) = 0; 
+    virtual void set_temp(float ) = 0; 
 }; 
    
 template<typename CM>
@@ -57,7 +58,8 @@ public:
     ComponentContainer(const std::string & data, 
                        std::vector<size_t> data_shape) :
         NDIM_(data_shape.size()), 
-        data_shape_(data_shape) 
+        data_shape_(data_shape) ,
+        temp_(1.0)
     {
         
         int s = 1; 
@@ -118,7 +120,7 @@ public:
                                    data_.begin(), i->second); 
             }
         }
-        return score; 
+        return score/temp_; 
            
     }
     
@@ -129,7 +131,7 @@ public:
         typename CM::value_t val = data_[dp_pos]; 
         sswrapper_t * ssw = components_[gp];
         return CM::post_pred(&(ssw->ss), &hps_, val, 
-                             dp_pos, data_.begin()); 
+                             dp_pos, data_.begin()) / temp_; 
     }
 
     float add_dp_post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) {
@@ -142,7 +144,7 @@ public:
 
         CM::ss_add(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
         ssw->count++; 
-        return score; 
+        return score/temp_; 
     }
     
     void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {
@@ -191,7 +193,7 @@ public:
                 slice_sample_exec<CM>(rng, width, 
                                       &(ssw->ss), 
                                       &hps_, data_.begin(), 
-                                      c.second); 
+                                      c.second, temp_); 
             }
         } else { 
             throw std::runtime_error("unknown kernel name"); 
@@ -213,6 +215,10 @@ public:
         sswrapper_t * ssw = components_[gh]; 
         CM::ss_from_dict(&(ssw->ss), val); 
         
+    }
+
+    void set_temp(float t)  {
+        temp_ = t; 
     }
 
 private:
@@ -238,9 +244,9 @@ private:
         return hash; 
 
     }
-    
+    float temp_; 
     typename CM::hypers_t hps_; 
-
+    
 }; 
 
 }

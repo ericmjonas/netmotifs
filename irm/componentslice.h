@@ -29,7 +29,8 @@ void slice_sample_exec
  typename T::suffstats_t * ss, 
  typename T::hypers_t * hps, 
  typename std::vector<typename T::value_t>::iterator data,
- const std::vector<dppos_t> & dppos)
+ const std::vector<dppos_t> & dppos, 
+ float temp)
 {
 
     throw std::runtime_error("slice sampler not implemented for this component model"); 
@@ -41,7 +42,8 @@ void slice_sample_exec<BetaBernoulliNonConj>
  BetaBernoulliNonConj::suffstats_t * ss, 
  BetaBernoulliNonConj::hypers_t * hps, 
  std::vector<BetaBernoulliNonConj::value_t>::iterator data,
- const std::vector<dppos_t> & dppos);
+ const std::vector<dppos_t> & dppos, 
+ float temp);
 
 
 template<>
@@ -50,7 +52,8 @@ void slice_sample_exec<LogisticDistance>
  LogisticDistance::suffstats_t * ss, 
  LogisticDistance::hypers_t * hps, 
  std::vector<LogisticDistance::value_t>::iterator data, 
- const std::vector<dppos_t> & dppos);
+ const std::vector<dppos_t> & dppos,
+ float temp);
 
 
 template<>
@@ -59,7 +62,8 @@ void slice_sample_exec<SigmoidDistance>
  SigmoidDistance::suffstats_t * ss, 
  SigmoidDistance::hypers_t * hps, 
  std::vector<SigmoidDistance::value_t>::iterator data, 
- const std::vector<dppos_t> & dppos);
+ const std::vector<dppos_t> & dppos, 
+ float temp);
 
 }
 

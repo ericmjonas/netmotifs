@@ -183,3 +183,4 @@ def test_slice_nonconj():
             print empirical_p - true_map_p
             np.testing.assert_approx_equal(empirical_p, true_map_p, 3)
         # assert_equal(len(np.unique(tf_1.get_assignments())), 10)
+

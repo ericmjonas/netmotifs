@@ -78,7 +78,8 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("dpcount", &IComponentContainer::dpcount)
       .def("set_hps", &IComponentContainer::set_hps)
       .def("get_hps", &IComponentContainer::get_hps)
-      .def("apply_kernel", &IComponentContainer::apply_kernel); 
+      .def("apply_kernel", &IComponentContainer::apply_kernel)
+      .def("set_temp", &IComponentContainer::set_temp); 
 
   def("helloworld", &helloworld); 
   def("cart_prod", &cart_prod_helper_py); 

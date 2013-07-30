@@ -33,7 +33,12 @@ def do_inference(irm_model, rng, kernel_config):
         elif kernel_name == "slice_params":
             for relation_name, relation in irm_model.relations.iteritems():
                 relation.apply_comp_kernel("slice_sample", rng, params)
-
+        elif kernel_name == "tempered_transitions":
+            temps = kernel_config['temps']
+            subkernels = kernel_config['kernels']
+            kernels.tempered_transitions(irm_model, rng, temps, 
+                                         irmio.get_latent, 
+                                         
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
         t2 = time.time()
