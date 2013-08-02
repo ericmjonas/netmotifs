@@ -36,8 +36,8 @@ def do_inference(irm_model, rng, kernel_config):
         elif kernel_name == "tempered_transitions":
             temps = kernel_config['temps']
             subkernels = kernel_config['kernels']
-            kernels.tempered_transitions(irm_model, rng, temps, 
-                                         irmio.get_latent, 
+            # kernels.tempered_transitions(irm_model, rng, temps, 
+            #                              irmio.get_latent, 
                                          
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
@@ -52,7 +52,8 @@ class Runner(object):
         # create the model
         self.rng = pyirm.RNG()
         
-        self.model = irmio.model_from_latent(latent, data, rng=self.rng)
+        self.model = irmio.create_model_from_data(data, rng=self.rng)
+        irmio.set_model_latent(self.model, latent, self.rng)
         self.iters = 0
         
         self.kernel_config = kernel_config

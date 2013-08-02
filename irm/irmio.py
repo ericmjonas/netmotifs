@@ -11,13 +11,13 @@ def model_from_config_file(configfile):
     config = pickle.load(open(configfile, 'r'))
     return model_from_config(config)
 
-def model_from_latent(latent, data, relation_class=pyirmutil.Relation, 
+
+def create_model_from_data(data, relation_class=pyirmutil.Relation, 
                       rng=None):
 
-    domains_config = latent['domains']
-    relations_config = latent['relations']
+    domains_config = data['domains']
+    relations_config = data['relations']
 
-    ss_config = latent.get('ss', {})
 
     # build the model
     relations = {}
@@ -38,10 +38,8 @@ def model_from_latent(latent, data, relation_class=pyirmutil.Relation,
             m = models.SigmoidDistance()
         else:
             raise NotImplementedError()
-        rel = relation_class(domaindef, data[rel_name], 
+        rel = relation_class(domaindef, relations_config[rel_name]['data'], 
                              m)
-        rel.set_hps(rel_config['hps'])
-
         relations[rel_name] = rel
         # set because we only want to add each relation once to a domain
         for tn in set(rel_config['relation']):
@@ -53,15 +51,34 @@ def model_from_latent(latent, data, relation_class=pyirmutil.Relation,
     for d_name, d_config in domains_config.iteritems():
         D_N = d_config['N'] 
         ti = model.DomainInterface(D_N, domains_to_relations[d_name])
-        ti.set_hps(d_config['hps'])
         domain_interfaces[d_name] = ti
 
         
     irm_model = model.IRM(domain_interfaces, relations)
 
+    return irm_model
+
+def set_model_latent(irm_model, latent,                       
+                     rng):
+    """ 
+    Take in an existing model with the correct structure and types, and 
+    set the latent parameters
+    """
+
+    domains_latent = latent['domains']
+    relations_latent = latent['relations']
+
+    for rel_name, relation_object in irm_model.relations.iteritems():
+
+        relation_object.set_hps(relations_latent[rel_name]['hps'])
+
+
+    for d_name, d_obj in irm_model.domains.iteritems():
+        d_obj.set_hps(domains_latent[d_name]['hps'])
+
     domain_assignvect_to_gids = {}
-    for dn, di in domain_interfaces.iteritems():
-        assign_vect = domains_config[dn]['assignment']
+    for dn, di in irm_model.domains.iteritems():
+        assign_vect = domains_latent[dn]['assignment']
         gr = {}
         for ai, a in enumerate(assign_vect):
             if a not in gr:
@@ -70,13 +87,12 @@ def model_from_latent(latent, data, relation_class=pyirmutil.Relation,
         domain_assignvect_to_gids[dn] = gr
 
     # now load / set the sufficient statistics
-    for relname, reldata in ss_config.iteritems():
-        rel_obj = relations[relname]
-        d_names = relations_config[relname]['relation']
-        domain_rel_pos = [domain_interfaces[dn].get_relation_pos(relname) for dn  in d_names]
-        dr = zip([domain_interfaces[dn] for dn in d_names], domain_rel_pos)
-
-        for assignvect_group_coord, ss_val in reldata.iteritems():
+    for relname, rel_obj in irm_model.relations.iteritems():
+        d_names = rel_obj.get_axes()
+        domain_rel_pos = [irm_model.domains[dn].get_relation_pos(relname) for dn  in d_names]
+        dr = zip([irm_model.domains[dn] for dn in d_names], domain_rel_pos)
+        rel_data = relations_latent[relname].get('ss', {})
+        for assignvect_group_coord, ss_val in rel_data.iteritems():
             gid_group_coord = []
             for d, g in zip(d_names, assignvect_group_coord):
                 gid_group_coord.append(domain_assignvect_to_gids[d][g])
@@ -84,8 +100,6 @@ def model_from_latent(latent, data, relation_class=pyirmutil.Relation,
             
             model.set_components_in_relation(dr, rel_obj, 
                                              gid_group_coord, ss_val)
-
-    return irm_model
 
 def empty_domain(domain_obj):
     """
@@ -134,32 +148,26 @@ def get_latent(model_obj):
         a = domain_obj.get_assignments()
         N = len(a)
         domain = {'hps' : hps, 
-                  'N' : N, 
                   'assignment' : a.tolist()}
         domains_out[domain_name] = domain
     relations_out = {}
-    ss_out = {}
+
+    dom_names = model_obj.domains.keys()
 
     for relation_name, rel_obj in model_obj.relations.iteritems():
         model_str = rel_obj.modeltypestr
         # relation def
 
         hps = rel_obj.get_hps()
-
-        dom_names = rel_obj.get_axes()
-
-
-        relations_out[relation_name] = {'relation' : tuple(dom_names), 
-                                        'model' : model_str, 
-                                        'hps' : hps}
+        relations_out[relation_name] = {'hps' : hps}
+                                        
         
-        doms = [(model_obj.domains[dn], model_obj.domains[dn].get_relation_pos(relation_name)) for dn in dom_names]
+        doms = [(model_obj.domains[dn], model_obj.domains[dn].get_relation_pos(relation_name)) for dn in rel_obj.get_axes()] # dom_names]
 
-        ss_out[relation_name] = model.get_components_in_relation(doms, rel_obj)
+        relations_out[relation_name]['ss'] = model.get_components_in_relation(doms, rel_obj)
 
     return {'domains' : domains_out, 
-            'relations' : relations_out, 
-            'ss' : ss_out}
+            'relations' : relations_out}
 
 def delta_thold(x, y, tol = 0.0001):
     "Is the delta greater than the threshold?"
@@ -169,7 +177,8 @@ def delta_thold(x, y, tol = 0.0001):
     else:
         return False
 
-def latent_equality(l1, l2, include_ss=True, tol = 0.0001):
+def latent_equality(l1, l2, data1 = None, 
+                    include_ss=True, tol = 0.0001):
     domains1= l1['domains']
     domains2 = l2['domains']
     if set(domains1.keys()) != set(domains2.keys()):
@@ -182,8 +191,6 @@ def latent_equality(l1, l2, include_ss=True, tol = 0.0001):
         for hp in d1['hps'].keys():
             if delta_thold(d1['hps'][hp], d2['hps'][hp]):
                 return False
-        if d1['N'] != d2['N'] :
-            return False
         if (util.canonicalize_assignment(d1['assignment']) != util.canonicalize_assignment(d2['assignment'])).all():
             return False
 
@@ -195,10 +202,6 @@ def latent_equality(l1, l2, include_ss=True, tol = 0.0001):
     for r in relations1.keys():
         r1 = relations1[r]
         r2 = relations2[r]
-        if r1['relation'] != r2['relation']:
-            return False
-        if r1['model'] != r2['model']:
-            return False
         for hp in r1['hps'].keys():
             if delta_thold(r1['hps'][hp], r2['hps'][hp]):
                 return False
@@ -207,12 +210,14 @@ def latent_equality(l1, l2, include_ss=True, tol = 0.0001):
 
     # god this is going to be a bitch
     for r in relations1.keys():
-        rdef = relations1[r]['relation']
-        ss1 = l1['ss'][r]
-        ss2 = l2['ss'][r]
+        rdef = data1['relations'][r]['relation']
+        print "rdef=", rdef
+        ss1 = relations1[r]['ss']
+        ss2 = relations2[r]['ss']
         for g1 in ss1.keys():
             comp1 = ss1[g1]
             g2 = tuple([domain_groupid_maps[rn][g] for rn, g in zip(rdef, g1)])
+            print "g2=", g2, "g1=", g1
             comp2 = ss2[g2]
             for param in comp1.keys():
                 if delta_thold(comp1[param], comp2[param]):

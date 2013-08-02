@@ -11,29 +11,30 @@ Tests of the IRM IO
 np.random.seed(0)
 
 latent_simple_nonconj = {'domains' : {'d1' :{ 'hps' : {'alpha': 1.0}, 
-                                             'N' : 5, 
                                              'assignment' : [0, 0, 1, 1, 2]}}, 
-                        'relations' : {'R1' : {'relation' :  ('d1', 'd1'), 
-                                               'model' : "BetaBernoulliNonConj", 
-                                               'hps' : {'alpha' : 1.0, 
-                                                        'beta' : 1.0}}},
-                         'ss' : {'R1' : {(0, 0) : {'p' : 0.0}, 
-                                         (0, 1) : {'p' : 0.01}, 
-                                         (0, 2) : {'p' : 0.02}, 
-                                         (1, 0) : {'p' : 0.10}, 
-                                         (1, 1) : {'p' : 0.11}, 
-                                         (1, 2) : {'p' : 0.12}, 
-                                         (2, 0) : {'p' : 0.20}, 
-                                         (2, 1) : {'p' : 0.21}, 
-                                         (2, 2) : {'p' : 0.22}}}}
+                        'relations' : {'R1' : {'hps' : {'alpha' : 1.0, 
+                                                        'beta' : 1.0},
+                                               'ss' : {(0, 0) : {'p' : 0.0}, 
+                                                       (0, 1) : {'p' : 0.01}, 
+                                                       (0, 2) : {'p' : 0.02}, 
+                                                       (1, 0) : {'p' : 0.10}, 
+                                                       (1, 1) : {'p' : 0.11}, 
+                                                       (1, 2) : {'p' : 0.12}, 
+                                                       (2, 0) : {'p' : 0.20}, 
+                                                       (2, 1) : {'p' : 0.21}, 
+                                                       (2, 2) : {'p' : 0.22}}}}}
 
-data_simple_nonconj = {'R1' : np.random.rand(5, 5) > 0.5}
+data_simple_nonconj = {'domains' : {'d1' : {'N' : 5}}, 
+                       'relations' : {'R1' : {'relation' :  ('d1', 'd1'), 
+                                              'model' : "BetaBernoulliNonConj",
+                                              'data':  np.random.rand(5, 5) > 0.5}}}
 
 
 def test_simple_nonconj():
     rng = irm.RNG()
-    irm_model = irmio.model_from_latent(latent_simple_nonconj, 
-                                        data_simple_nonconj, rng=rng)
+    irm_model = irmio.create_model_from_data(data_simple_nonconj, rng=rng)
+    
+    irmio.set_model_latent(irm_model, latent_simple_nonconj, rng=rng)
     
     a = irm_model.domains['d1'].get_assignments()
     axes = irm_model.relations['R1'].get_axes()
@@ -63,11 +64,12 @@ def test_simple_nonconj():
 
 def test_simple_nonconj_inout():
     rng = irm.RNG()
-    irm_model = irmio.model_from_latent(latent_simple_nonconj, 
-                                        data_simple_nonconj, rng=rng)
+    irm_model = irmio.create_model_from_data(data_simple_nonconj, rng=rng)
+    
+    irmio.set_model_latent(irm_model, latent_simple_nonconj, rng=rng)
+
     latent = irmio.get_latent(irm_model)
-    print latent['ss']['R1']
-    irmio.latent_equality(latent, latent_simple_nonconj)
+    irmio.latent_equality(latent_simple_nonconj, latent, data_simple_nonconj)
 
 def test_runner():
     run = irm.runner.Runner(latent_simple_nonconj, data_simple_nonconj, 
