@@ -78,6 +78,16 @@ def set_model_latent(irm_model, latent,
 
     domain_assignvect_to_gids = {}
     for dn, di in irm_model.domains.iteritems():
+        # clear out the domain
+        for i, ai in enumerate(di.get_assignments()):
+            if ai != irm.model.NOT_ASSIGNED:
+                di.remove_entity_from_group(i)
+        gs = di.get_groups()
+        for g in gs:
+            di.delete_group(g)
+            
+        # now do the assignment
+        
         assign_vect = domains_latent[dn]['assignment']
         gr = {}
         for ai, a in enumerate(assign_vect):
