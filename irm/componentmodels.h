@@ -103,7 +103,7 @@ struct BetaBernoulli {
         bp::dict hp; 
         hp["alpha"] = hps.alpha; 
         hp["beta"] = hps.beta; 
-
+        
         return hp; 
 
     }

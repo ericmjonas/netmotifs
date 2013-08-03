@@ -2,7 +2,7 @@ from nose.tools import *
 import numpy as np
 from numpy.testing import assert_approx_equal
 
-from irm import irmio, model
+from irm import irmio, model, data
 
 import irm
 """
@@ -78,3 +78,64 @@ def test_runner():
     run.run_iters(10)
     run.get_score()
     run.get_state()
+
+
+def test_io_score_t1t2():
+
+    rng = irm.RNG()
+
+    for D1_N, D2_N in [(10, 20), (20, 30), (200, 300)]:
+        for model_name in ["BetaBernoulliNonConj", 
+                           "LogisticDistance"]: 
+
+            d = {'domains' : {'d1' : {'N' : D1_N}, 
+                              'd2' : {'N' : D2_N}},
+                    'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
+                                           'model' : model_name}}}
+
+            l = {}
+
+            new_latent, new_data = data.synth.prior_generate(l, d)
+
+            irm_model = irmio.create_model_from_data(new_data, rng=rng)
+            irmio.set_model_latent(irm_model, new_latent, rng=rng)
+
+            s1 = irm_model.total_score()
+
+            extracted_latent = irmio.get_latent(irm_model)
+
+            irm_model2 = irmio.create_model_from_data(new_data, rng=rng)
+            irmio.set_model_latent(irm_model, extracted_latent, rng=rng)
+
+            s2 = irm_model.total_score()
+            np.testing.assert_approx_equal(s1, s2, 5)
+
+
+def test_io_score_t1t1():
+
+    rng = irm.RNG()
+
+    for D1_N in [10, 100, 1000]:
+        for model_name in ["BetaBernoulliNonConj", 
+                           "LogisticDistance"]: 
+
+            d = {'domains' : {'d1' : {'N' : D1_N}}, 
+                    'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                           'model' : model_name}}}
+
+            l = {}
+
+            new_latent, new_data = data.synth.prior_generate(l, d)
+
+            irm_model = irmio.create_model_from_data(new_data, rng=rng)
+            irmio.set_model_latent(irm_model, new_latent, rng=rng)
+
+            s1 = irm_model.total_score()
+
+            extracted_latent = irmio.get_latent(irm_model)
+
+            irm_model2 = irmio.create_model_from_data(new_data, rng=rng)
+            irmio.set_model_latent(irm_model, extracted_latent, rng=rng)
+
+            s2 = irm_model.total_score()
+            np.testing.assert_approx_equal(s1, s2, 5)
