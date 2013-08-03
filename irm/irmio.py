@@ -141,15 +141,17 @@ def default_graph_init(connectivity, model = 'BetaBernoulli'):
     """
     T1_N = connectivity.shape[0]
     assert connectivity.shape[0] == connectivity.shape[1]
-    latent = {'domains' : {'d1' : {'hps' : {'alpha' : 1.0}, 
-                                   'N' : T1_N}, 
+    latent = {'domains' : {'d1' : {'hps' : {'alpha' : 1.0},
+                                   'assignment' : range(T1_N)}
                            },
-              'relations' : { 'R1' : {'relation' : ('d1', 'd1'), 
-                                      'model' : model, 
-                                      'hps' : {'alpha' : 1.0, 
+              'relations' : { 'R1' : {'hps' : {'alpha' : 1.0, 
                                                'beta' : 1.0}}}}
 
-    return latent, {'R1' : connectivity}
+    data = {'domains' : {'d1' : {  'N' : T1_N}, }, 
+            'relations' : { 'R1' : {'relation' : ('d1', 'd1'), 
+                                    'model' : model, 
+                                    'data' : connectivity}}}
+    return latent, data
 
 def get_latent(model_obj):
     domains_out = {}
