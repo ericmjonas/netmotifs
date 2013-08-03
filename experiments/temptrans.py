@@ -4,7 +4,7 @@ from irm import kernels
 from matplotlib import pylab
 
 
-temps = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
+temps = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
 
 
 def log_norm_dens(x, mu, var):

@@ -155,3 +155,14 @@ def compute_zmatrix(list_of_assignment):
                 if a[i] == a[j]:
                     z[i, j] +=1 
     return z
+
+def crp_draw(N, alpha):
+    # FIXME FIXME
+    return np.random.permutation(N) % 10
+
+def logistic(x, mu, lamb):
+    return 1.0/(1 + np.exp((x - mu)/lamb))
+
+def sigmoid(x, mu, lamb):
+    return -(x-mu) / (lamb + np.abs(x-mu))*0.5  + 0.5
+

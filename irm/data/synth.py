@@ -1,8 +1,9 @@
 import numpy as np
 from matplotlib import pylab
 import cPickle as pickle
-
-
+from copy import deepcopy
+from .. import util
+from .. import models
 NODE_POS_DTYPE = [('class',  np.uint32), 
                   ('pos' ,  np.float32, (3, ))]
 
@@ -122,7 +123,82 @@ def add_class(nodes, classnum):
     nodes_class['pos'] = nodes
     return nodes_class
 
+def prior_generate(latent, data):
+    """
+    Take in a partially-specified prior and latent and then 
+    fill in the missing pieces. 
+    
+    requires: data must specify latent names, relational structure, n
+    
+    warning: SUFFSTATS ARE ALWAYS DRAWN FROM THE PRIOR. 
+    if data and latent are specified but suffstats are not, we
+    will happily fill with bullshit suffstats (that is, suffstats that 
+    
+    """ 
+    
+    new_latent = deepcopy(latent)
+    new_data = deepcopy(data)
+    
+    # structural
+    def cou(d, key, val): # cou
+        if key not in d:
+            d[key] = val
 
+    cou(new_latent, 'domains', {})
+    cou(new_latent, 'relations', {})
+
+
+    for domain_name in new_data['domains']:
+        cou(new_latent['domains'], domain_name, {})
+        new_alpha = np.random.uniform(1.0, 5.0)
+        cou(new_latent['domains'][domain_name], 
+                      'hps', {} )
+        cou(new_latent['domains'][domain_name]['hps'], 
+            'alpha', new_alpha )
+        
+        alpha_val = new_latent['domains'][domain_name]['hps']['alpha']
+        a = util.crp_draw(new_data['domains'][domain_name]['N'], alpha_val)
+        cou(new_latent['domains'][domain_name], 
+            'assignment', a)
+        
+    #### YOUR THINKING ABOUT SUFFICIENT STATISTICS AND PARAMETERS IS CONFUSED
+    #### THE SUFFSTATS ARE UNIQUELY DETERMINED BY DATA/ASSIGNMENT IN CONJ MODELS
+    #### BUT NOT IN NONCONJ MODELS 
+    for rel_name, rel in new_data['relations'].iteritems():
+        model_obj = models.NAMES[rel['model']]()
+        cou(new_latent['relations'], rel_name, {})
+        mod_new_hps = model_obj.sample_hps() 
+
+        cou(new_latent['relations'][rel_name], 'hps', mod_new_hps)
+        
+        if 'ss' not in new_latent['relations'][rel_name]:
+            rel_def = new_data['relations'][rel_name]['relation']
+            grouplist = [np.unique(new_latent['domains'][dom]['assignment']) for dom in rel_def]
+            coords = util.cart_prod(grouplist)
+            ss = {}
+            for c in coords:
+                ss[c] = model_obj.sample_param(new_latent['relations'][rel_name]['hps'])
+
+            new_latent['relations'][rel_name]['ss'] = ss
+
+        if 'data' not in new_data['relations'][rel_name]:
+            # generate the matrix
+            data = np.zeros([new_data['domains'][dn]['N'] for dn in rel['relation']], 
+                            dtype = model_obj.data_dtype())
+            
+
+            # now optionally the data
+            for pos in util.cart_prod([range(new_data['domains'][dn]['N']) for dn in rel['relation']]):
+                coords = [new_latent['domains'][dn]['assignment'][p] for dn, p in zip(rel['relation'], pos)]
+        
+                d = model_obj.sample_data(new_latent['relations'][rel_name]['ss'][tuple(coords)], 
+                                          new_latent['relations'][rel_name]['hps'])
+                data[pos] = d
+    
+            new_data['relations'][rel_name]['data'] = data
+
+    return new_latent, new_data
+    
 
 if __name__ == "__main__":
     generate()
