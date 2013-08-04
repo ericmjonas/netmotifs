@@ -20,6 +20,9 @@ def do_inference(irm_model, rng, kernel_config, reverse=False,
     """
     By default we do all domains, all relations. 
     We assume a homogeneous model for the moment. 
+    
+    The way values are returned from PT here is an abomination, and should
+    be resolved at some point 
     """
     step = 1
     res = None
@@ -66,7 +69,7 @@ def do_inference(irm_model, rng, kernel_config, reverse=False,
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
         t2 = time.time()
         print "kernels:", kernel_name, "%3.2f sec" % (t2-t1)
-        return res
+    return res
 
 class Runner(object):
     def __init__(self, latent, data, kernel_config, seed=0):
@@ -100,7 +103,8 @@ class Runner(object):
         """
         for i in range(N):
             if self.PT :
-                self.chain_states = do_inference(self.model, self.rng, self.kernel_config, 
+                self.chain_states = do_inference(self.model, self.rng,
+                                                 self.kernel_config, 
                                                 states_at_temps = self.chain_states)
             else:
                 do_inference(self.model, self.rng, self.kernel_config)
