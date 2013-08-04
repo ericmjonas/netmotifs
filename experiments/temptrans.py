@@ -4,7 +4,7 @@ from irm import kernels
 from matplotlib import pylab
 
 
-temps = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
+temps = [1.0, 1.1, 1.2, 1.5, 2.0, 3.0, 5.0, 8.0, 10.0]
 
 
 def log_norm_dens(x, mu, var):
@@ -36,7 +36,7 @@ class Model(object):
         return self.x 
 
     
-def do_inference(model, rng, foo=None):
+def do_inference(model, rng, reverse=False):
     x = np.random.normal(model.x, 1.0)
 
     s_pre = model.get_score()
@@ -69,12 +69,28 @@ def temp_trans():
         #do_inference(m, None)
 
         samps.append(m.latent_get())
-    pylab.subplot(1, 2, 1)
-    pylab.plot(x, np.exp(dens(x)))
-    pylab.subplot(1, 2, 2)
-    pylab.hist(samps, bins=100)
-    pylab.show()
+    f = pylab.figure()
+    ax = f.add_subplot(1, 1, 1)
+    plot(ax, samps, dens, 1.)
 
+    pylab.savefig("temp_trans.pdf")
+
+def plot(ax, samps, density, t=1.0):
+    
+    bins = np.linspace(-20, 20, 100)
+    bin_width = bins[1] - bins[0]
+    
+    hist, bin_edges = np.histogram(samps, bins)
+    pos= bins[:-1] + bin_width/2.0
+    p = np.exp(density(pos)/t) 
+    p = p / np.sum(p)
+    #p = p /  bin_width
+    print p
+    ax.plot(pos, p)
+
+    h = hist.astype(float)/np.sum(hist)
+    ax.scatter(pos, h)
+    
 def pt():
     x = np.linspace(-15, 15, 1000)
     m = Model()
@@ -92,13 +108,14 @@ def pt():
         #do_inference(m, None)
         m.latent_set(chain_states[0])
         samps.append(m.latent_get())
-    pylab.subplot(1, 2, 1)
-    pylab.plot(x, np.exp(dens(x)))
-    pylab.subplot(1, 2, 2)
-    pylab.hist(samps, bins=100)
-    pylab.show()
+    f= pylab.figure()
+
+    ax = f.add_subplot(1, 1, 1)
+    plot(ax, samps, dens)
+
+    pylab.savefig("pt.pdf")
 
 
-
+pt()
 
 temp_trans()

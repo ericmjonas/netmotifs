@@ -15,13 +15,23 @@ from irm import relation
 import util as putil
 
 SAMPLE_SETS = 20
-SAMPLES_N = 1000
+SAMPLES_N = 100
 ITERS_PER_SAMPLE = 10
 SEEDS = 1
 MODEL_CLASSES = ['conj', 'nonconj']
 
+tt_config_nonconj = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+                                               'subkernels' : runner.default_kernel_nonconj_config()})]
+
+tt_config_conj = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+                                            'subkernels' : runner.default_kernel_config()})]
+
+
 KERNEL_CONFIGS = {'default' : {'conj' : runner.default_kernel_config(), 
-                               'nonconj' : runner.default_kernel_nonconj_config()}}
+                               'nonconj' : runner.default_kernel_nonconj_config()}, 
+                  'pt' : {'conj' : tt_config_conj, 
+                          'nonconj' : tt_config_nonconj}}
+
 
 
 def t1_t2_datasets():
@@ -160,10 +170,8 @@ def run_samples((latent_filename, data_filename, config_filename), outfile):
     latent = pickle.load(open(latent_filename, 'r'))
     data = pickle.load(open(data_filename, 'r'))
 
-    rng = irm.RNG()
 
-    irm_model = irmio.create_model_from_data(data, rng=rng)
-    irmio.set_model_latent(irm_model, latent, rng)
+    run = runner.Runner(latent, data, kernel_config)
 
     domain_names = sorted(data['domains'].keys())
 
@@ -173,11 +181,10 @@ def run_samples((latent_filename, data_filename, config_filename), outfile):
         samp_set_items = {}
         print "Samp_set", samp_set
         for s in range(SAMPLES_N):
-            for i in range(ITERS_PER_SAMPLE):
-                runner.do_inference(irm_model, rng, kernel_config)
+            run.run_iters(ITERS_PER_SAMPLE)
             a_s = []
             for dn in domain_names:
-                a = putil.canonicalize_assignment(irm_model.domains[dn].get_assignments())
+                a = putil.canonicalize_assignment(run.model.domains[dn].get_assignments())
                 a = tuple(a)
                 a_s.append(a)
             a_s = tuple(a_s)

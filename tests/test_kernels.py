@@ -6,7 +6,7 @@ from matplotlib import pylab
 import irm
 from irm import util 
 from irm import models
-from irm import model
+from irm import model, data, runner
 
 
 def test_slice_normal():
@@ -184,3 +184,48 @@ def test_slice_nonconj():
             np.testing.assert_approx_equal(empirical_p, true_map_p, 3)
         # assert_equal(len(np.unique(tf_1.get_assignments())), 10)
 
+# def test_tempered_transitions():
+    
+#     rng = irm.RNG()
+
+#     D1_N = 100
+#     model_name = "BetaBernoulliNonConj"
+
+#     d = {'domains' : {'d1' : {'N' : D1_N}}, 
+#          'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+#                                 'model' : model_name}}}
+
+#     l = {}
+
+#     new_latent, new_data = data.synth.prior_generate(l, d)
+    
+#     config = [('tempered_transitions', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+#                                         'subkernels' : runner.default_kernel_nonconj_config()})]
+
+    # r = runner.Runner(new_latent, new_data, config)
+    # for i in range(100):
+    #     print "tt", i, r.get_score()
+    #     r.run_iters(1)
+
+def test_parallel_tempering():
+    
+    rng = irm.RNG()
+
+    D1_N = 100
+    model_name = "BetaBernoulliNonConj"
+
+    d = {'domains' : {'d1' : {'N' : D1_N}}, 
+         'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                'model' : model_name}}}
+
+    l = {}
+
+    new_latent, new_data = data.synth.prior_generate(l, d)
+    
+    config = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+                                        'subkernels' : runner.default_kernel_nonconj_config()})]
+
+    r = runner.Runner(new_latent, new_data, config)
+    for i in range(100):
+        print "tt", i, r.get_score()
+        r.run_iters(1)

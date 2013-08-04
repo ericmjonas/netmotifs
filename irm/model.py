@@ -145,6 +145,13 @@ class IRM(object):
         self.domains = domains
         self.relations = relations
     
+    def set_temp(self, t):
+        for r in self.relations.values():
+            r.set_temp(t)
+
+    def get_score(self):
+        return self.total_score()
+
     def total_score(self):
         score = 0
         for t in self.domains.values():

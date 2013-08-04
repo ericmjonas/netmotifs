@@ -10,22 +10,36 @@ def tempered_transitions(model, rng, temps,
 
     current_state = init_state
  
+    
     scores = {} # u/d ,chain_pos, dist_pos
-         
+    
+    def set_scores(up_or_down, chain_pos, distribution_pos, score):
+        k = (up_or_down, chain_pos, distribution_pos)
+        if k in scores:
+            raise Exception("Key %s already in scores" % str(k))
+
+        scores[k] = score
+
+
     N = len(temps)
     def get_temp(i):
         return temps[i-1]
+
+
+    set_scores('u', 0, 0, model.get_score())
 
     # up transitions
     for i in range(1, N+1):
 
 
-        scores[('u', i-1, i-1)] = model.get_score()
-        print "Applying kernel T^_%d" %  i, "transitioning TO state x^%d"  % i
         temp = get_temp(i)
         set_temp(model, temp)
-        scores[('u', i-1, i)] = model.get_score()
-        do_inference(model, rng)
+        set_scores('u', i-1, i, model.get_score())
+
+        print "Applying kernel T^_%d" %  i, "transitioning TO state x^%d"  % i, "temp=", temp
+
+        set_scores('u', i, i, model.get_score())
+        do_inference(model, rng, False)
 
     print "Going down"
     for i in range(N, 0, -1):
@@ -35,28 +49,35 @@ def tempered_transitions(model, rng, temps,
 
         set_temp(model, temp)
 
-        scores[('d', i, i-1)] = model.get_score()
-        print "Applying kernel Tv_%d" % i, "transitioning to state Xv%d" % (i-1)
-        do_inference(model, rng)
-        scores[('d', i-1, i-1)] = model.get_score()
+        #set_scores('d', i, i-1, model.get_score())
+        print "Applying kernel Tv_%d" % i, "transitioning to state Xv%d" % (i-1), "temp=", temp
+        do_inference(model, rng, True)
+        print "After inference, in state", i-1
+        set_temp(model, get_temp(i-1))
+        set_scores('d', i-1, i-1, model.get_score())
         set_temp(model, get_temp(i))
-        scores[('d', i-1, i)] = model.get_score()
+        set_scores('d', i-1, i, model.get_score())
 
 
     score = 0
     print "up temp scores"
     for i in range(N):
-        score += scores[('u', i, i+1)]  - scores[('u', i, i)]
+
+        delta = scores[('u', i, i+1)]  - scores[('u', i, i)]
+        print "computing p_%d(x^%d) / p_%d(x^%d)" % (i+1, i, i, i), delta
+        score += delta
 
     print "down temp scores"
-    for i in range(N-1, 0, -1):
-        print "i=", i
-        score += scores[('d', i, i)]  - scores[('d', i, i+1)]
-                                            
-    if np.random.rand() < np.exp(score) :
-        print "mh: accept!", score
+    for i in range(N-1, -1, -1):
+        delta =  scores[('d', i, i)]  - scores[('d', i, i+1)]
+        print "computing p_%d(Xv%d) / p_%d(Xv%d)" % (i, i, i+1, i), delta
+        score += delta
+                             
+    p = np.exp(score)
+    if np.random.rand() < p:
+        print "mh: accept!", p
     else:
-        print "mh: reject!", score
+        print "mh: reject!", p
         latent_set(model, init_state)
 
 
