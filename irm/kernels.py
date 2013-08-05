@@ -113,6 +113,8 @@ def parallel_tempering(model, chain_states,
     latent_set(model, out_latents[ci+1])
     s2 -= model.get_score()
     
+    set_temp(model, temps[0])
+
     if np.random.rand() < np.exp(s1 + s2):
         print "accept"
         ci_l = out_latents[ci]
