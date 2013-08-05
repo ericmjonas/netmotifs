@@ -25,6 +25,7 @@ def tempered_transitions(model, rng, temps,
     def get_temp(i):
         return temps[i-1]
 
+    set_temp(model, temps[0])
 
     set_scores('u', 0, 0, model.get_score())
 
@@ -80,6 +81,7 @@ def tempered_transitions(model, rng, temps,
         print "mh: reject!", p
         latent_set(model, init_state)
 
+    set_temp(model, temps[0])
 
     
 def parallel_tempering(model, chain_states, 
