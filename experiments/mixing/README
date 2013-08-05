@@ -1,0 +1,22 @@
+
+
+dataset 
+init strategy : with each 
+kernel config : with each 
+run : 
+get results : wait
+
+perform analysis
+
+
+('fromprior.big', 'crp_10', 'default_100')
+('connect.hand', 'crp_10', 'default_100')
+
+dataset : a named collection of data, latent, etc. 
+init strategy: takes in a data, latent, and spits out init latents
+kernel config: a kernel configuration
+
+run: runs each
+
+
+

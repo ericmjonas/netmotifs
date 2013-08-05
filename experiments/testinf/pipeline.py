@@ -37,10 +37,12 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 CHAINS_TO_RUN = 10
-SAMPLER_ITERS = 500
+SAMPLER_ITERS = 10
 SEEDS = np.arange(2)
 
 JITTERS = [0, 0.01, 0.1]
+
+INITIAL_GROUP_NUM = 40
 
 #SKIP = 100
 #BURN = 700
@@ -122,7 +124,7 @@ def data_generator():
         for seed in SEEDS:
             for conn_name, conn_config in conn.iteritems():
                 for jitteri in range(len(JITTERS)):
-                    filename = "ptdata.%d.%d.%d.%s.pickle" % (SIDE_N, seed, jitteri, 
+                    filename = "data.%d.%d.%d.%s.pickle" % (SIDE_N, seed, jitteri, 
                                                             conn_name)
                     yield None, filename, SIDE_N, seed, conn_name, conn_config, jitteri
 
@@ -198,8 +200,8 @@ def create_rundata(infilename, outfilename):
     model_name= "LogisticDistance" 
     kernel_config = irm.runner.default_kernel_nonconj_config()
     kernel_config[0][1]['M'] = 30
-    kernel_config_pt = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
-                                                'subkernels' : kernel_config})]
+    # kernel_config_pt = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+    #                                             'subkernels' : kernel_config})]
     
 
     data = indata['conn_and_dist']
@@ -220,13 +222,12 @@ def create_rundata(infilename, outfilename):
 
         latent = copy.deepcopy(irm_latent)
 
-        GRP = 20
-        a = np.arange(irm_data['domains']['d1']['N']) % GRP
+        a = np.arange(irm_data['domains']['d1']['N']) % INITIAL_GROUP_NUM
         a = np.random.permutation(a)
     
         latent['domains']['d1']['assignment'] = a
         irm_latents.append(latent)
-        kernel_configs.append(kernel_config_pt)
+        kernel_configs.append(kernel_config)
 
     # the ground truth one
     irm_latent_true = copy.deepcopy(irm_latent)
