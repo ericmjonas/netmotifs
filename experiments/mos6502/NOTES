@@ -1,0 +1,134 @@
+
+
+""" Hi Eric - The netlist is in our own format and runs in the
+javascript simulation.  There are words on our wiki about how the data
+is encoded.  You can download the node and transdefs.js files directly
+from the URLs that appear in the simulation code.  The physical
+coordinates are also in the .js files.  -Greg """
+
+http://wiki.nesdev.com/w/index.php/Visual_circuit_tutorial
+
+nodenames.js: I think this is name to some internal node ID? 
+res: 159,       // pads: reset
+rw: 1156,       // pads: read not write
+db0: 1005,      // pads: databus
+db1: 82,
+db3: 650,
+db2: 945,
+
+
+
+transdefs.js: physical locations of the transisitors? 
+
+What is this? I assume t1825 is a transistor name
+
+['t1825', 1679, 558, 1262, [4069, 4086, 5973, 6084],[111, 111, 17, 1, 1943] ],
+[name?,   gate?, c1, c2,   bb,  what is this last thing?
+from wires.js: 
+
+function setupTransistors(){
+	for(i in transdefs){
+		var tdef = transdefs[i];
+		var name = tdef[0];
+		var gate = tdef[1];
+		var c1 = tdef[2];
+		var c2 = tdef[3];
+		var bb = tdef[4];
+		if(c1==ngnd) {c1=c2;c2=ngnd;}
+		if(c1==npwr) {c1=c2;c2=npwr;}
+		var trans = {name: name, on: false, gate: gate, c1: c1, c2: c2, bb: bb};
+		nodes[gate].gates.push(trans);
+		nodes[c1].c1c2s.push(trans);
+		nodes[c2].c1c2s.push(trans);
+		transistors[name] = trans;
+	}
+}
+
+
+Question: are transistors all there is? 
+Where does the actual geometry come from? 
+What's the netlist / wire up file? 
+
+So we have transdefs, nodenames, and segdefs? 
+
+setupTransistors
+setupNodes
+
+segdef: 
+[   0,'+',1,5391,8260,5391,8216,5357,8216,5357,8260],
+
+
+function setupNodes(){
+	for(var i in segdefs){
+		var seg = segdefs[i];
+		var w = seg[0];
+		if(nodes[w]==undefined) 
+			nodes[w] = {segs: new Array(), num: w, pullup: seg[1]=='+',
+			            state: false, gates: new Array(), c1c2s: new Array()};
+		if(w==ngnd) continue;
+		if(w==npwr) continue;
+		nodes[w].segs.push(seg.slice(3));
+	}
+}
+
+function setupBackground(){
+	chipbg = document.getElementById('chipbg');
+	chipbg.width = grCanvasSize;
+	chipbg.height = grCanvasSize;
+	var ctx = chipbg.getContext('2d');
+	ctx.fillStyle = '#000000';
+	ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+	ctx.lineWidth = grLineWidth;
+	ctx.fillRect(0,0,grCanvasSize,grCanvasSize);
+	for(var i in segdefs){
+		var seg = segdefs[i];
+		var c = seg[2];
+		if (drawlayers[c]) {
+			ctx.fillStyle = colors[c];
+			drawSeg(ctx, segdefs[i].slice(3));
+			ctx.fill();
+			if((c==0)||(c==6)) ctx.stroke();
+		}
+	}		
+}
+
+What the hell are c1c2s? 
+
+"Electrically common areas are called nodes in Visual 6502/2C02/2A03."
+
+array.slice(N) is python array[N:]
+
+
+v8 visual6502/segdefs.js visual6502/transdefs.js visual6502/nodenames.js import.js > data.json
+
+segdefs appears to be part of the wire-up file? It's used to build the nodes
+but nodes[nodeid].segs appears to be a list of lists? 
+
+Let's examine the simulator
+
+macros.js:initChip()
+macros.js:go() whcih calls
+
+function step(){
+	var s=stateString();
+	var m=getMem();
+	trace[cycle]= {chip: s, mem: m};
+	if(goldenChecksum != undefined)
+		traceChecksum=adler32(traceChecksum+s+m.slice(0,511).toString(16));
+	halfStep();
+	if(animateChipLayout)
+		refresh();
+	cycle++;
+	chipStatus();
+}
+
+function halfStep(){
+	var clk = isNodeHigh(nodenames['clk0']);
+	if (clk) {setLow('clk0'); handleBusRead(); } 
+	else {setHigh('clk0'); handleBusWrite();}
+	eval(clockTriggers[cycle+1]);  // pre-apply next tick's inputs now, so the updates are displayed
+
+}
+
+There's like an entire discrete event simulator here
+

@@ -4,6 +4,8 @@ import cPickle as pickle
 
 from matplotlib import pylab
 from copy import deepcopy
+import time
+
 
 import irm
 from irm import models
@@ -15,7 +17,7 @@ from irm import relation
 import util as putil
 
 SAMPLE_SETS = 20
-SAMPLES_N = 100
+SAMPLES_N = 1000
 ITERS_PER_SAMPLE = 10
 SEEDS = 1
 MODEL_CLASSES = ['conj', 'nonconj']
@@ -35,8 +37,8 @@ KERNEL_CONFIGS = {'default' : {'conj' : runner.default_kernel_config(),
 
 
 def t1_t2_datasets():
-    T1_N = 6
-    T2_N = 2
+    T1_N = 8
+    T2_N = 7
     for mc in MODEL_CLASSES:
         for seed in range(SEEDS):
             filename_base = "srm.t1xt2.%d.%d.%d.%s" % (T1_N, T2_N, seed, mc)
@@ -70,7 +72,7 @@ def create_data_t1t2(inputfile, (latent_filename, data_filename),
     pickle.dump(latent, open(latent_filename, 'w'))
 
 def t1_t1_datasets():
-    T1_N = 6
+    T1_N = 9
     for mc in MODEL_CLASSES:
         for seed in range(SEEDS):
             output_filename = "srm.t1xt1.%d.%d.%s" % (T1_N, seed, mc)
@@ -136,14 +138,20 @@ def score((latent_filename, data_filename), outfilename):
     domain_sizes = [data['domains'][dn]['N'] for dn in domain_names]
     
     # create the dict
-    candidate_partitions = putil.enumerate_possible_latents(domain_sizes)
+    candidate_partitions = list(putil.enumerate_possible_latents(domain_sizes))
+    CANDIDATE_N = len(candidate_partitions)
     scores = {}
-    for cp in candidate_partitions:
+    for cpi, cp in enumerate(candidate_partitions):
+        t1 = time.time()
         for di, av in enumerate(cp):
             domain_name = domain_names[di]
             latent['domains'][domain_name]['assignment'] = av
         irmio.set_model_latent(irm_model, latent, rng)
         scores[cp] = irm_model.total_score()
+        t2 = time.time()
+        delta = t2-t1
+        if cpi % 1000 == 0:
+            print "%s : %3.2f min left" % (outfilename, delta * (CANDIDATE_N - cpi)/60.)
     pickle.dump(scores, open(outfilename, 'w'))
     
 def run_samples_params():
@@ -164,6 +172,7 @@ def run_samples_params():
 @follows(t1_t2_datasets)
 @follows(t1_t1_datasets)
 @follows(dump_kernel_configs)
+@follows(score)
 @files(run_samples_params)
 def run_samples((latent_filename, data_filename, config_filename), outfile):
     kernel_config = pickle.load(open(config_filename, 'r'))
@@ -181,6 +190,7 @@ def run_samples((latent_filename, data_filename, config_filename), outfile):
         samp_set_items = {}
         print "Samp_set", samp_set
         for s in range(SAMPLES_N):
+            t1 = time.time()
             run.run_iters(ITERS_PER_SAMPLE)
             a_s = []
             for dn in domain_names:
@@ -191,10 +201,11 @@ def run_samples((latent_filename, data_filename, config_filename), outfile):
             if a_s not in samp_set_items:
                 samp_set_items[a_s] = 0
             samp_set_items[a_s] += 1
-            # a = t1_obj.get_assignments()
-            # ca = canonicalize_assignment(a)
-            # pi = ca_to_pos[tuple(ca)]
-            # bins[samp_set, pi] += 1
+            t2 = time.time()
+            delta = (t2-t1)
+            approx_time_left = (SAMPLE_SETS-samp_set)*delta*SAMPLES_N
+            print "%s : roughly %3.2f min left" %(outfile, approx_time_left/60.)
+
         ss.append(samp_set_items)
     print "DONE"
     
