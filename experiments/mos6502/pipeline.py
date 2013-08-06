@@ -183,8 +183,9 @@ def plot_raw_graph((data_file, graph_file), output_file):
 @files([load_data, create_raw_graph], 'mergedgraph.pickle')
 def merge_wires_graph((data_file, graph_file), output_file):
     """
-    Merge the wires into the transistor nodes
-    and also add spatial data
+    Merge the wires into the transistor nodes, 
+    filter out vcc and vss
+
     """
 
     d = pickle.load(open(data_file, 'r'))
@@ -200,19 +201,7 @@ def merge_wires_graph((data_file, graph_file), output_file):
         g.remove_node(r.name)
 
     util.remove_merge_wires(g)
-    print g.number_of_nodes()
-        
-    # for n in g.nodes():
-    #     if g.node[n]['ntype'] == 'wire':
-    #         g.node[n]['fillcolor'] = '#FF000080'
-    #         wire_name = wiredf.loc[n]['name']
-    #         if isinstance(wire_name, float):
-    #             wire_name = ""
-    #         g.node[n]['label'] = wire_name
-    #     elif g.node[n]['ntype'] == 'transistor':
-    #         g.node[n]['fillcolor'] = '#0000FF80'
-    #     g.node[n]['style'] = 'filled'
-    #nx.write_dot(g, output_file)
+
     pickle.dump({"graph" : g}, 
                 open(output_file, 'w'))
 
@@ -338,8 +327,73 @@ def analysis((data_file, graph_file), out_file):
 
         f.savefig("graph.%s.pdf" % t)
     
+@files([load_data, merge_wires_graph], 'adjmat.pickle')
+def create_adj_matrix((data_file, graph_file), output_file):
+    """
+    Take the merged graph and compute the adjacency matrix! 
     
+    """
+
+    d = pickle.load(open(data_file, 'r'))
+    tfdf = d['tfdf']
+    wiredf = d['wiredf']
+    
+    gf = pickle.load(open(graph_file, 'r'))
+    g = gf['graph']
+
+    canonical_node_ordering = tfdf.index
+    N = len(canonical_node_ordering)
+    adj_mat = np.zeros((N, N), dtype = [('link', np.bool), 
+                                        ('distance', np.float32)])
+                  
+    print "now walk"
+    # create graph
+    for n1_i, (n1, n1_data) in enumerate(tfdf.iterrows()):
+        x1 = n1_data['x']
+        y1 = n1_data['y']
+        print n1_i
+        for n2_i, (n2, row_data) in enumerate(tfdf.iterrows()):
+            if g.has_edge(n1, n2):
+                adj_mat[n1_i, n2_i]['link'] =True
+            x2 = row_data['x']
+            y2 = row_data['y']
+            d = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+            adj_mat[n1_i, n2_i]['distance'] = d
+    pickle.dump({'adj_mat' : adj_mat}, 
+                open(output_file, 'w'))
+
+@files(create_adj_matrix, ["all.adj.png", "all.distances.png"])
+def plot_adj_matrix(infile, (adj_matrix_outfile, distance_outfile)):
+    d = pickle.load(open(infile, 'r'))
+    f = pylab.figure(figsize=(12, 12))
+    ax_link = f.add_subplot(1, 1, 1)
+    adj_mat = d['adj_mat']
+    #ax_dist = f.add_subplot(1, 2, 2)
+    
+    links = np.argwhere(adj_mat['link'])
+
+    #ax_link.imshow(adj_mat['link'], interpolation='nearest', cmap = pylab.cm.Greys)
+    ax_link.scatter(links[:, 0], links[:, 1], edgecolor='none', alpha=0.5, 
+                    s=1)
+
+    # ax_dist.imshow(adj_mat['distance'], 
+    #                interpolation='nearest')
+    ax_link.set_xlim(0, len(adj_mat))
+    ax_link.set_ylim(0, len(adj_mat))
+    f.savefig(adj_matrix_outfile, dpi=300)
+
+    f = pylab.figure(figsize=(12, 12))
+    ax_alldist = f.add_subplot(2, 1, 1)
+    ax_alldist.hist(adj_mat['distance'].flatten(), bins=40)
+
+    conn_only = adj_mat['distance'][adj_mat['link']]
+    
+    ax_conndist = f.add_subplot(2, 1, 2)
+    ax_conndist.hist(conn_only.flatten(), bins=40)
+    f.savefig(distance_outfile)
+
 
 pipeline_run([load_data, plot_transistors, create_raw_graph, 
               plot_raw_graph, #analysis, 
-              plot_merged_graph])
+              plot_merged_graph, create_adj_matrix, 
+              plot_adj_matrix])

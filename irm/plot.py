@@ -23,8 +23,16 @@ def plot_purity(ax, true_assignvect, sorted_assign_matrix):
     # get the chain order 
     #chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
     for a in sorted_assign_matrix:
-        a_s = a.argsort(kind='heapsort')
-        vals.append(true_assignvect[a_s])
+        #a_s = a.argsort(kind='heapsort')
+        # a more concerted effort to mix things up
+        out = np.zeros_like(a)
+        pos = 0
+        for c in np.unique(a):
+            eq_c= np.argwhere(a == c).flatten()
+            out[pos:pos+len(eq_c)] = np.random.permutation(eq_c)
+            pos += len(eq_c)
+        
+        vals.append(true_assignvect[out])
     vals_img = np.vstack(vals)
     ax.imshow(vals_img, interpolation='nearest')
     ax.set_xticks([])

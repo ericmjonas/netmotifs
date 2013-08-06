@@ -19,19 +19,32 @@ BUCKET_BASE="srm/experiments/mixing"
 
 
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'), 
-               ('connmat0', 'fixed_10_40', 'default20')]
+               ('connmat0', 'fixed_10_40', 'default20'), 
+               ('connmat0', 'fixed_10_40', 'default200'), 
+               ('connmat0', 'fixed_10_100', 'default200'), 
+               ('connmat0', 'fixed_10_40', 'pt100')
+           ]
 
 INIT_CONFIGS = {'fixed_4_10' : {'N' : 4, 
                              'config' : {'type' : 'fixed', 
                                          'group_num' : 10}}, 
                 'fixed_10_40' : {'N' : 10, 
                                 'config' : {'type' : 'fixed', 
-                                            'group_num' : 40}}}
+                                            'group_num' : 40}}, 
+                'fixed_10_100' : {'N' : 10, 
+                                'config' : {'type' : 'fixed', 
+                                            'group_num' : 100}}}
+                
 
-
+default_nonconj = irm.runner.default_kernel_nonconj_config()
 KERNEL_CONFIGS = {'default20' : {'ITERS' : 20, 
-                                 'kernels' : irm.runner.default_kernel_nonconj_config()}}
-
+                                 'kernels' : default_nonconj},
+                  'default200' : {'ITERS' : 200, 
+                                  'kernels' : default_nonconj},
+                  'pt100' : {'ITERS' : 100, 
+                             'kernels' : [('parallel_tempering', 
+                                           {'temps' : [1.0, 2.0, 4.0, 8.0], 
+                                            'subkernels' : default_nonconj})]}}
 
 def to_bucket(filename):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
@@ -312,7 +325,7 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     f = pylab.figure(figsize= (12, 8))
     ax_purity_control = f.add_subplot(2, 2, 1)
     ax_z = f.add_subplot(2, 2, 2)
-    ax_scores = f.add_subplot(2, 2, 3)
+    ax_score = f.add_subplot(2, 2, 3)
     
     ###### plot purity #######################
     ###
@@ -326,6 +339,7 @@ def plot_latent(exp_results, (plot_latent_filename, )):
         d = chains[di] 
         sample_latent = d['state']
         a = np.array(sample_latent['domains']['d1']['assignment'])
+        print "di=%d unique classes:"  % di, np.unique(a)
         sorted_assign_matrix.append(a)
     irm.plot.plot_purity(ax_purity_control, true_assignvect, sorted_assign_matrix)
 
