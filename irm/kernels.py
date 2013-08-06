@@ -76,9 +76,9 @@ def tempered_transitions(model, rng, temps,
                              
     p = np.exp(score)
     if np.random.rand() < p:
-        print "mh: accept!", p
+        print "TT: accept!", p
     else:
-        print "mh: reject!", p
+        print "TT: reject!", p
         latent_set(model, init_state)
 
     set_temp(model, temps[0])
@@ -116,15 +116,17 @@ def parallel_tempering(model, chain_states,
     s2 -= model.get_score()
     
     set_temp(model, temps[0])
+    
+    trans_str = "%d(%f) <-> %d(%f)" %(ci, temps[ci], ci+1, temps[ci+1])
 
     if np.random.rand() < np.exp(s1 + s2):
-        print "accept"
+        print "PT accept " + trans_str
         ci_l = out_latents[ci]
         ci_p1_l = out_latents[ci+1]
         out_latents[ci] = ci_p1_l
         out_latents[ci+1] = ci_l
     else:
-        print "reject!" 
+        print "PT reject!" + trans_str
     return out_latents
     
     
