@@ -37,7 +37,7 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 CHAINS_TO_RUN = 10
-SAMPLER_ITERS = 10
+SAMPLER_ITERS = 50
 SEEDS = np.arange(2)
 
 JITTERS = [0, 0.01, 0.1]
@@ -124,7 +124,7 @@ def data_generator():
         for seed in SEEDS:
             for conn_name, conn_config in conn.iteritems():
                 for jitteri in range(len(JITTERS)):
-                    filename = "data.%d.%d.%d.%s.pickle" % (SIDE_N, seed, jitteri, 
+                    filename = "ptdata.%d.%d.%d.%s.pickle" % (SIDE_N, seed, jitteri, 
                                                             conn_name)
                     yield None, filename, SIDE_N, seed, conn_name, conn_config, jitteri
 
@@ -200,8 +200,8 @@ def create_rundata(infilename, outfilename):
     model_name= "LogisticDistance" 
     kernel_config = irm.runner.default_kernel_nonconj_config()
     kernel_config[0][1]['M'] = 30
-    # kernel_config_pt = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
-    #                                             'subkernels' : kernel_config})]
+    kernel_config_pt = [('parallel_tempering', {'temps' : [1.0, 2.0, 4.0, 8.0], 
+                                                'subkernels' : kernel_config})]
     
 
     data = indata['conn_and_dist']
@@ -227,7 +227,7 @@ def create_rundata(infilename, outfilename):
     
         latent['domains']['d1']['assignment'] = a
         irm_latents.append(latent)
-        kernel_configs.append(kernel_config)
+        kernel_configs.append(kernel_config_pt)
 
     # the ground truth one
     irm_latent_true = copy.deepcopy(irm_latent)
@@ -530,30 +530,20 @@ def plot_latent(inputfile, (latent_plot, true_sample,
     vals = [tv_i]
     # get the chain order 
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    sorted_assign_matrix = []
     for di in chains_sorted_order: 
         d = chains[di] 
         sample_latent = d['state']
         a = np.array(sample_latent['domains']['d1']['assignment'])
-        print "LEN=", len(np.unique(a))
-        a_s = a.argsort(kind='heapsort')
-        vals.append(true_assignvect[a_s])
-    vals_img = np.vstack(vals)
-    ax_purity_control.imshow(vals_img, interpolation='nearest')
-    ax_purity_control.set_xticks([])
-    ax_purity_control.set_yticks([])
-    ax_purity_control.set_aspect(30)
-
+        sorted_assign_matrix.append(a)
+    irm.plot_purity(ax_purity_control, true_assignvect, sorted_assign_matrix)
 
     # zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
-    import scipy.cluster.hierarchy as hier
-    lm = hier.linkage(z)
-    ord = np.array(hier.leaves_list(lm))
-    
-    ax_z.imshow((z[ord])[:, ord], interpolation='nearest', cmap=pylab.cm.Greys)
-    
+    irm.plot.plot_zmatrix(ax_z, z)
+
     f.tight_layout()
 
     f.savefig(latent_plot)

@@ -2,18 +2,36 @@ from ruffus import *
 import cPickle as pickle
 import numpy as np
 import copy
-import os
+import os, glob
 import time
+from matplotlib import pylab
 
 import irm
 import irm.data
+
+def dist(a, b):
+    return np.sqrt(np.sum((b-a)**2))
+
 
 import cloud
 
 BUCKET_BASE="srm/experiments/mixing"
 
 
-EXPERIMENTS = [('connmat0', 'fixed40', 'default10')]
+EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'), 
+               ('connmat0', 'fixed_10_40', 'default20')]
+
+INIT_CONFIGS = {'fixed_4_10' : {'N' : 4, 
+                             'config' : {'type' : 'fixed', 
+                                         'group_num' : 10}}, 
+                'fixed_10_40' : {'N' : 10, 
+                                'config' : {'type' : 'fixed', 
+                                            'group_num' : 40}}}
+
+
+KERNEL_CONFIGS = {'default20' : {'ITERS' : 20, 
+                                 'kernels' : irm.runner.default_kernel_nonconj_config()}}
+
 
 def to_bucket(filename):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
@@ -23,32 +41,48 @@ def from_bucket(filename):
 
 
 def dataset_connectivity_matrix_params():
-    datasets = {'connmat0' : {'seeds' : range(4), 
+    datasets = {'connmat0' : {'seeds' : range(2), 
                               'side_n' : [5, 10], 
                               'class_n' : [5, 10], 
-                              'jitter' : [0.001, 0.01, 0.1]}
-                }
+                              'nonzero_frac' : [0.1, 0.2, 0.5], 
+                              'jitter' : [0.001, 0.01, 0.1]}, 
+                'trivial' : {'seeds' : range(1), 
+                             'side_n' : [4], 
+                             'class_n' : [2], 
+                             'nonzero_frac' : [1.0], 
+                             'jitter' : [0.001]}}
 
     for dataset_name, ds in datasets.iteritems():
         for side_n in ds['side_n']:
             for class_n in ds['class_n']:
-                for jitter in ds['jitter']:
-                    for seed in ds['seeds']:
+                for nonzero_frac in ds['nonzero_frac']:
+                    for jitter in ds['jitter']:
 
-                        filename_base = "data.%s.%d.%d.%3.2f.%s" % (dataset_name, side_n, class_n, jitter, seed)
+                        for seed in ds['seeds']:
+
+                            filename_base = "data.%s.%d.%d.%3.3f.%3.3f.%s" % (dataset_name, side_n, class_n, nonzero_frac, jitter, seed)
                         
-                        yield None, [filename_base + ".data", 
-                                     filename_base + ".latent", 
-                                     filename_base + ".meta"], seed, possible_side_n, class_n, jitter
-
+                            yield None, [filename_base + ".data", 
+                                         filename_base + ".latent", 
+                            filename_base + ".meta"], seed, side_n, class_n, nonzero_frac, jitter
+                            
 @files(dataset_connectivity_matrix_params)
 def dataset_connectivity_matrix(infile, (data_filename, latent_filename, 
                                          meta_filename), 
-                                seed, possible_side_n, class_n, jitter):
+                                seed, side_n, class_n, nonzero_frac, jitter):
 
     np.random.seed(seed)
-
+            
     conn_config = {}
+
+    for c1 in range(class_n):
+        for c2 in range(class_n):
+            if np.random.rand() < nonzero_frac:
+                conn_config[(c1, c2)] = (np.random.uniform(1.0, 4.0), 
+                                         np.random.uniform(0.1, 0.9))
+    if len(conn_config) == 0:
+        conn_config[(0, 0)] = (np.random.uniform(1.0, 4.0), 
+                               np.random.uniform(0.4, 0.9))
 
 
     nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(side_n, 
@@ -63,12 +97,12 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
     for ni, (ci, posi) in enumerate(nodes_with_class):
         for nj, (cj, posj) in enumerate(nodes_with_class):
             conn_and_dist[ni, nj]['link'] = connectivity[ni, nj]
-            conn_and_dist[ni, nj]['distance'] = d(posi, posj)
+            conn_and_dist[ni, nj]['distance'] = dist(posi, posj)
 
             
-    meta = {'SIDE_N' : SIDE_N, 
+    meta = {'SIDE_N' : side_n,
             'seed' : seed, 
-            'conn_name' : conn_name, 
+            'class_n' : class_n, 
             'conn_config' : conn_config, 
             'nodes' : nodes_with_class, 
             'connectivity' : connectivity, 
@@ -79,6 +113,7 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
     model_name= "LogisticDistance" 
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+    irm_latent['domains']['d1']['assignment'] = nodes_with_class['class']
 
     # FIXME is the assignment vector ground-truth here? 
 
@@ -96,8 +131,8 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
 
 
 
-def create_init(latent_filename, out_filename_base, 
-                INIT_N, init= None):
+def create_init(latent_filename, out_filenames, 
+                init= None):
     """ 
     CONVENTION: when we create N inits, the first is actually 
     initialized from the "ground truth" of the intial init (whatever
@@ -107,7 +142,7 @@ def create_init(latent_filename, out_filename_base,
     
     irm_latents = []
 
-    for c in range(INIT_N):
+    for c, out_f in enumerate(out_filenames):
         np.random.seed(c)
 
         latent = copy.deepcopy(irm_latent)
@@ -127,11 +162,10 @@ def create_init(latent_filename, out_filename_base,
             latent['domains']['d1']['assignment'] = a
 
         # delete the suffstats
-        del latent['relations']['R1']['ss']
+        if 'ss' in latent['relations']['R1']:
+            del latent['relations']['R1']['ss']
 
-        filename = "%s.%02d.init" % (out_filename_base, c)
- 
-        pickle.dump(latent, open(filename, 'w'))
+        pickle.dump(latent, open(out_f, 'w'))
 
 
 
@@ -145,33 +179,182 @@ def create_init(latent_filename, out_filename_base,
 #             yield filename, outfilename, init
 
 
+def get_dataset(data_name):
+    return glob.glob("data.%s.*.data" %  data_name)
+
+def init_generator():
+    for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
+        for data_filename in get_dataset(data_name):
+            name, _ = os.path.splitext(data_filename)
+
+            yield data_filename, ["%s.%d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
+
+
+            
+            # inits  = get_init(data_name, init_config_name)
+            # kernel = get_kernel_conf(kernel_config_name)
+
+            # experiment_filename = "%s-%s-%s.experiment" % (data_filename, init_config_name, kernel_config_name)
+
+            # exp = {'data' : data_filename, 
+            #        'inits' : inits, 
+            #        'kernel' : kernel}
+
+            #pickle.dump(exp, open(experiment_filename, 'w'))
+
+@follows(dataset_connectivity_matrix)
+@files(init_generator)
+def create_inits(data_filename, out_filenames, init_config_name, init_config):
+    basename, _ = os.path.splitext(data_filename)
+    latent_filename = basename + ".latent"
+
+    create_init(latent_filename, out_filenames, 
+                init= init_config['config'])
+
+
+
+def inference_run_ld(latent_filename, 
+                     data_filename, 
+                     kernel_config,  ITERS, seed):
+
+    latent = from_bucket(latent_filename)
+    data = from_bucket(data_filename)
+
+    SAVE_EVERY = 100
+    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
+
+    scores = []
+    times = []
+    def logger(iter, model):
+        print "Iter", iter
+        scores.append(model.total_score())
+        times.append(time.time())
+    chain_runner.run_iters(ITERS, logger)
+        
+    return scores, chain_runner.get_state(), times
+
+
+def experiment_generator():
+    for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
+        for data_filename in get_dataset(data_name):
+            name, _ = os.path.splitext(data_filename)
+
+            inits = ["%s.%d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
+            
+            exp_name = "%s-%s-%s.wait" % (data_filename, init_config_name, kernel_config_name)
+            yield [data_filename, inits], exp_name, kernel_config_name
+
+@follows(create_inits)
+@files(experiment_generator)
+def run_exp((data_filename, inits), wait_file, kernel_config_name):
+    # put the filenames in the data
+    to_bucket(data_filename)
+    [to_bucket(init_f) for init_f in inits]
+
+    kc = KERNEL_CONFIGS[kernel_config_name]
+    CHAINS_TO_RUN = len(inits)
+    ITERS = kc['ITERS']
+    kernel_config = kc['kernels']
+    
+    jids = cloud.map(inference_run_ld, inits, 
+                     [data_filename]*CHAINS_TO_RUN, 
+                     [kernel_config]*CHAINS_TO_RUN,
+                     [ITERS] * CHAINS_TO_RUN, 
+                     range(CHAINS_TO_RUN), 
+                     _env='connectivitymotif', 
+                     _type='f2')
+
+    pickle.dump({'jids' : jids, 
+                'data_filename' : data_filename, 
+                'inits' : inits, 
+                'kernel_config_name' : kernel_config_name}, 
+                open(wait_file, 'w'))
+
+
+@transform(run_exp, suffix('.wait'), '.samples')
+def get_results(exp_wait, exp_results):
+    
+    d = pickle.load(open(exp_wait, 'r'))
+    
+    chains = []
+    # reorg on a per-seed basis
+    for chain_data in cloud.iresult(d['jids'], ignore_errors=True):
+        
+        chains.append({'scores' : chain_data[0], 
+                       'state' : chain_data[1], 
+                       'times' : chain_data[2]})
+        
+        
+    pickle.dump({'chains' : chains, 
+                 'exp' : d}, 
+                open(exp_results, 'w'))
+
+@transform(get_results, suffix(".samples"), [".latent.pdf"])
+def plot_latent(exp_results, (plot_latent_filename, )):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+
+    nodes_with_class = meta['nodes']
+    conn_and_dist = meta['conn_and_dist']
+
+    true_assignvect = nodes_with_class['class']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    f = pylab.figure(figsize= (12, 8))
+    ax_purity_control = f.add_subplot(2, 2, 1)
+    ax_z = f.add_subplot(2, 2, 2)
+    ax_scores = f.add_subplot(2, 2, 3)
+    
+    ###### plot purity #######################
+    ###
+    tv = true_assignvect.argsort()
+    tv_i = true_assignvect[tv]
+    vals = [tv_i]
+    # get the chain order 
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    sorted_assign_matrix = []
+    for di in chains_sorted_order: 
+        d = chains[di] 
+        sample_latent = d['state']
+        a = np.array(sample_latent['domains']['d1']['assignment'])
+        sorted_assign_matrix.append(a)
+    irm.plot.plot_purity(ax_purity_control, true_assignvect, sorted_assign_matrix)
+
+    ###### zmatrix
+    av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
+    z = irm.util.compute_zmatrix(av)    
+
+    irm.plot.plot_zmatrix(ax_z, z)
+
+    ### Plot scores
+    for di, d in enumerate(chains):
+        subsamp = 4
+        s = np.array(d['scores'])[::subsamp]
+        t = np.array(d['times'])[::subsamp] - d['times'][0]
+        if di == 0:
+            ax_score.plot(t, s, alpha=0.7, c='r', linewidth=3)
+        else:
+            ax_score.plot(t, s, alpha=0.7, c='k')
+
+    ax_score.tick_params(axis='both', which='major', labelsize=6)
+    ax_score.tick_params(axis='both', which='minor', labelsize=6)
+    ax_score.set_xlabel('time (s)')
+    ax_score.grid(1)
+    
+    f.tight_layout()
+
+    f.savefig(plot_latent_filename)
     
 
-def master_generator():
-    for data_name, init_config_name, kernel_config_name:
-        for data in get_dataset(data_name):
-            inits  = get_init(data_name, init_config_name):
-            kernel = get_kernel_conf(kernel_config_name):
-
-            experiment_filename = "%s-%s-%s.experiment" % (data_filename, init_config_name, kernel_config_name)
-
-            exp = {'data' : data_filename, 
-                   'inits' : inits, 
-                   'kernel' : kernel}
-
-            pickle.dump(exp, open(experiment_filename, 'w'))
-
-
-@transform("*.experiment", suffix(".experiment"), ".wait")
-def run_exp(exp_def, wait_file):
-    pass
-
-@transform(run_exp, suffix('.wait'), '.done'):
-def get_results(exp_wait, exp_results):
-    pass
-
-
-
-
-        
-        
+pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
+              get_results, plot_latent], multiprocess=4)
+                        
