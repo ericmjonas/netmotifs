@@ -132,3 +132,14 @@ function halfStep(){
 
 There's like an entire discrete event simulator here
 
+---------------------------------------------------------
+Experiments: 
+
+physical region subsetting -- instruction whatever, etc. 
+
+Scale distance to sane values
+
+This dataset is going to be hella-massive, be sure to be able to run correctly
+
+
+

@@ -1,0 +1,9 @@
+Experiment goals: 
+1. Compute adjacency and distance matrix, synapse numbers
+2. Create binary data based upon: 
+   1. any connection
+   2. chemical only
+   3. gap junction only
+
+3. compute relevant hyperparams for distance matrix
+4. 
