@@ -120,4 +120,5 @@ def plot_adjmat(infile, outfile):
     ax.set_title("c. elegans. herm. somatic connectome adj. matrix")
     f.savefig(outfile)
 
+
 pipeline_run([read_data, preprocess, plot_adjmat])
