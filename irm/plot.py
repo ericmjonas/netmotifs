@@ -1,10 +1,11 @@
-from matplotlib import pylab
 import numpy as np
 
 import scipy.cluster.hierarchy as hier
 
 
 def plot_zmatrix(ax, zmatrix):
+    from matplotlib import pylab
+
     lm = hier.linkage(zmatrix)
     ord = np.array(hier.leaves_list(lm))
     
