@@ -15,20 +15,11 @@ def dist(a, b):
 
 import cloud
 
-BUCKET_BASE="srm/experiments/celegans"
+BUCKET_BASE="srm/experiments/mouseretina"
 
 
-EXPERIMENTS = [#('celegans.both.ld', 'fixed_100_200', 'default_nc_100'), 
-               ('celegans.both.bb', 'fixed_100_200', 'default_1000'), 
+EXPERIMENTS = [('retina.bb', 'fixed_100_200', 'default_100')]
                
-               # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
-               # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
-               
-               # ('celegans.chemical.ld', 'fixed_100_100', 'default_nc_1000'), 
-               # ('celegans.chemical.bb', 'fixed_100_100', 'default_200'), 
-
-           ]
-
 INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}, 
@@ -42,9 +33,9 @@ default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 
 
-KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
+KERNEL_CONFIGS = {'default_nc_10000' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
-                  'default_1000' : {'ITERS' : 1000, 
+                  'default_100' : {'ITERS' : 100, 
                                   'kernels' : default_conj},
                   }
 
@@ -56,65 +47,49 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 
-@split('data.processed.pickle', ['celegans.both.data.pickle', 
-                                 'celegans.electrical.data.pickle', 
-                                 'celegans.chemical.data.pickle'])
-def data_celegans_adj(infile, (both_file, electrical_file, chemical_file)):
+@split('rawdata.pickle', ['retina.data.pickle', ])
+def data_retina_adj(infile, (retina_outfile,)):
     data = pickle.load(open(infile, 'r'))
-    conn_matrix = data['conn_matrix']
-    neurons = data['neurons']
-    canonical_neuron_ordering = data['canonical_neuron_ordering']
-    NEURON_N = len(canonical_neuron_ordering)
+    area_mat = data['area_mat']
+
+    NEURON_N = len(area_mat)
+
     dist_matrix = np.zeros((NEURON_N, NEURON_N), 
                            dtype=[('link', np.uint8), 
                                   ('distance', np.float32)])
-    # compute distance
-    for n1_i, n1 in enumerate(canonical_neuron_ordering):
-        for n2_i, n2 in enumerate(canonical_neuron_ordering):
-            dist_matrix[n1_i, n2_i]['distance'] = np.abs(neurons[n1]['soma_pos'] - neurons[n2]['soma_pos'])
     
-    adj_mat_chem = conn_matrix['chemical'] > 0
-    adj_mat_elec = conn_matrix['electrical'] > 0
-    adj_mat_both = np.logical_or(adj_mat_chem, adj_mat_elec)
-    
-    dist_matrix['link'] = adj_mat_both
+    dist_matrix['link'] = (area_mat['count'] > 0)
+
     pickle.dump({'dist_matrix' : dist_matrix, 
-                 'infile' : infile}, open(both_file, 'w'))
-    
-    dist_matrix['link'] = adj_mat_chem
-    pickle.dump({'dist_matrix' : dist_matrix, 
-                 'infile' : infile}, open(chemical_file, 'w'))
-    
-    dist_matrix['link'] = adj_mat_elec
-    pickle.dump({'dist_matrix' : dist_matrix, 
-                 'infile' : infile}, open(electrical_file, 'w'))
+                 'infile' : infile}, open(retina_outfile, 'w'))
     
     
-@transform(data_celegans_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
-def create_latents_ld(infile, 
-                      (data_filename, latent_filename, meta_filename)):
-    print "INPUT FILE IS", infile
-    d = pickle.load(open(infile, 'r'))
-    conn_and_dist = d['dist_matrix']
+# @transform(data_celegans_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
+# def create_latents_ld(infile, 
+#                       (data_filename, latent_filename, meta_filename)):
+#     print "INPUT FILE IS", infile
+#     d = pickle.load(open(infile, 'r'))
+#     conn_and_dist = d['dist_matrix']
     
-    model_name= "LogisticDistance" 
+#     model_name= "LogisticDistance" 
 
-    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+#     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : 0.05, 
-           'lambda_hp' : 0.05, 
-           'p_min' : 0.05, 
-           'p_max' : 0.5}
+#     HPS = {'mu_hp' : 0.05, 
+#            'lambda_hp' : 0.05, 
+#            'p_min' : 0.05, 
+#            'p_max' : 0.9}
 
-    irm_latent['relations']['R1']['hps'] = HPS
+#     irm_latent['relations']['R1']['hps'] = HPS
 
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile, 
-                 }, open(meta_filename, 'w'))
+#     pickle.dump(irm_latent, open(latent_filename, 'w'))
+#     pickle.dump(irm_data, open(data_filename, 'w'))
+#     pickle.dump({'infile' : infile, 
+#                  }, open(meta_filename, 'w'))
 
 
-@transform(data_celegans_adj, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
+@transform(data_retina_adj, suffix(".data.pickle"), 
+           [".bb.data", ".bb.latent", ".bb.meta"])
 def create_latents_bb(infile, 
                       (data_filename, latent_filename, meta_filename)):
 
@@ -185,7 +160,7 @@ def init_generator():
 
             
 
-@follows(create_latents_ld, create_latents_bb)
+@follows(create_latents_bb)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -335,5 +310,5 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     f.savefig(plot_latent_filename)
     
 
-pipeline_run([create_inits, get_results, plot_latent])
+pipeline_run([data_retina_adj, create_latents_bb, plot_latent])
                         

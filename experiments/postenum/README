@@ -1,0 +1,10 @@
+
+generate datasets, t1xt2, conj, nonconj versions
+
+
+create conj, non-conj versions
+for particular kernel configs
+run for long period of time, collect samples
+fix latents to use new latent format
+
+

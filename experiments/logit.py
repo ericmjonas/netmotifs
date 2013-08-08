@@ -30,7 +30,7 @@ def parametric_plot(func):
     pylab.figure()
     for c, mu in [('r', 0.0), ('b', 50.0)]:
 
-        for lamb in [0.1, 1.0, 4.0, 10.0, 20, 50]:
+        for lamb in np.array([0.1, 0.5, 1.0, 2.0, 4.0]): #  1.0, 4.0, 10.0, 20, 50]:
             pylab.plot(x, func(x, mu, lamb), linewidth=3, 
                        c=c)
         #pylab.axvline(mu, linestyle='--')
@@ -81,27 +81,4 @@ def single_plot(func):
 #prior_sample(sigmoid)
 
 
-#single_plot()
-mu = np.linspace(0.01, 10.0, 1000)
-lamb = 1.0
-
-N = 100
-xs = np.abs(np.random.normal(0, 10, N))
-ys = np.random.rand(N) > 0.5
-print xs
-print ys
-
-score = np.zeros_like(mu)
-mu_prior = 1.0
-for x, y in zip(xs, ys):
-    if y:
-        score += np.log(logistic(x, 1.0, mu) )
-    else:
-        score += np.log(1-logistic(x,1.0, mu) )
-
-score += log_exp_dist(mu, mu_prior)
-pylab.plot(mu, score)
-pylab.plot(mu, np.exp(score))
-pylab.xlabel('mu')
-pylab.show()
-
+parametric_plot(logistic)
