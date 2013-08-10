@@ -343,7 +343,7 @@ def create_adj_matrix((data_file, graph_file), output_file):
 
     canonical_node_ordering = tfdf.index
     N = len(canonical_node_ordering)
-    adj_mat = np.zeros((N, N), dtype = [('link', np.bool), 
+    adj_mat = np.zeros((N, N), dtype = [('link', np.uint8), 
                                         ('distance', np.float32)])
                   
     print "now walk"
@@ -371,25 +371,25 @@ def plot_adj_matrix(infile, (adj_matrix_outfile, distance_outfile)):
     #ax_dist = f.add_subplot(1, 2, 2)
     
     links = np.argwhere(adj_mat['link'])
-
-    #ax_link.imshow(adj_mat['link'], interpolation='nearest', cmap = pylab.cm.Greys)
-    ax_link.scatter(links[:, 0], links[:, 1], edgecolor='none', alpha=0.5, 
-                    s=1)
+    print links.shape
+    ax_link.imshow(adj_mat['link'], interpolation='nearest', cmap = pylab.cm.Greys)
+    #ax_link.scatter(links[:, 0], links[:, 1], edgecolor='none', alpha=0.5, 
+    #                s=1)
 
     # ax_dist.imshow(adj_mat['distance'], 
     #                interpolation='nearest')
     ax_link.set_xlim(0, len(adj_mat))
     ax_link.set_ylim(0, len(adj_mat))
     f.savefig(adj_matrix_outfile, dpi=300)
-
+    print "next fig" 
     f = pylab.figure(figsize=(12, 12))
     ax_alldist = f.add_subplot(2, 1, 1)
     ax_alldist.hist(adj_mat['distance'].flatten(), bins=40)
 
-    conn_only = adj_mat['distance'][adj_mat['link']]
+    # conn_only = adj_mat['distance'][adj_mat['link']]
     
-    ax_conndist = f.add_subplot(2, 1, 2)
-    ax_conndist.hist(conn_only.flatten(), bins=40)
+    # ax_conndist = f.add_subplot(2, 1, 2)
+    # ax_conndist.hist(conn_only.flatten(), bins=40)
     f.savefig(distance_outfile)
 
 
