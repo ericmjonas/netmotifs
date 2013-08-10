@@ -1,6 +1,7 @@
 import numpy as np
 
 import scipy.cluster.hierarchy as hier
+import util
 
 
 def plot_zmatrix(ax, zmatrix):
@@ -11,6 +12,7 @@ def plot_zmatrix(ax, zmatrix):
     
     ax.imshow((zmatrix[ord])[:, ord], interpolation='nearest', 
               cmap=pylab.cm.Greys)
+    return ord
     
 def plot_purity(ax, true_assignvect, sorted_assign_matrix):
     """
@@ -39,4 +41,21 @@ def plot_purity(ax, true_assignvect, sorted_assign_matrix):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_aspect(30)
+    
+
+def plot_purity_ratios(ax, clustering, truth):
+    """
+    For a given assignment vector, plot, for each true cluster types, 
+    how many different clusters it was in. 
+    
+    Sort by true cluster size
+    """
+    
+    true_order, true_sizes, fracs_order = util.compute_purity_ratios(clustering, truth)
+
+
+    left = np.cumsum(np.hstack([np.array([0]), true_sizes]))[:-1]
+    height = [f[0] for f in fracs_order]
+    ax.bar(left, height, width= true_sizes)
+    
     

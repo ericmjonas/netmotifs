@@ -6,6 +6,8 @@ import os, glob
 import time
 from matplotlib import pylab
 
+import matplotlib.gridspec as gridspec
+
 import irm
 import irm.data
 
@@ -18,27 +20,60 @@ import cloud
 BUCKET_BASE="srm/experiments/mouseretina"
 
 
-EXPERIMENTS = [('retina.bb', 'fixed_100_200', 'default_100')]
-               
-INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
+EXPERIMENTS = [#('retina.bb', 'fixed_100_200', 'default_10'), 
+               #('retina.bb', 'fixed_100_200', 'default_100'), 
+               ('retina.0.0.ld.0.0', 'fixed_10_200', 'default_nc_10'),
+               ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+               #('retina.ld', 'fixed_100_200', 'default_nc_100')
+               #('retina.bb', 'fixed_100_200', 'default_10000'), 
+           ]
+
+THOLDS = [0.01, 0.1, 0.5, 1.0]
+    
+MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
+PMAXS = [0.95, 0.9, 0.7, 0.5]
+
+
+for i in range(len(THOLDS)):
+    for z in [0, 1]:
+        for k in range(len(MULAMBS)):
+            for l in range(len(PMAXS)):
+                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+                                    'fixed_10_200',
+                                    'default_nc_10'))
+            
+                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+                                    'fixed_100_200',
+                                    'default_nc_100'))
+            
+            
+INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}, 
                 'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}}
-                
-                
+
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 
 
-KERNEL_CONFIGS = {'default_nc_10000' : {'ITERS' : 100, 
+KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
+                  'default_nc_10' : {'ITERS' : 10, 
+                                  'kernels' : default_nonconj},
+                  'default_10' : {'ITERS' : 10, 
+                                  'kernels' : default_conj},
                   'default_100' : {'ITERS' : 100, 
                                   'kernels' : default_conj},
+                  'default_nc_1000' : {'ITERS' : 1000, 
+                                       'kernels' : default_nonconj},
                   }
 
+
+def dist(a, b):
+    return np.sqrt(np.sum((b-a)**2))
 
 def to_bucket(filename):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
@@ -46,51 +81,87 @@ def to_bucket(filename):
 def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
+def create_tholds():
+    """
+    systematicaly vary the threshold for "synapse" and whether or not
+    we use the z-axis
+    """
+    infiles = ['rawdata.pickle', 'xlsxdata.pickle', 
+               'soma.positions.pickle']
+    for use_z in [0, 1]:
+        for tholdi, thold in enumerate(THOLDS):
+            outfile = "retina.%d.%d.data.pickle" % (use_z, tholdi)
+            yield infiles, [outfile], thold, use_z
 
-@split('rawdata.pickle', ['retina.data.pickle', ])
-def data_retina_adj(infile, (retina_outfile,)):
-    data = pickle.load(open(infile, 'r'))
+@files(create_tholds)
+def data_retina_adj((raw_infile, xlsx_infile, positions_infile), 
+                    (retina_outfile,), AREA_THOLD, USE_Z):
+    data = pickle.load(open(xlsx_infile, 'r'))
     area_mat = data['area_mat']
+    positions_data = pickle.load(open(positions_infile, 'r'))
+    pos_vec = positions_data['pos_vec']
+    NEURON_N = 950 # only the ones for which we also have position data
 
-    NEURON_N = len(area_mat)
+    area_mat_sub = area_mat[:NEURON_N, :NEURON_N]
 
     dist_matrix = np.zeros((NEURON_N, NEURON_N), 
                            dtype=[('link', np.uint8), 
                                   ('distance', np.float32)])
-    
-    dist_matrix['link'] = (area_mat['count'] > 0)
+
+    dist_matrix['link'] = area_mat_sub > AREA_THOLD
+    for n1 in range(NEURON_N):
+        for n2 in range(NEURON_N):
+            p1 = pos_vec[n1]
+            p2 = pos_vec[n2]
+            if not USE_Z:
+                p1[2] = 0
+                p2[2] = 0
+            
+            dist_matrix[n1, n2]['distance'] = dist(p1, p2)
 
     pickle.dump({'dist_matrix' : dist_matrix, 
-                 'infile' : infile}, open(retina_outfile, 'w'))
+                 'area_thold' : AREA_THOLD, 
+                 'infile' : xlsx_infile}, open(retina_outfile, 'w'))
+                
+def create_latents_ld_params():
+    for a in create_tholds():
+        inf = a[1][0]
+        for mli, mulamb in enumerate(MULAMBS):
+            for pi, p in enumerate(PMAXS):
+                outf_base = inf[:-len('.data.pickle')]
+                outf = "%s.ld.%d.%d" % (outf_base, mli, pi)
+                yield inf, [outf + '.data', 
+                            outf + '.latent', outf + '.meta'], mulamb, p
+        
     
+@files(create_latents_ld_params)
+def create_latents_ld(infile, 
+                      (data_filename, latent_filename, meta_filename), 
+                      mulamb, pmax):
+
+    d = pickle.load(open(infile, 'r'))
+    conn_and_dist = d['dist_matrix']
     
-# @transform(data_celegans_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
-# def create_latents_ld(infile, 
-#                       (data_filename, latent_filename, meta_filename)):
-#     print "INPUT FILE IS", infile
-#     d = pickle.load(open(infile, 'r'))
-#     conn_and_dist = d['dist_matrix']
-    
-#     model_name= "LogisticDistance" 
+    model_name= "LogisticDistance" 
 
-#     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-#     HPS = {'mu_hp' : 0.05, 
-#            'lambda_hp' : 0.05, 
-#            'p_min' : 0.05, 
-#            'p_max' : 0.9}
+    HPS = {'mu_hp' : mulamb,
+           'lambda_hp' : mulamb,
+           'p_min' : 0.05, 
+           'p_max' : pmax}
 
-#     irm_latent['relations']['R1']['hps'] = HPS
+    irm_latent['relations']['R1']['hps'] = HPS
 
-#     pickle.dump(irm_latent, open(latent_filename, 'w'))
-#     pickle.dump(irm_data, open(data_filename, 'w'))
-#     pickle.dump({'infile' : infile, 
-#                  }, open(meta_filename, 'w'))
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 }, open(meta_filename, 'w'))
 
 
 @transform(data_retina_adj, suffix(".data.pickle"), 
            [".bb.data", ".bb.latent", ".bb.meta"])
-def create_latents_bb(infile, 
+def create_latents_bb((infile, ),
                       (data_filename, latent_filename, meta_filename)):
 
     d = pickle.load(open(infile, 'r'))
@@ -160,6 +231,7 @@ def init_generator():
 
             
 
+@follows(create_latents_ld)
 @follows(create_latents_bb)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
@@ -171,7 +243,7 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
 
 
 
-def inference_run_ld(latent_filename, 
+def inference_run(latent_filename, 
                      data_filename, 
                      kernel_config,  ITERS, seed):
 
@@ -213,7 +285,7 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(inference_run_ld, inits, 
+    jids = cloud.map(inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
@@ -246,8 +318,8 @@ def get_results(exp_wait, exp_results):
                  'exp' : d}, 
                 open(exp_results, 'w'))
 
-@transform(get_results, suffix(".samples"), [".latent.pdf"])
-def plot_latent(exp_results, (plot_latent_filename, )):
+@transform(get_results, suffix(".samples"), [".scoresz.pdf"])
+def plot_scores_z(exp_results, (plot_latent_filename,)):
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
     
@@ -257,6 +329,13 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     data_basename, _ = os.path.splitext(data_filename)
     meta = pickle.load(open(data_basename + ".meta"))
 
+    meta_infile = meta['infile']
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    orig_data = pickle.load(open(d['infile']))
+    print "len(dist_matrix):", conn.shape
+    cell_types = orig_data['types'][:len(conn)]
 
     # nodes_with_class = meta['nodes']
     # conn_and_dist = meta['conn_and_dist']
@@ -271,27 +350,11 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     ax_z = f.add_subplot(2, 2, 2)
     ax_score = f.add_subplot(2, 2, 3)
     
-    # ###### plot purity #######################
-    # ###
-    # tv = true_assignvect.argsort()
-    # tv_i = true_assignvect[tv]
-    # vals = [tv_i]
-    # # get the chain order 
-    # chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
-    # sorted_assign_matrix = []
-    # for di in chains_sorted_order: 
-    #     d = chains[di] 
-    #     sample_latent = d['state']
-    #     a = np.array(sample_latent['domains']['d1']['assignment'])
-    #     print "di=%d unique classes:"  % di, np.unique(a)
-    #     sorted_assign_matrix.append(a)
-    # irm.plot.plot_purity(ax_purity_control, true_assignvect, sorted_assign_matrix)
-
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
-    irm.plot.plot_zmatrix(ax_z, z)
+    z_ord = irm.plot.plot_zmatrix(ax_z, z)
 
     ### Plot scores
     for di, d in enumerate(chains):
@@ -308,7 +371,92 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
+    f = pylab.figure(figsize=(20, 4))
+
+
+
+@transform(get_results, suffix(".samples"), 
+           [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
+def plot_best_latent(exp_results, 
+                     out_filenames):
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = orig_data['types'][:len(conn)]
+
+                        
+    # nodes_with_class = meta['nodes']
+    # conn_and_dist = meta['conn_and_dist']
+
+    # true_assignvect = nodes_with_class['class']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+    for chain_pos, (latent_fname, types_fname) in enumerate(out_filenames):
+        f = pylab.figure(figsize= (24, 26))
+
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
+
+
+        best_chain_i = chains_sorted_order[chain_pos]
+        best_chain = chains[best_chain_i]
+        sample_latent = best_chain['state']
+        a = np.array(sample_latent['domains']['d1']['assignment'])
+
+        a = irm.util.canonicalize_assignment(a)
+        print len(cell_types), len(a)
+        ai = np.argsort(a).flatten()
+
+        ax = pylab.subplot(gs[1])
+        ax_types = pylab.subplot(gs[0])
+
+        s_conn =conn[ai]
+        s_conn = s_conn[:, ai]
+        ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
+        for i in  np.argwhere(np.diff(a[ai]) > 0):
+            ax.axhline(i, c='b', alpha=0.7, linewidth=1.0)
+            ax.axvline(i, c='b', alpha=0.7, linewidth=1.0)
+            ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        ax_types.scatter(np.arange(len(cell_types)), 
+                         cell_types[ai], edgecolor='none', c='k', 
+                         s=2)
+
+        ax_types.set_xlim(0, len(cell_types))
+        ax_types.set_ylim(0, 80)
+        ax_types.set_xticks([])
+        ax_types.set_yticks([])
+
+        f.tight_layout()
+
+        f.savefig(latent_fname)
+
+
+        f = pylab.figure()
+        ax_types = pylab.subplot(1, 1, 1)
+        irm.plot.plot_purity_ratios(ax_types, a, cell_types)
+        f.savefig(types_fname)
     
 
-pipeline_run([data_retina_adj, create_latents_bb, plot_latent])
+pipeline_run([data_retina_adj, create_latents_bb, plot_scores_z, 
+              plot_best_latent], multiprocess=2)
                         

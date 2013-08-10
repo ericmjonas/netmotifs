@@ -1,11 +1,18 @@
 from ruffus import *
 from matplotlib import pylab
 from xlrd import open_workbook
+import glob
 import os
 
 import cPickle as pickle
 import numpy as np
 import scipy.io
+import skimage 
+import skimage.draw
+import skimage.feature
+import skimage.morphology
+import skimage.measure
+import skimage.io
 
 LIGHT_AXIS = [0.9916,0.0572, 0.1164]
 
@@ -156,7 +163,117 @@ def plot_adj(infile, outfile):
     
     f.savefig(outfile, dpi=600)
 
-pipeline_run([load_data, load_xlsx_data, sanity_check, plot_synapses, 
-              plot_adj])
+BASEDIR = "../../../data/mouseretina"
 
+def cell_image_files():
+
+    for directory in [os.path.join(BASEDIR, "nature12346-s6/Supp_Info6a/*.png"), 
+                      os.path.join(BASEDIR, "nature12346-s6/Supp_Info6b/*.png"), 
+                      os.path.join(BASEDIR, "nature12346-s7/*.png"), 
+                      os.path.join(BASEDIR, "nature12346-s8/*.png"), 
+                      os.path.join(BASEDIR, "nature12346-s9/Supp_Info6e/*.png"), 
+                      os.path.join(BASEDIR, "nature12346-s9/Supp_Info6f/*.png")]:
+        files = glob.glob(directory)
+        for filename in files:
+            f = os.path.basename(filename)
+            cell_id = int(f[5:9])
+            out_basename = "imgproc/%04d" % cell_id
+            yield filename, [out_basename + '.png', out_basename + ".pickle"]
+
+@files(cell_image_files)
+def process_image_pos(filename, (output_png, output_pickle)):
+    print "PROCESSING", filename
+    W = 200
+    H = 200
+    R = 50
+    template = np.zeros((H, W))
+    a = skimage.draw.circle(H/2, W/2, R, (H, W))
+    template[a] = 1
+    
+    REGION_X = 0, 1900
+    REGION_Y = 0, 3800
+
+    results = {}
+    
+
+    x = skimage.io.imread(filename)
+    x_sub = x[REGION_Y[0]:REGION_Y[1], REGION_X[0]:REGION_X[1]]
+
+    tgt = (x_sub[:, :, 0] < 200) & (x_sub[:, :, 1] < 200) & (x_sub[:, :, 2] < 240) & (x_sub[:, :, 2] >100)
+
+    m = skimage.feature.match_template(tgt, template, pad_input=True)       
+
+    tholded = m > 0.22
+    label_image = skimage.morphology.label(tholded)
+
+    coords_x_y = []
+    for region in skimage.measure.regionprops(label_image, ['Area', 'Centroid']):
+
+        # skip small images
+
+        if region['Area'] < 1000:
+            continue
+        c = region['Centroid']
+
+        coords_x_y.append((c[1], c[0]))
+
+    if len(coords_x_y) != 4:
+        print "DANGER ERROR", coords_x_y
+        pylab.subplot(1, 2, 1)
+        pylab.imshow(tholded)
+        pylab.subplot(1, 2, 2)
+        pylab.imshow(x_sub)
+        pylab.show()
+        raise RuntimeError("found %d coords in file %s" % (len(coords_x_y), filename))
+
+    results = {'filename' : filename, 
+               'coords' : coords_x_y}
+    pickle.dump(results, open(output_pickle, 'w'))
+    
+    f = pylab.figure()
+    ax  = f.add_subplot(1, 1, 1)
+    ax.imshow(x_sub)
+    for c in coords_x_y:
+        ax.scatter(c[0], c[1], c='r')
+    f.savefig(output_png)
+    f.clf()
+    del f
+
+@merge(process_image_pos, "soma.positions.pickle")
+def merge_positions(inputfiles, outputfile):
+    PIX_PER_UM = 7.2
+    # use the top two plots
+    out_pos = {}
+    out_coords = {}
+    N = len(inputfiles)
+    coords = np.zeros((N, 3), dtype=np.float32)
+    for f in inputfiles:
+        cell_id = int(os.path.basename(f[1])[:4])
+        d = pickle.load(open(f[1]))
+
+        # NOTE THESE ARE IN BS UNITS
+        x = 0
+        y = 0
+        z = 0
+        for c in d['coords']:
+            if c[0] < 900 and c[1] < 900:
+                # upper left plot in image, meaning x-z
+                x = c[0] / PIX_PER_UM
+                z = c[1] / PIX_PER_UM
+            elif c[0] > 900 and c[1] < 900:
+                y = c[0] / PIX_PER_UM
+                z = c[1] / PIX_PER_UM
+        
+                
+        out_coords[cell_id] = d['coords']
+        out_pos[cell_id] = (x, y, z)
+        coords[cell_id -1] = (x, y, z)
+
+    pickle.dump({'pos' : out_pos, 
+                 'coords_px' : out_coords, 
+                 'pos_vec' : coords}, open(outputfile, 'w'))
+    
+            
+pipeline_run([load_data, load_xlsx_data, sanity_check, plot_synapses, 
+              plot_adj, process_image_pos, merge_positions])
 

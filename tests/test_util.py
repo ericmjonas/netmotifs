@@ -2,7 +2,7 @@ from nose.tools import *
 from irm import util
 import numpy as np
 
-from numpy.testing import assert_approx_equal
+from numpy.testing import assert_approx_equal, assert_array_almost_equal
 
 def test_unitue_qxes_pos():
     
@@ -33,3 +33,16 @@ def test_crp_score():
         c = util.assign_to_counts(a)
         s = util.crp_score(c, alpha)
     # FIXME better tests of CRP 
+
+def test_compute_purity_ratios():
+    truth = np.array([0, 1, 1, 2, 2, 2, 2], dtype=np.uint32)
+    clustering = np.array([6, 7, 8, 9, 9, 9, 1], dtype=np.uint32)
+    
+    true_order, true_sizes, fracs_order = util.compute_purity_ratios(clustering, truth)
+    np.testing.assert_array_equal(true_order, [2, 1, 0])
+    np.testing.assert_array_equal(true_sizes, [4, 2, 1])
+    
+    assert_array_almost_equal(fracs_order[0], [0.75, 0.25])
+    assert_array_almost_equal(fracs_order[1], [0.5, 0.5])
+    assert_array_almost_equal(fracs_order[2], [1.0])
+    

@@ -166,3 +166,41 @@ def logistic(x, mu, lamb):
 def sigmoid(x, mu, lamb):
     return -(x-mu) / (lamb + np.abs(x-mu))*0.5  + 0.5
 
+
+def compute_purity_ratios(clustering, truth):
+    """
+    For a given assignment vector, compute for each true cluster types, 
+    how many different clusters it was in. 
+    
+    Sort by true cluster size, returning: 
+    
+    """
+    
+    true_order = np.unique(truth)
+    true_sizes = np.zeros_like(true_order)
+    true_lut = {}
+    for ti, t in enumerate(true_order):
+        true_lut[t] = ti
+    for t in truth:
+        true_sizes[true_lut[t]] +=1
+
+    a = np.argsort(true_sizes)
+    true_order = true_order[a][::-1]
+    true_sizes = true_sizes[a][::-1]
+
+    fracs_order = []
+    for ti, true_class in enumerate(true_order):
+        pos = np.argwhere(truth ==true_class).flatten()
+        clustered_vals = clustering[pos]
+
+        N = len(clustered_vals)
+        cv_unique = np.unique(clustered_vals)
+        fracs = np.zeros(len(cv_unique))
+
+        for ci, c in enumerate(cv_unique):
+            n = len(np.argwhere(clustered_vals == c))
+            fracs[ci] = float(n) / N
+        fracs = sorted(fracs)[::-1]
+        fracs_order.append(fracs)
+    
+    return true_order, true_sizes, fracs_order
