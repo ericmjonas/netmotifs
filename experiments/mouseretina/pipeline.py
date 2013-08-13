@@ -385,6 +385,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
            [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
+    from matplotlib.backends.backend_pdf import PdfPages
 
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
@@ -400,6 +401,7 @@ def plot_best_latent(exp_results,
 
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
+    dist_matrix = d['dist_matrix']
     orig_data = pickle.load(open(d['infile']))
     cell_types = orig_data['types'][:len(conn)]
 
@@ -440,7 +442,7 @@ def plot_best_latent(exp_results,
         # for k, v in cluster_types.iteritems():
         #     print k, ":",  v
 
-        for i in  np.argwhere(np.diff(a[ai]) > 0):
+        for i in  np.argwhere(np.diff(a[ai]) != 0):
             ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
 
         ax_types.scatter(np.arange(len(cell_types)), 
@@ -453,8 +455,16 @@ def plot_best_latent(exp_results,
         ax_types.set_yticks([])
 
         f.tight_layout()
+        pp = PdfPages(latent_fname)
+        f.savefig(pp, format='pdf')
 
-        f.savefig(latent_fname)
+
+        f2 =  pylab.figure(figsize= (12, 12))
+        irm.plot.plot_t1t1_params(f2, dist_matrix, a, 
+                                  sample_latent['relations']['R1']['ss'], 
+                                  MAX_DIST=200)
+        f2.savefig(pp, format='pdf')
+        pp.close()
 
 
         f = pylab.figure()

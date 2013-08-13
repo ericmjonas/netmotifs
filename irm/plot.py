@@ -86,3 +86,68 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect):
 
 
     return ai
+
+def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10, 
+                     model="LogisticDistance"):
+    """
+    In the same order that we would plot the latent matrix, plot
+    the per-parameter properties
+
+    note, tragically, this wants the whole figure
+
+    """
+
+    CLASSES = np.unique(assign_vect)
+    CLASSN = len(CLASSES)
+    from mpl_toolkits.axes_grid1 import Grid
+
+    img_grid = Grid(fig, 111, # similar to subplot(111)
+                    nrows_ncols = (CLASSN, CLASSN),
+                    axes_pad = 0.1,
+                    add_all=True,
+                    label_mode = 'L',
+                     )
+
+    
+    print CLASSN, len(CLASSES)
+    for c1i, c1 in enumerate(CLASSES):
+        for c2i, c2 in enumerate(CLASSES):
+            ax_pos = c1i * CLASSN + c2i
+            print 'ax_pos=', ax_pos, c1i, c2i
+            ax = img_grid[ax_pos]
+
+            nodes_1 = np.argwhere(assign_vect == c1).flatten()
+            nodes_2 = np.argwhere(assign_vect == c2).flatten()
+            conn_dist_hist = []
+            noconn_dist_hist = []
+            for n1 in nodes_1:
+                for n2 in nodes_2:
+                    d = conn_and_dist[n1, n2]['distance']
+                    if conn_and_dist[n1, n2]['link']:
+                        conn_dist_hist.append(d)
+                    else:
+                        noconn_dist_hist.append(d)
+
+            bins = np.linspace(0, MAX_DIST, 20)
+            fine_bins = np.linspace(0, MAX_DIST, 100)
+
+            # compute prob as a function of distance for this class
+            htrue, _ = np.histogram(conn_dist_hist, bins)
+
+            hfalse, _ = np.histogram(noconn_dist_hist, bins)
+
+            p = htrue.astype(float) / (hfalse + htrue)
+            print bins, p
+            ax.plot(bins[:-1], p)
+            ax.set_xlim(0, MAX_DIST)
+            ax.set_ylim(0, 1.0)
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            if model == "LogisticDistance":
+                c = ss[(c1, c2)]
+                ax.plot(fine_bins, 
+                        util.logistic(fine_bins, c['mu'], c['lambda']), 
+                        c='r') 
+                ax.axvline(c['mu'], c='k')
+
