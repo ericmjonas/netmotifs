@@ -204,3 +204,22 @@ def compute_purity_ratios(clustering, truth):
         fracs_order.append(fracs)
     
     return true_order, true_sizes, fracs_order
+
+def compute_purity(clustering, truth):
+    """
+    Returns, for each cluster in the clustering assignment vector, 
+    a list of how many of each of the others there are
+
+    """
+    results = {}
+    for c in np.unique(clustering):
+        other_vals = truth[clustering == c]
+        d = {}
+        for v in other_vals:
+            if v not in d:
+                d[v] = 0
+            d[v] +=1
+
+        results[c] = d
+    return results
+        

@@ -3,6 +3,8 @@ from matplotlib import pylab
 from xlrd import open_workbook
 import glob
 import os
+import pandas
+
 
 import cPickle as pickle
 import numpy as np
@@ -273,7 +275,37 @@ def merge_positions(inputfiles, outputfile):
                  'coords_px' : out_coords, 
                  'pos_vec' : coords}, open(outputfile, 'w'))
     
+@files("../../../data/mouseretina/types.xlsx",
+       "type_metadata.pickle")
+def type_metadata(xlsx_file, output_file):
+    neuron_connect =  open_workbook(xlsx_file)
+
+    s =  neuron_connect.sheets()[0]
+    N = 71
+    res = []
+    
+    for cell_i in range(N):
+        cell_id = s.cell(cell_i + 1, 0).value
+        desig = s.cell(cell_i + 1, 1).value
+        volgyi = s.cell(cell_i + 1,2).value
+        macneil = s.cell(cell_i + 1, 3).value
+        certainty = s.cell(cell_i + 1, 4).value
+        if volgyi != "":
+            other = volgyi
+        else:
+            other=macneil
+        res.append({'id' : cell_id, 
+                    'desig' : desig, 
+                    'other' : other, 
+                    'certainty' : certainty})
+    df = pandas.DataFrame(res)
+    df = df.set_index(df['id'])
+    del df['id']
+                    
+    pickle.dump({'type_metadata' : df}, 
+                open(output_file, 'w'))
+
             
 pipeline_run([load_data, load_xlsx_data, sanity_check, plot_synapses, 
-              plot_adj, process_image_pos, merge_positions])
+              plot_adj, process_image_pos, merge_positions, type_metadata])
 

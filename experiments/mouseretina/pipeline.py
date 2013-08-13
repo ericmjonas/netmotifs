@@ -24,6 +24,9 @@ EXPERIMENTS = [#('retina.bb', 'fixed_100_200', 'default_10'),
                #('retina.bb', 'fixed_100_200', 'default_100'), 
                ('retina.0.0.ld.0.0', 'fixed_10_200', 'default_nc_10'),
                ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+               ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+               ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+               ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
                #('retina.ld', 'fixed_100_200', 'default_nc_100')
                #('retina.bb', 'fixed_100_200', 'default_10000'), 
            ]
@@ -346,10 +349,9 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     CHAINN = len(chains)
 
     f = pylab.figure(figsize= (12, 8))
-    ax_purity_control = f.add_subplot(2, 2, 1)
-    ax_z = f.add_subplot(2, 2, 2)
-    ax_score = f.add_subplot(2, 2, 3)
-    
+    ax_z = pylab.subplot2grid((2,2), (0, 0))
+    ax_score = pylab.subplot2grid((2,2), (0, 1))
+    ax_purity =pylab.subplot2grid((2,2), (1, 0), colspan=2)
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
@@ -367,7 +369,11 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_score.tick_params(axis='both', which='minor', labelsize=6)
     ax_score.set_xlabel('time (s)')
     ax_score.grid(1)
-    
+
+
+    ax_purity.plot(cell_types[z_ord])
+    ax_purity.set_ylabel('true cell id')
+
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
@@ -397,7 +403,8 @@ def plot_best_latent(exp_results,
     orig_data = pickle.load(open(d['infile']))
     cell_types = orig_data['types'][:len(conn)]
 
-                        
+    type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+    
     # nodes_with_class = meta['nodes']
     # conn_and_dist = meta['conn_and_dist']
 
@@ -422,6 +429,15 @@ def plot_best_latent(exp_results,
         a = irm.util.canonicalize_assignment(a)
         print len(cell_types), len(a)
         ai = np.argsort(a).flatten()
+        
+        gross_types = np.zeros_like(cell_types)
+        gross_types[:12] = 0
+        gross_types[12:57] = 1
+        gross_types[58:] = 2 
+
+        cluster_types = irm.util.compute_purity(a, gross_types)
+        for k, v in cluster_types.iteritems():
+            print k, ":",  v
 
         ax = pylab.subplot(gs[1])
         ax_types = pylab.subplot(gs[0])
@@ -454,6 +470,8 @@ def plot_best_latent(exp_results,
         f = pylab.figure()
         ax_types = pylab.subplot(1, 1, 1)
         irm.plot.plot_purity_ratios(ax_types, a, cell_types)
+
+
         f.savefig(types_fname)
     
 
