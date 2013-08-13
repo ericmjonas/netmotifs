@@ -420,38 +420,28 @@ def plot_best_latent(exp_results,
 
         gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
 
+        ax = pylab.subplot(gs[1])
+        ax_types = pylab.subplot(gs[0])
 
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
         a = np.array(sample_latent['domains']['d1']['assignment'])
 
-        a = irm.util.canonicalize_assignment(a)
-        print len(cell_types), len(a)
-        ai = np.argsort(a).flatten()
-        
-        gross_types = np.zeros_like(cell_types)
-        gross_types[:12] = 0
-        gross_types[12:57] = 1
-        gross_types[58:] = 2 
+        ai = irm.plot.plot_t1t1_latent(ax, conn, a)
 
-        cluster_types = irm.util.compute_purity(a, gross_types)
-        for k, v in cluster_types.iteritems():
-            print k, ":",  v
 
-        ax = pylab.subplot(gs[1])
-        ax_types = pylab.subplot(gs[0])
+        # gross_types = np.zeros_like(cell_types)
+        # gross_types[:12] = 0
+        # gross_types[12:57] = 1
+        # gross_types[58:] = 2 
 
-        s_conn =conn[ai]
-        s_conn = s_conn[:, ai]
-        ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
+        # cluster_types = irm.util.compute_purity(a, gross_types)
+        # for k, v in cluster_types.iteritems():
+        #     print k, ":",  v
+
         for i in  np.argwhere(np.diff(a[ai]) > 0):
-            ax.axhline(i, c='b', alpha=0.7, linewidth=1.0)
-            ax.axvline(i, c='b', alpha=0.7, linewidth=1.0)
             ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
-
-        ax.set_xticks([])
-        ax.set_yticks([])
 
         ax_types.scatter(np.arange(len(cell_types)), 
                          cell_types[ai], edgecolor='none', c='k', 

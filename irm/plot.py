@@ -59,3 +59,30 @@ def plot_purity_ratios(ax, clustering, truth):
     ax.bar(left, height, width= true_sizes)
     
     
+def plot_t1t1_latent(ax, adj_matrix, assign_vect):
+    """
+    Plot a latent with the assign vect
+
+    returns the sorted order of the assignment vector
+    """
+
+    from matplotlib import pylab
+
+    a = util.canonicalize_assignment(assign_vect) # make big clusters first
+
+    ai = np.argsort(a).flatten()
+        
+    conn = adj_matrix
+
+    s_conn =conn[ai]
+    s_conn = s_conn[:, ai]
+    ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
+    for i in  np.argwhere(np.diff(a[ai]) > 0):
+        ax.axhline(i, c='b', alpha=0.7, linewidth=1.0)
+        ax.axvline(i, c='b', alpha=0.7, linewidth=1.0)
+        
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+    return ai
