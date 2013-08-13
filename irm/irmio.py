@@ -236,3 +236,19 @@ def latent_equality(l1, l2, data1 = None,
                     return False
     return True
 
+def estimate_suffstats(irm_model, rng, ITERS=10):
+    """
+    Take in a model and just perform hyperparam inference, that is, 
+    don't do any structural inference. 
+
+    This is to "fix up" the horrible init-from-prior state we 
+    find ourselves in when we create a model
+    """
+
+    for i in range(ITERS):
+        for relation_name, relation in irm_model.relations.iteritems():
+            if relation.modeltypestr == "LogisticDistance":
+                params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+            else:
+                raise NotImplementedError() 

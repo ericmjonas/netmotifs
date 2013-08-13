@@ -1,5 +1,4 @@
 import numpy as np
-
 import scipy.cluster.hierarchy as hier
 import util
 
@@ -97,9 +96,12 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
 
     """
 
+    from mpl_toolkits.axes_grid1 import Grid
+    from matplotlib import pylab
+
     CLASSES = np.unique(assign_vect)
     CLASSN = len(CLASSES)
-    from mpl_toolkits.axes_grid1 import Grid
+
 
     img_grid = Grid(fig, 111, # similar to subplot(111)
                     nrows_ncols = (CLASSN, CLASSN),
@@ -107,7 +109,6 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
                     add_all=True,
                     label_mode = 'L',
                      )
-
     
     print CLASSN, len(CLASSES)
     for c1i, c1 in enumerate(CLASSES):
@@ -149,5 +150,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
                 ax.plot(fine_bins, 
                         util.logistic(fine_bins, c['mu'], c['lambda']), 
                         c='r') 
+                ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
+                ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
 

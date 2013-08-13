@@ -10,6 +10,7 @@ import matplotlib.gridspec as gridspec
 
 import irm
 import irm.data
+import util
 
 def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
@@ -22,11 +23,11 @@ BUCKET_BASE="srm/experiments/mouseretina"
 
 EXPERIMENTS = [#('retina.bb', 'fixed_100_200', 'default_10'), 
                #('retina.bb', 'fixed_100_200', 'default_100'), 
-               ('retina.0.0.ld.0.0', 'fixed_10_200', 'default_nc_10'),
-               ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-               ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-               ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
-               ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+               ('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
+               # ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+               # ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+               # ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+               # ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
                #('retina.ld', 'fixed_100_200', 'default_nc_100')
                #('retina.bb', 'fixed_100_200', 'default_10000'), 
            ]
@@ -37,22 +38,25 @@ MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
 PMAXS = [0.95, 0.9, 0.7, 0.5]
 
 
-for i in range(len(THOLDS)):
-    for z in [0, 1]:
-        for k in range(len(MULAMBS)):
-            for l in range(len(PMAXS)):
-                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
-                                    'fixed_10_200',
-                                    'default_nc_10'))
+# for i in range(len(THOLDS)):
+#     for z in [0, 1]:
+#         for k in range(len(MULAMBS)):
+#             for l in range(len(PMAXS)):
+#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+#                                     'fixed_10_200',
+#                                     'default_nc_10'))
             
-                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
-                                    'fixed_100_200',
-                                    'default_nc_100'))
+#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+#                                     'fixed_100_200',
+#                                     'default_nc_100'))
             
             
 INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}, 
+                'fixed_10_20' : {'N' : 10, 
+                                  'config' : {'type' : 'fixed', 
+                                              'group_num' : 20}}, 
                 'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}}
@@ -184,7 +188,7 @@ def create_latents_bb((infile, ),
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
 
-def create_init(latent_filename, out_filenames, 
+def create_init(latent_filename, data_filename, out_filenames, 
                 init= None):
     """ 
     CONVENTION: when we create N inits, the first is actually 
@@ -192,10 +196,14 @@ def create_init(latent_filename, out_filenames,
     that happened to be)
     """
     irm_latent = pickle.load(open(latent_filename, 'r'))
-    
+    irm_data = pickle.load(open(data_filename, 'r'))
     irm_latents = []
 
+    rng = irm.RNG()
+
+    irm_model = irm.irmio.create_model_from_data(irm_data, rng=rng)
     for c, out_f in enumerate(out_filenames):
+        print "generating init", out_f
         np.random.seed(c)
 
         latent = copy.deepcopy(irm_latent)
@@ -214,11 +222,14 @@ def create_init(latent_filename, out_filenames,
         if c > 0: # first one stays the same
             latent['domains']['d1']['assignment'] = a
 
-        # delete the suffstats
-        if 'ss' in latent['relations']['R1']:
-            del latent['relations']['R1']['ss']
+        # generate new suffstats, recompute suffstats in light of new assignment
 
-        pickle.dump(latent, open(out_f, 'w'))
+        irm.irmio.set_model_latent(irm_model, latent, rng)
+
+        irm.irmio.estimate_suffstats(irm_model, rng, ITERS=10)
+
+
+        pickle.dump(irm.irmio.get_latent(irm_model), open(out_f, 'w'))
 
 
 def get_dataset(data_name):
@@ -229,7 +240,7 @@ def init_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            yield data_filename, ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
+            yield data_filename, ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
 
 
             
@@ -241,7 +252,8 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
     latent_filename = basename + ".latent"
 
-    create_init(latent_filename, out_filenames, 
+    create_init(latent_filename, data_filename, 
+                out_filenames, 
                 init= init_config['config'])
 
 
@@ -271,7 +283,7 @@ def experiment_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            inits = ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
+            inits = ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
             
             exp_name = "%s-%s-%s.wait" % (data_filename, init_config_name, kernel_config_name)
             yield [data_filename, inits], exp_name, kernel_config_name
@@ -418,61 +430,69 @@ def plot_best_latent(exp_results,
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
     for chain_pos, (latent_fname, types_fname) in enumerate(out_filenames):
-        f = pylab.figure(figsize= (24, 26))
 
-        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
-
-        ax = pylab.subplot(gs[1])
-        ax_types = pylab.subplot(gs[0])
 
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
-        a = np.array(sample_latent['domains']['d1']['assignment'])
+        
+        util.plot_latent(sample_latent, dist_matrix, 
+                         latent_fname, cell_types, 
+                         types_fname)
 
-        ai = irm.plot.plot_t1t1_latent(ax, conn, a)
+        # a = np.array(sample_latent['domains']['d1']['assignment'])
 
+        # f = pylab.figure(figsize= (24, 26))
 
-        # gross_types = np.zeros_like(cell_types)
-        # gross_types[:12] = 0
-        # gross_types[12:57] = 1
-        # gross_types[58:] = 2 
-
-        # cluster_types = irm.util.compute_purity(a, gross_types)
-        # for k, v in cluster_types.iteritems():
-        #     print k, ":",  v
-
-        for i in  np.argwhere(np.diff(a[ai]) != 0):
-            ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
-
-        ax_types.scatter(np.arange(len(cell_types)), 
-                         cell_types[ai], edgecolor='none', c='k', 
-                         s=2)
-
-        ax_types.set_xlim(0, len(cell_types))
-        ax_types.set_ylim(0, 80)
-        ax_types.set_xticks([])
-        ax_types.set_yticks([])
-
-        f.tight_layout()
-        pp = PdfPages(latent_fname)
-        f.savefig(pp, format='pdf')
+        # gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
 
 
-        f2 =  pylab.figure(figsize= (12, 12))
-        irm.plot.plot_t1t1_params(f2, dist_matrix, a, 
-                                  sample_latent['relations']['R1']['ss'], 
-                                  MAX_DIST=200)
-        f2.savefig(pp, format='pdf')
-        pp.close()
+        # ax = pylab.subplot(gs[1])
+        # ax_types = pylab.subplot(gs[0])
+
+        # ai = irm.plot.plot_t1t1_latent(ax, conn, a)
 
 
-        f = pylab.figure()
-        ax_types = pylab.subplot(1, 1, 1)
-        irm.plot.plot_purity_ratios(ax_types, a, cell_types)
+        # # gross_types = np.zeros_like(cell_types)
+        # # gross_types[:12] = 0
+        # # gross_types[12:57] = 1
+        # # gross_types[58:] = 2 
+
+        # # cluster_types = irm.util.compute_purity(a, gross_types)
+        # # for k, v in cluster_types.iteritems():
+        # #     print k, ":",  v
+
+        # for i in  np.argwhere(np.diff(a[ai]) != 0):
+        #     ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
+
+        # ax_types.scatter(np.arange(len(cell_types)), 
+        #                  cell_types[ai], edgecolor='none', c='k', 
+        #                  s=2)
+
+        # ax_types.set_xlim(0, len(cell_types))
+        # ax_types.set_ylim(0, 80)
+        # ax_types.set_xticks([])
+        # ax_types.set_yticks([])
+
+        # f.tight_layout()
+        # pp = PdfPages(latent_fname)
+        # f.savefig(pp, format='pdf')
 
 
-        f.savefig(types_fname)
+        # f2 =  pylab.figure(figsize= (12, 12))
+        # irm.plot.plot_t1t1_params(f2, dist_matrix, a, 
+        #                           sample_latent['relations']['R1']['ss'], 
+        #                           MAX_DIST=200)
+        # f2.savefig(pp, format='pdf')
+        # pp.close()
+
+
+        # f = pylab.figure()
+        # ax_types = pylab.subplot(1, 1, 1)
+        # irm.plot.plot_purity_ratios(ax_types, a, cell_types)
+
+
+        # f.savefig(types_fname)
     
 
 pipeline_run([data_retina_adj, create_latents_bb, plot_scores_z, 

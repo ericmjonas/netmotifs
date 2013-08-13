@@ -320,6 +320,13 @@ class LogisticDistance(object):
         x[0]['link'] = link
         return x[0]
 
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
+        
 
 class SigmoidDistance(object):
     """

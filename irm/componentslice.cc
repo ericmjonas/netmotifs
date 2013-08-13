@@ -65,6 +65,7 @@ void slice_sample_exec<LogisticDistance>
  std::vector<LogisticDistance::value_t>::iterator data,
  const std::vector<dppos_t> & dppos,
  float temp){
+
     auto mu = slice_sample<float>(ss->mu, 
                                   [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
