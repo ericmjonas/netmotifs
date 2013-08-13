@@ -29,6 +29,8 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
                 
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
+default_nonconj[1][1]['width'] = 500. 
+
 default_conj = irm.runner.default_kernel_config()
 
 
@@ -69,8 +71,8 @@ def create_latents_ld(infile,
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : 2000., 
-           'lambda_hp' : 2000., 
+    HPS = {'mu_hp' : 1000., 
+           'lambda_hp' : 1000., 
            'p_min' : 0.05, 
            'p_max' : 0.95}
 
@@ -148,7 +150,7 @@ def init_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            yield data_filename, ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
+            yield data_filename, ["%s.%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
 
 
             
@@ -159,8 +161,9 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
     latent_filename = basename + ".latent"
 
-    create_init(latent_filename, out_filenames, 
-                init= init_config['config'])
+    irm.experiments.create_init(latent_filename, data_filename, 
+                                out_filenames, 
+                                init= init_config['config'])
 
 
 
@@ -189,7 +192,7 @@ def experiment_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            inits = ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
+            inits = ["%s.%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
             
             exp_name = "%s-%s-%s.wait" % (data_filename, init_config_name, kernel_config_name)
             yield [data_filename, inits], exp_name, kernel_config_name

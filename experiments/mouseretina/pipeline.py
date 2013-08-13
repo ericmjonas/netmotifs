@@ -252,9 +252,9 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
     latent_filename = basename + ".latent"
 
-    create_init(latent_filename, data_filename, 
-                out_filenames, 
-                init= init_config['config'])
+    irm.experiments.create_init(latent_filename, data_filename, 
+                                out_filenames, 
+                                init= init_config['config'])
 
 
 
