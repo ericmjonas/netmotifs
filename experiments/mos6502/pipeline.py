@@ -379,15 +379,8 @@ def plot_best_latent(exp_results,
     print "meta_infile=", meta_infile
 
     d = pickle.load(open(meta_infile, 'r'))
-    conn = d['dist_matrix']['link']
-    # orig_data = pickle.load(open(d['infile']))
-    # cell_types = orig_data['types'][:len(conn)]
+    dist_matrix = d['dist_matrix']
 
-                        
-    # nodes_with_class = meta['nodes']
-    # conn_and_dist = meta['conn_and_dist']
-
-    # true_assignvect = nodes_with_class['class']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -403,44 +396,11 @@ def plot_best_latent(exp_results,
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
-        a = np.array(sample_latent['domains']['d1']['assignment'])
 
-        a = irm.util.canonicalize_assignment(a)
-        #print len(cell_types), len(a)
-        ai = np.argsort(a).flatten()
-
-        ax = pylab.subplot(gs[1])
-        #ax_types = pylab.subplot(gs[0])
-
-        s_conn =conn[ai]
-        s_conn = s_conn[:, ai]
-        ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
-        for i in  np.argwhere(np.diff(a[ai]) > 0):
-            ax.axhline(i, c='b', alpha=0.7, linewidth=1.0)
-            ax.axvline(i, c='b', alpha=0.7, linewidth=1.0)
-            #ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
-
-        ax.set_xticks([])
-        ax.set_yticks([])
-
-        # ax_types.scatter(np.arange(len(cell_types)), 
-        #                  cell_types[ai], edgecolor='none', c='k', 
-        #                  s=2)
-
-        # ax_types.set_xlim(0, len(cell_types))
-        # ax_types.set_ylim(0, 80)
-        # ax_types.set_xticks([])
-        # ax_types.set_yticks([])
-
-        f.tight_layout()
-
-        f.savefig(latent_fname)
-
-
-        # f = pylab.figure()
-        # ax_types = pylab.subplot(1, 1, 1)
-        # irm.plot.plot_purity_ratios(ax_types, a, cell_types)
-        # f.savefig(types_fname)
+        from irm.experiments import plot_latent
+        model = data['relations']['R1']['model']
+        plot_latent(sample_latent, dist_matrix, latent_fname, 
+                    model=model, PLOT_MAX_DIST=10000)
     
 
 

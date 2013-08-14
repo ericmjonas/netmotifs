@@ -20,17 +20,22 @@ import cloud
 
 BUCKET_BASE="srm/experiments/mouseretina"
 
+WORKING_DIR = "data"
+
+def td(fname): # "to directory"
+    return os.path.join(WORKING_DIR, fname)
 
 EXPERIMENTS = [#('retina.bb', 'fixed_100_200', 'default_10'), 
-               #('retina.bb', 'fixed_100_200', 'default_100'), 
-               ('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
-               # ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-               # ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-               # ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
-               # ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
-               #('retina.ld', 'fixed_100_200', 'default_nc_100')
-               #('retina.bb', 'fixed_100_200', 'default_10000'), 
-           ]
+    #('retina.bb', 'fixed_100_200', 'default_100'), 
+    #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
+    ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+    ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
+    ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+    ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+    #('retina.ld', 'fixed_100_200', 'default_nc_100')
+    #('retina.bb', 'fixed_100_200', 'default_10000'), 
+    #('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+]
 
 THOLDS = [0.01, 0.1, 0.5, 1.0]
     
@@ -59,7 +64,12 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
                                               'group_num' : 20}}, 
                 'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
-                                              'group_num' : 200}}}
+                                              'group_num' : 200}}, 
+                'truth_10' : {'N' : 10, 
+                              'config' : {'type' : 'truth'}}, 
+                'truth_100' : {'N' : 100, 
+                              'config' : {'type' : 'truth'}}, 
+}
 
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
@@ -97,23 +107,42 @@ def create_tholds():
                'soma.positions.pickle']
     for use_z in [0, 1]:
         for tholdi, thold in enumerate(THOLDS):
-            outfile = "retina.%d.%d.data.pickle" % (use_z, tholdi)
+            outfile = td("retina.%d.%d.data.pickle" % (use_z, tholdi))
             yield infiles, [outfile], thold, use_z
 
 @files(create_tholds)
 def data_retina_adj((raw_infile, xlsx_infile, positions_infile), 
                     (retina_outfile,), AREA_THOLD, USE_Z):
+    """
+    From the raw file, create the adjacency matrix. 
+
+    NOTE THAT WE PERMUTE THE ROWS
+
+    Bewcause in the raw file things are already sorted by their 'type'
+    and this makes a lot of interpretation challenging
+    """
+
     data = pickle.load(open(xlsx_infile, 'r'))
     area_mat = data['area_mat']
     positions_data = pickle.load(open(positions_infile, 'r'))
     pos_vec = positions_data['pos_vec']
     NEURON_N = 950 # only the ones for which we also have position data
 
+    np.random.seed(0)
+    cell_id_permutation = np.random.permutation(NEURON_N)
+
+
     area_mat_sub = area_mat[:NEURON_N, :NEURON_N]
+
+    area_mat_sub = area_mat_sub[cell_id_permutation, :]
+    area_mat_sub = area_mat_sub[:, cell_id_permutation]
+    pos_vec = pos_vec[cell_id_permutation]
 
     dist_matrix = np.zeros((NEURON_N, NEURON_N), 
                            dtype=[('link', np.uint8), 
                                   ('distance', np.float32)])
+
+    cell_types = data['types'][cell_id_permutation]
 
     dist_matrix['link'] = area_mat_sub > AREA_THOLD
     for n1 in range(NEURON_N):
@@ -128,6 +157,8 @@ def data_retina_adj((raw_infile, xlsx_infile, positions_infile),
 
     pickle.dump({'dist_matrix' : dist_matrix, 
                  'area_thold' : AREA_THOLD, 
+                 'types' : cell_types, 
+                 'cell_id_permutation' : cell_id_permutation,
                  'infile' : xlsx_infile}, open(retina_outfile, 'w'))
                 
 def create_latents_ld_params():
@@ -188,52 +219,38 @@ def create_latents_bb((infile, ),
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
 
-def create_init(latent_filename, data_filename, out_filenames, 
-                init= None):
-    """ 
-    CONVENTION: when we create N inits, the first is actually 
-    initialized from the "ground truth" of the intial init (whatever
-    that happened to be)
-    """
-    irm_latent = pickle.load(open(latent_filename, 'r'))
-    irm_data = pickle.load(open(data_filename, 'r'))
-    irm_latents = []
+@transform(data_retina_adj, suffix(".data.pickle"), 
+           [".ld.truth.data", ".ld.truth.latent", ".ld.truth.meta"])
+def create_latents_ld_truth((infile, ),
+                      (data_filename, latent_filename, meta_filename)):
 
-    rng = irm.RNG()
+    d = pickle.load(open(infile, 'r'))
+    conn_and_dist = d['dist_matrix']
+    
+    model_name= "LogisticDistance" 
 
-    irm_model = irm.irmio.create_model_from_data(irm_data, rng=rng)
-    for c, out_f in enumerate(out_filenames):
-        print "generating init", out_f
-        np.random.seed(c)
-
-        latent = copy.deepcopy(irm_latent)
-
-        if init['type'] == 'fixed':
-            group_num = init['group_num']
-
-            a = np.arange(len(latent['domains']['d1']['assignment'])) % group_num
-            a = np.random.permutation(a)
-
-        elif init['type'] == 'crp':
-            alpha = init['alpha']
-        else:
-            raise NotImplementedError("Unknown init type")
-            
-        if c > 0: # first one stays the same
-            latent['domains']['d1']['assignment'] = a
-
-        # generate new suffstats, recompute suffstats in light of new assignment
-
-        irm.irmio.set_model_latent(irm_model, latent, rng)
-
-        irm.irmio.estimate_suffstats(irm_model, rng, ITERS=10)
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = d['types']
 
 
-        pickle.dump(irm.irmio.get_latent(irm_model), open(out_f, 'w'))
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
+    HPS = {'mu_hp' : 10.,
+           'lambda_hp' : 10,
+           'p_min' : 0.05, 
+           'p_max' : 0.5}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    irm_latent['domains']['d1']['assignment'] = cell_types
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 }, open(meta_filename, 'w'))
 
 def get_dataset(data_name):
-    return glob.glob("%s.data" %  data_name)
+    return glob.glob(td("%s.data" %  data_name))
 
 def init_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
@@ -244,7 +261,7 @@ def init_generator():
 
 
             
-
+@follows(create_latents_ld_truth)
 @follows(create_latents_ld)
 @follows(create_latents_bb)
 @files(init_generator)
@@ -496,5 +513,6 @@ def plot_best_latent(exp_results,
     
 
 pipeline_run([data_retina_adj, create_latents_bb, plot_scores_z, 
-              plot_best_latent], multiprocess=2)
+              plot_best_latent, 
+              create_latents_ld_truth], multiprocess=2)
                         
