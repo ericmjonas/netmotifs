@@ -65,25 +65,23 @@ void slice_sample_exec<LogisticDistance>
  std::vector<LogisticDistance::value_t>::iterator data,
  const std::vector<dppos_t> & dppos,
  float temp){
-
     auto mu = slice_sample<float>(ss->mu, 
-                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
-                                     ss->mu = x; 
-                                     return LogisticDistance::score(ss, hps, data, 
-                                                                    dppos) /temp;
-                          }, 
-                          rng, width); 
+                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      ss->mu = x; 
+                                      return LogisticDistance::score(ss, hps, data, 
+                                                                     dppos) /temp;
+                                  }, 
+                                  rng, width); 
     
     ss->mu = mu; 
 
-
     auto lambda = slice_sample<float>(ss->lambda, 
-                                      [&ss, &hps, data, &dppos, temp](float x) -> float{
-                                     ss->lambda = x; 
-                                     return LogisticDistance::score(ss, hps, data, 
-                                                                    dppos);
-                          }, 
-                          rng, width); 
+                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                          ss->lambda = x; 
+                                          return LogisticDistance::score(ss, hps, data, 
+                                                                         dppos);
+                                      }, 
+                                      rng, width); 
     
     ss->lambda = lambda; 
 
@@ -98,7 +96,7 @@ void slice_sample_exec<SigmoidDistance>
  const std::vector<dppos_t> & dppos, 
  float temp){
     auto mu = slice_sample<float>(ss->mu, 
-                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
                                                                     dppos)/temp;
@@ -109,7 +107,7 @@ void slice_sample_exec<SigmoidDistance>
 
 
     auto lambda = slice_sample<float>(ss->lambda, 
-                                      [&ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
                                                                     dppos);
