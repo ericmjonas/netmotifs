@@ -387,9 +387,9 @@ struct LogisticDistance {
         float r2 = uniform_01(rng); 
         
         try { 
-            boost::math::exponential_distribution<> mu_dist(mu_hp);
+            boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
             float mu = quantile(mu_dist, r1); 
-            boost::math::exponential_distribution<> lamb_dist(lambda_hp);
+            boost::math::exponential_distribution<> lamb_dist(1.0/lambda_hp);
             float lamb = quantile(lamb_dist, r2); 
             return std::make_pair(mu, lamb); 
 
@@ -578,9 +578,9 @@ struct SigmoidDistance {
         float r2 = uniform_01(rng); 
         
         try { 
-            boost::math::exponential_distribution<> mu_dist(mu_hp);
+            boost::math::exponential_distribution<> mu_dist(1./mu_hp);
             float mu = quantile(mu_dist, r1); 
-            boost::math::exponential_distribution<> lamb_dist(lambda_hp);
+            boost::math::exponential_distribution<> lamb_dist(1./lambda_hp);
             float lamb = quantile(lamb_dist, r2); 
             return std::make_pair(mu, lamb); 
 
