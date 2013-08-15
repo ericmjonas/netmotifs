@@ -87,7 +87,7 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect):
     return ai
 
 def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10, 
-                     model="LogisticDistance"):
+                     model="LogisticDistance", MAX_CLASSES = 20):
     """
     In the same order that we would plot the latent matrix, plot
     the per-parameter properties
@@ -98,10 +98,21 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
 
     from mpl_toolkits.axes_grid1 import Grid
     from matplotlib import pylab
+    
+    canon_assign_vect = util.canonicalize_assignment(assign_vect)
+    # create the mapping between existing and new
+    canon_to_old  = {}
+    for i, v in enumerate(canon_assign_vect):
+        canon_to_old[v]= assign_vect[i]
 
-    CLASSES = np.unique(assign_vect)
+    CLASSES = np.sort(np.unique(canon_assign_vect)) 
+    
     CLASSN = len(CLASSES)
+    print CLASSN, len(CLASSES)
 
+    if CLASSN > MAX_CLASSES:
+        print "WARNING, TOO MANY CLASSES" 
+        CLASSN = MAX_CLASSES
 
     img_grid = Grid(fig, 111, # similar to subplot(111)
                     nrows_ncols = (CLASSN, CLASSN),
@@ -110,9 +121,11 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
                     label_mode = 'L',
                      )
     
-    print CLASSN, len(CLASSES)
-    for c1i, c1 in enumerate(CLASSES):
-        for c2i, c2 in enumerate(CLASSES):
+
+    for c1i, c1_canon in enumerate(CLASSES[:MAX_CLASSES]):
+        for c2i, c2_canon in enumerate(CLASSES[:MAX_CLASSES]):
+            c1 = canon_to_old[c1_canon]
+            c2 = canon_to_old[c1_canon]
             ax_pos = c1i * CLASSN + c2i
             print 'ax_pos=', ax_pos, c1i, c2i
             ax = img_grid[ax_pos]
