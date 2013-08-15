@@ -464,10 +464,13 @@ struct LogisticDistance {
                                   RandomAccessIterator data, const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
+        float p_range = hps->p_max - hps->p_min; 
+
         for(auto dpi : dppos) { 
             float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
                                           ss->lambda, hps->p_min, 
                                           hps->p_max); 
+            p = p * p_range + hps->p_min; 
             float lscore; 
             if(data[dpi].link) {
                 lscore = logf(p); 
@@ -487,7 +490,6 @@ struct LogisticDistance {
     { 
         float prior_score = score_prior(ss, hps); 
         float likelihood_score = score_likelihood(ss, hps, data, dppos); 
-
         return prior_score + likelihood_score; 
     }
 
@@ -667,7 +669,6 @@ struct SigmoidDistance {
     { 
         float prior_score = score_prior(ss, hps); 
         float likelihood_score = score_likelihood(ss, hps, data, dppos); 
-
         return prior_score + likelihood_score; 
     }
 
