@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.cluster.hierarchy as hier
 import util
-
+import cPickle as pickle
 
 def plot_zmatrix(ax, zmatrix):
     from matplotlib import pylab
@@ -154,6 +154,14 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
             hfalse, _ = np.histogram(noconn_dist_hist, bins)
 
             p = htrue.astype(float) / (hfalse + htrue)
+            # # TOTAL INSANE GROSS HACK REMOVE ASAP
+            # pickle.dump({'conn_dist_hist' : conn_dist_hist, 
+            #              'noconn_dist_hist' : noconn_dist_hist, 
+            #              'htrue' : htrue, 
+            #              'hfalse' : hfalse, 
+            #              'p' : p, 'bins' : bins, 'fine_bins' : fine_bins}, 
+            #             open("component.%d.%d.pickle" % (c1i, c2i), 'w'))
+            
             ax.plot(bins[:-1], p)
             #ax.set_xlim(0, MAX_DIST)
             #ax.set_ylim(0, 1.0)
