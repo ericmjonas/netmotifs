@@ -60,7 +60,7 @@ def create_init(latent_filename, data_filename, out_filenames,
 
         irm.irmio.set_model_latent(irm_model, latent, rng)
 
-        irm.irmio.estimate_suffstats(irm_model, rng, ITERS=10)
+        irm.irmio.estimate_suffstats(irm_model, rng, ITERS=2)
 
 
         pickle.dump(irm.irmio.get_latent(irm_model), open(out_f, 'w'))
@@ -70,7 +70,7 @@ def plot_latent(latent, dist_matrix,
                 latent_filename, 
                 ground_truth_assign = None, 
                 truth_comparison_filename = None, 
-                model='LogisticDistance', PLOT_MAX_DIST=200):
+                model='LogisticDistance', PLOT_MAX_DIST=200, MAX_CLASSES=20):
     """ just getting this code out of pipeline"""
     from matplotlib import pylab
 
@@ -87,18 +87,8 @@ def plot_latent(latent, dist_matrix,
     
     ax = pylab.subplot(gs[1])
     ax_types = pylab.subplot(gs[0])
-    
+    print "plot_t1t1_latent"
     ai = irm.plot.plot_t1t1_latent(ax, dist_matrix['link'], a)
-
-
-    # gross_types = np.zeros_like(ground_truth_assign)
-    # gross_types[:12] = 0
-    # gross_types[12:57] = 1
-    # gross_types[58:] = 2 
-
-    # cluster_types = irm.util.compute_purity(a, gross_types)
-    # for k, v in cluster_types.iteritems():
-    #     print k, ":",  v
 
     if ground_truth_assign != None:
         for i in  np.argwhere(np.diff(a[ai]) != 0):
@@ -120,12 +110,14 @@ def plot_latent(latent, dist_matrix,
     # SUCH A HACK SHOULD PASS IN DATA. GOD THIS CODE IS TURNING TO SHIT
     # UNDER TIME PRESSURE
 
-    f2 =  pylab.figure(figsize= (12, 12))
+    f2 =  pylab.figure(figsize= (24, 24))
+    print "plot_t1t1_params"
     irm.plot.plot_t1t1_params(f2, dist_matrix, a, 
                               latent['relations']['R1']['ss'], 
-                              MAX_DIST=PLOT_MAX_DIST, model=model)
+                              latent['relations']['R1']['hps'], 
+                              MAX_DIST=PLOT_MAX_DIST, model=model, 
+                              MAX_CLASSES=MAX_CLASSES   )
     f2.savefig(pp, format='pdf')
-
 
     pp.close()
 
