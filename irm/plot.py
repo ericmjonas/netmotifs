@@ -86,11 +86,13 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect):
 
     return ai
 
-def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10, 
+def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10, 
                      model="LogisticDistance", MAX_CLASSES = 20):
     """
     In the same order that we would plot the latent matrix, plot
     the per-parameter properties
+
+    hps are per-relation hps
 
     note, tragically, this wants the whole figure
 
@@ -117,7 +119,8 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
     img_grid = Grid(fig, 111, # similar to subplot(111)
                     nrows_ncols = (CLASSN, CLASSN),
                     axes_pad = 0.1,
-                    add_all=True,
+                    add_all=True, 
+                    share_all=True, 
                     label_mode = 'L',
                      )
     
@@ -125,7 +128,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
     for c1i, c1_canon in enumerate(CLASSES[:MAX_CLASSES]):
         for c2i, c2_canon in enumerate(CLASSES[:MAX_CLASSES]):
             c1 = canon_to_old[c1_canon]
-            c2 = canon_to_old[c1_canon]
+            c2 = canon_to_old[c2_canon]
             ax_pos = c1i * CLASSN + c2i
             print 'ax_pos=', ax_pos, c1i, c2i
             ax = img_grid[ax_pos]
@@ -151,18 +154,17 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, MAX_DIST=10,
             hfalse, _ = np.histogram(noconn_dist_hist, bins)
 
             p = htrue.astype(float) / (hfalse + htrue)
-            print bins, p
             ax.plot(bins[:-1], p)
-            ax.set_xlim(0, MAX_DIST)
-            ax.set_ylim(0, 1.0)
-            ax.set_xticks([])
-            ax.set_yticks([])
+            #ax.set_xlim(0, MAX_DIST)
+            #ax.set_ylim(0, 1.0)
+            # ax.set_xticks([])
+            # ax.set_yticks([])
 
             if model == "LogisticDistance":
                 c = ss[(c1, c2)]
-                ax.plot(fine_bins, 
-                        util.logistic(fine_bins, c['mu'], c['lambda']), 
-                        c='r') 
+                y = util.logistic(fine_bins, c['mu'], c['lambda']) 
+                y = y * (hps['p_max'] - hps['p_min']) + hps['p_min']
+                ax.plot(fine_bins, y, c='r') 
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
