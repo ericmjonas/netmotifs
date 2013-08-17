@@ -13,5 +13,6 @@ if __name__ == "__main__":
     latent = pickle.load(open(latent_filename, 'r'))
     dist_matrix = data['relations']['R1']['data']
 
-    util.plot_latent(latent, dist_matrix, outfile)
+    util.plot_latent(latent, dist_matrix, outfile, PLOT_MAX_DIST=100., 
+                     MAX_CLASSES=20)
 

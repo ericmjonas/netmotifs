@@ -19,8 +19,41 @@ import skimage.io
 LIGHT_AXIS = [0.9916,0.0572, 0.1164]
 
 @files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation5.mat", 
+       "synapses.pickle")
+def load_synapse_data(mat_file, output_file):
+    """
+    raw synapse data from the matlab file. 
+    zero-center
+    """
+    
+    d = scipy.io.loadmat(mat_file)
+    
+    data = d['kn_allContactData_Interfaces_duplCorr_output_IDconv']
+
+    synapses = {}
+    for from_id, to_id, area, x, y, z in data:
+        # ASSUMPTION : from < to, upper right-hand of matrix
+        from_id -= 1
+        to_id -= 1
+        if from_id > to_id:
+            from_id, to_id = to_id, from_id
+        node_tuple = (int(from_id), int(to_id)) 
+
+        if node_tuple not in synapses:
+            synapses[node_tuple] = []
+
+        synapses[node_tuple].append(((x/1000., y/1000., z/1000.), area))
+    pickle.dump({'synapses' : synapses},  
+                 open(output_file, 'w'))
+
+@files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation5.mat", 
        "rawdata.pickle")
 def load_data(mat_file, output_file):
+    """
+    In a move that may doom us all to failure, we shift the cell-IDs to be zero
+    indexed
+    """
+    
     d = scipy.io.loadmat(mat_file)
     
     data = d['kn_allContactData_Interfaces_duplCorr_output_IDconv']
@@ -29,8 +62,8 @@ def load_data(mat_file, output_file):
     TO_COL = 1 
 
     cell_ids = np.unique(np.vstack([data[:, FROM_COL], data[:, TO_COL]])).astype(int)
-    
     CELL_N = len(cell_ids)
+    assert np.min(cell_ids) == 1
     
     # some cells have ZERO synapses, so they are empty; still nto sure where cellids
     # > 1123 come from 
@@ -306,6 +339,6 @@ def type_metadata(xlsx_file, output_file):
                 open(output_file, 'w'))
 
             
-pipeline_run([load_data, load_xlsx_data, sanity_check, plot_synapses, 
+pipeline_run([load_synapse_data, load_xlsx_data, sanity_check, plot_synapses, 
               plot_adj, process_image_pos, merge_positions, type_metadata])
 

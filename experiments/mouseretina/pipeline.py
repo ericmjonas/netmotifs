@@ -25,13 +25,17 @@ WORKING_DIR = "data"
 def td(fname): # "to directory"
     return os.path.join(WORKING_DIR, fname)
 
-EXPERIMENTS = [#('retina.bb', 'fixed_100_200', 'default_10'), 
+EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'), 
+               ('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
+               ('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
+               ('retina.0.1.bb', 'fixed_10_200', 'default_100'), 
+
     #('retina.bb', 'fixed_100_200', 'default_100'), 
     #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
-    ('retina.1.1.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-    ('retina.1.0.ld.0.0', 'fixed_100_200', 'default_nc_1000'), 
-    ('retina.1.1.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
-    ('retina.1.0.ld.1.0', 'fixed_100_200', 'default_nc_1000'), 
+    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), 
+    # ('retina.1.0.ld.0.0', 'fixed_20_100', 'default_nc_100'), 
+    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_100'), 
+    # ('retina.1.0.ld.1.0', 'fixed_20_100', 'default_nc_100'), 
     #('retina.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
     #('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
@@ -43,17 +47,13 @@ MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
 PMAXS = [0.95, 0.9, 0.7, 0.5]
 
 
-# for i in range(len(THOLDS)):
-#     for z in [0, 1]:
-#         for k in range(len(MULAMBS)):
-#             for l in range(len(PMAXS)):
-#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
-#                                     'fixed_10_200',
-#                                     'default_nc_10'))
-            
-#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
-#                                     'fixed_100_200',
-#                                     'default_nc_100'))
+for i in range(len(THOLDS)):
+    for z in [0, 1]:
+        for k in range(len(MULAMBS)):
+            for l in range(len(PMAXS)):
+                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+                                    'fixed_20_100',
+                                    'default_nc_100'))
             
             
 INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
@@ -62,9 +62,9 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
                 'fixed_10_20' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 20}}, 
-                'fixed_100_200' : {'N' : 100, 
+                'fixed_20_100' : {'N' : 20, 
                                   'config' : {'type' : 'fixed', 
-                                              'group_num' : 200}}, 
+                                              'group_num' : 100}}, 
                 'truth_10' : {'N' : 10, 
                               'config' : {'type' : 'truth'}}, 
                 'truth_100' : {'N' : 100, 
@@ -103,7 +103,7 @@ def create_tholds():
     systematicaly vary the threshold for "synapse" and whether or not
     we use the z-axis
     """
-    infiles = ['rawdata.pickle', 'xlsxdata.pickle', 
+    infiles = ['xlsxdata.pickle', 
                'soma.positions.pickle']
     for use_z in [0, 1]:
         for tholdi, thold in enumerate(THOLDS):
@@ -111,7 +111,7 @@ def create_tholds():
             yield infiles, [outfile], thold, use_z
 
 @files(create_tholds)
-def data_retina_adj((raw_infile, xlsx_infile, positions_infile), 
+def data_retina_adj((xlsx_infile, positions_infile), 
                     (retina_outfile,), AREA_THOLD, USE_Z):
     """
     From the raw file, create the adjacency matrix. 
@@ -223,7 +223,7 @@ def create_latents_bb((infile, ),
            [".ld.truth.data", ".ld.truth.latent", ".ld.truth.meta"])
 def create_latents_ld_truth((infile, ),
                       (data_filename, latent_filename, meta_filename)):
-
+    print "Creating latent init to truth", data_filename
     d = pickle.load(open(infile, 'r'))
     conn_and_dist = d['dist_matrix']
     
@@ -237,14 +237,24 @@ def create_latents_ld_truth((infile, ),
 
     HPS = {'mu_hp' : 10.,
            'lambda_hp' : 10,
-           'p_min' : 0.05, 
-           'p_max' : 0.5}
+           'p_min' : 0.02, 
+           'p_max' : 0.98}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
     irm_latent['domains']['d1']['assignment'] = cell_types
 
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
+
+
+
+    rng = irm.RNG()
+    irm_model = irm.irmio.create_model_from_data(irm_data, rng=rng)
+    irm.irmio.set_model_latent(irm_model, irm_latent, rng)
+
+    irm.irmio.estimate_suffstats(irm_model, rng, ITERS=20)
+    
+    pickle.dump(irm.irmio.get_latent(irm_model), 
+                open(latent_filename, 'w'))
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : infile, 
                  }, open(meta_filename, 'w'))
@@ -367,8 +377,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     conn = d['dist_matrix']['link']
     orig_data = pickle.load(open(d['infile']))
     print "len(dist_matrix):", conn.shape
-    cell_types = orig_data['types'][:len(conn)]
-
+    cell_types = d['types'][:len(conn)]
     # nodes_with_class = meta['nodes']
     # conn_and_dist = meta['conn_and_dist']
 
@@ -400,7 +409,8 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_score.grid(1)
 
 
-    ax_purity.plot(cell_types[z_ord])
+    ax_purity.scatter(np.arange(len(cell_types)), 
+                      cell_types[z_ord], edgecolor='none', s=3)
     ax_purity.set_ylabel('true cell id')
 
     f.tight_layout()
@@ -455,7 +465,8 @@ def plot_best_latent(exp_results,
         
         util.plot_latent(sample_latent, dist_matrix, 
                          latent_fname, cell_types, 
-                         types_fname)
+                         types_fname, 
+                         model=data['relations']['R1']['model'])
 
         # a = np.array(sample_latent['domains']['d1']['assignment'])
 
@@ -512,7 +523,8 @@ def plot_best_latent(exp_results,
         # f.savefig(types_fname)
     
 
-pipeline_run([data_retina_adj, create_latents_bb, plot_scores_z, 
+pipeline_run([data_retina_adj, create_latents_bb, create_latents_ld_truth, 
+              plot_scores_z, 
               plot_best_latent, 
-              create_latents_ld_truth], multiprocess=2)
+              create_latents_ld_truth], multiprocess=4)
                         
