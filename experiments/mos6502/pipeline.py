@@ -15,13 +15,16 @@ import cloud
 BUCKET_BASE="srm/experiments/mos6502"
 
 
-EXPERIMENTS = [('mos6502.all.bb', 'fixed_10_200', 'default_10'), 
-               ('mos6502.all.ld', 'fixed_10_200', 'default_nc_10'), 
+EXPERIMENTS = [('mos6502.all.bb', 'fixed_20_200', 'default_10'), 
+               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_10'), 
            ]
 
-INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
+INIT_CONFIGS = {'fixed_20_200' : {'N' : 20, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}, 
+                'fixed_2_40' : {'N' : 2, 
+                                'config' : {'type' : 'fixed', 
+                                              'group_num' : 40}}, 
                 'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}}
@@ -33,13 +36,12 @@ default_nonconj[1][1]['width'] = 500.
 
 default_conj = irm.runner.default_kernel_config()
 
+pickle.dump(default_nonconj, open("test.config", 'w'))
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
                   'default_nc_10' : {'ITERS' : 10, 
                                   'kernels' : default_nonconj},
-                  'default_1000' : {'ITERS' : 1000, 
-                                  'kernels' : default_conj},
                   'default_10' : {'ITERS' : 10, 
                                   'kernels' : default_conj},
                   }
@@ -362,10 +364,10 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
 
     
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, )  for d in range(3)])
+           [(".%d.latent.pdf" % d, )  for d in range(2)])
 def plot_best_latent(exp_results, 
                      out_filenames):
-
+    print "Plotting best latent", exp_results
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
     
@@ -384,23 +386,19 @@ def plot_best_latent(exp_results,
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
-
+    print "CHAINN=", CHAINN, "out_filenames=", out_filenames
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
     for chain_pos, (latent_fname, ) in enumerate(out_filenames):
-        f = pylab.figure(figsize= (24, 26))
-
-        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
-
+        print "plotting chain", chain_pos
 
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
 
-        from irm.experiments import plot_latent
         model = data['relations']['R1']['model']
-        plot_latent(sample_latent, dist_matrix, latent_fname, 
-                    model=model, PLOT_MAX_DIST=10000)
+        irm.experiments.plot_latent(sample_latent, dist_matrix, latent_fname, 
+                                    model=model, PLOT_MAX_DIST=10000)
     
 
 

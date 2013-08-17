@@ -83,7 +83,6 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect):
     ax.set_xticks([])
     ax.set_yticks([])
 
-
     return ai
 
 def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10, 

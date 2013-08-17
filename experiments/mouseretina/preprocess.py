@@ -30,69 +30,50 @@ def load_synapse_data(mat_file, output_file):
     
     data = d['kn_allContactData_Interfaces_duplCorr_output_IDconv']
 
-    synapses = {}
+    raw = []
     for from_id, to_id, area, x, y, z in data:
         # ASSUMPTION : from < to, upper right-hand of matrix
         from_id -= 1
         to_id -= 1
         if from_id > to_id:
             from_id, to_id = to_id, from_id
-        node_tuple = (int(from_id), int(to_id)) 
 
-        if node_tuple not in synapses:
-            synapses[node_tuple] = []
-
-        synapses[node_tuple].append(((x/1000., y/1000., z/1000.), area))
-    pickle.dump({'synapses' : synapses},  
+        raw.append((int(from_id), int(to_id), x/1000., y/1000., z/1000., area))
+    df = pandas.DataFrame.from_records(raw, columns=['from_id', 'to_id', 'x', 'y', 'z', 'area'])
+    pickle.dump({'synapsedf' : df},  
                  open(output_file, 'w'))
 
-@files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation5.mat", 
-       "rawdata.pickle")
-def load_data(mat_file, output_file):
+@files(load_synapse_data, 
+       ["conn.areacount.pickle"])
+def transform_data(synapse_file, (areacount_file,)):
     """
-    In a move that may doom us all to failure, we shift the cell-IDs to be zero
-    indexed
     """
-    
-    d = scipy.io.loadmat(mat_file)
-    
-    data = d['kn_allContactData_Interfaces_duplCorr_output_IDconv']
+    synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
+    HIGHEST_CELL_ID = synapses['to_id'].max()
+    CELL_N = HIGHEST_CELL_ID + 1
 
-    FROM_COL = 0
-    TO_COL = 1 
+    MAX_CONTACT_AREA = 5.0 # microns, to eliminate touching somata
 
-    cell_ids = np.unique(np.vstack([data[:, FROM_COL], data[:, TO_COL]])).astype(int)
-    CELL_N = len(cell_ids)
-    assert np.min(cell_ids) == 1
-    
-    # some cells have ZERO synapses, so they are empty; still nto sure where cellids
-    # > 1123 come from 
-    
-    cellid_to_pos = {}
-    for i, id in enumerate(cell_ids):
-        cellid_to_pos[int(id)] = i
-
-    # create the matrix
     area_mat = np.zeros((CELL_N, CELL_N), dtype=[('area', np.float32), 
                                                  ('count', np.uint32)])
-    synapse_pos = {}
 
-    for from_id, to_id, area, x, y, z in data:
-        from_i = cellid_to_pos[int(from_id)]
-        to_i = cellid_to_pos[int(to_id)]
-        if area_mat[from_i, to_i] > 0:
-            area_mat[from_i, to_i]['area'] += area
-            area_mat[from_i, to_i]['count'] += 1
+    for (from_id, to_id), cell_synapses in synapses.groupby(['from_id', 'to_id']):
+        area_mat[from_id, to_id]['count'] = len(cell_synapses)
+        area = cell_synapses['area']
 
-        if (int(from_id), int(to_id)) not in synapse_pos:
-            synapse_pos[(int(from_id), int(to_id))] = []
+        area_mat[from_id, to_id]['area'] = area[area < MAX_CONTACT_AREA].sum()
 
-        synapse_pos[(int(from_id), int(to_id))].append((x/1000., y/1000., z/1000.))
-    pickle.dump({'area_mat' : area_mat, 
-                 'synapse_pos' : synapse_pos, 
-                 'cellid_to_pos' : cellid_to_pos, 
-                 'cell_ids' : cell_ids}, 
-                open(output_file, 'w'))
+    # now make symmetric
+    lower_idx = np.tril_indices(CELL_N)
+    # now this should be zeros
+    assert area_mat[lower_idx]['count'].sum() == 0
+    area_mat['count'] += area_mat.T['count']
+    area_mat['area'] += area_mat.T['area']
+
+
+    pickle.dump({'area_mat': area_mat}, 
+                open(areacount_file, 'w'))
+
 
 @files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation4.xlsx", 
        "xlsxdata.pickle")
@@ -119,84 +100,6 @@ def load_xlsx_data(xlsx_file, output_file):
                  'types' : types}, 
                 open(output_file, 'w'))
 
-@files(load_data, ['synapse_hist.pdf'])
-def sanity_check(infile, (synapse_hist,)):
-    """
-    Sanity checking and plotting
-    """
-
-    d = pickle.load(open(infile))
-    area_mat = d['area_mat']
-    synapse_pos = d['synapse_pos']
-
-    print "MISSING", set(range(1, 1025)) - set(d['cell_ids'])
-
-    f = pylab.figure(figsize=(8, 6))
-    nonzero = area_mat.flatten()
-    nonzero = nonzero[nonzero['count']>0]
-    print nonzero['count']
-    ax_count = f.add_subplot(1,2, 1)
-    ax_count.hist(nonzero['count'], bins=20)
-    ax_count.set_title("histogram of synapse counts")
-    
-    ax_total_area = f.add_subplot(1,2, 2)
-    ax_total_area.hist(nonzero['area'], bins=20)
-    ax_total_area.set_title("total area distribution")
-    
-    f.savefig(synapse_hist)
-
-
-@files(load_data, "synapse_pos.png")
-def plot_synapses(infile, outfile):
-    """
-    normalize positions to the inbound light
-    """
-    d = pickle.load(open(infile))
-    area_mat = d['area_mat']
-    synapse_pos = d['synapse_pos']
-
-    all_synapses = []
-    for k, x in synapse_pos.iteritems():
-        all_synapses += x
-
-    all_synapses = np.array(all_synapses)
-
-
-    f = pylab.figure(figsize=(8, 8))
-
-    alpha = 0.01
-    s = 1.0
-    for i in range(3):
-        ax = f.add_subplot(2, 2, i+1)
-        
-        ax.scatter(all_synapses[:, (i) % 3], all_synapses[:, (i+1)%3], 
-                   edgecolor='none', s=s, alpha=alpha, c='k')
-
-        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                     ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(8)
-
-    f.savefig(outfile, dpi=600)
-
-@files(load_data, "cell_adj.png")
-def plot_adj(infile, outfile):
-    """
-    normalize positions to the inbound light
-    """
-    d = pickle.load(open(infile))
-    area_mat = d['area_mat']
-    CELL_N = len(area_mat)
-    p = np.random.permutation(CELL_N)
-    area_mat_p = area_mat[p, :]
-    area_mat_p = area_mat_p[:, p]
-
-    f = pylab.figure(figsize=(8, 8))
-    ax = f.add_subplot(1, 1, 1)
-
-    ax.imshow(area_mat_p['count'] > 0, interpolation='nearest', 
-              cmap=pylab.cm.Greys)
-    
-    f.savefig(outfile, dpi=600)
 
 BASEDIR = "../../../data/mouseretina"
 
@@ -338,7 +241,10 @@ def type_metadata(xlsx_file, output_file):
     pickle.dump({'type_metadata' : df}, 
                 open(output_file, 'w'))
 
-            
-pipeline_run([load_synapse_data, load_xlsx_data, sanity_check, plot_synapses, 
-              plot_adj, process_image_pos, merge_positions, type_metadata])
+if __name__ == "__main__":
+    
+    pipeline_run([load_synapse_data, load_xlsx_data, transform_data, 
+                  #sanity_check, plot_synapses, 
+                  #plot_adj, 
+                  process_image_pos, merge_positions, type_metadata])
 
