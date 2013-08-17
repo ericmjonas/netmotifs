@@ -17,6 +17,7 @@ import skimage.measure
 import skimage.io
 
 LIGHT_AXIS = [0.9916,0.0572, 0.1164]
+MAX_DIM = [132.0, 114.0, 80.0]
 
 @files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation5.mat", 
        "synapses.pickle")
@@ -179,12 +180,20 @@ def process_image_pos(filename, (output_png, output_pickle)):
 
 @merge(process_image_pos, "soma.positions.pickle")
 def merge_positions(inputfiles, outputfile):
+    """
+    Remember we have these as pixes, so we need to subtract and organize. 
+
+    """
+
     PIX_PER_UM = 7.2
     # use the top two plots
     out_pos = {}
     out_coords = {}
     N = len(inputfiles)
     coords = np.zeros((N, 3), dtype=np.float32)
+    LEFT_1 = 100
+    LEFT_2 = 1090
+    ZERO = 800
     for f in inputfiles:
         cell_id = int(os.path.basename(f[1])[:4])
         d = pickle.load(open(f[1]))
@@ -194,15 +203,17 @@ def merge_positions(inputfiles, outputfile):
         y = 0
         z = 0
         for c in d['coords']:
-            if c[0] < 900 and c[1] < 900:
-                # upper left plot in image, meaning x-z
-                x = c[0] / PIX_PER_UM
-                z = c[1] / PIX_PER_UM
-            elif c[0] > 900 and c[1] < 900:
-                y = c[0] / PIX_PER_UM
-                z = c[1] / PIX_PER_UM
+            print "The coords are", c
+            if c[0] < LEFT_2 and c[1] < 900:
+                # upper left plot in image, meaning u-z
+                x = (ZERO - c[1]) / PIX_PER_UM
+                y = (c[0] - LEFT_1) / PIX_PER_UM
+            elif c[0] > LEFT_2 and c[1] < 900:
+                x = (ZERO - c[1]) / PIX_PER_UM
+                z = (c[0] - LEFT_2) / PIX_PER_UM
         
-                
+        if x == 0 or y == 0 or z == 0:
+            raise Exception("did not find one!")
         out_coords[cell_id] = d['coords']
         out_pos[cell_id] = (x, y, z)
         coords[cell_id -1] = (x, y, z)

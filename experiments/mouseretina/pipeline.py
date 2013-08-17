@@ -412,6 +412,8 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_purity.scatter(np.arange(len(cell_types)), 
                       cell_types[z_ord], edgecolor='none', s=3)
     ax_purity.set_ylabel('true cell id')
+    ax_purity.set_xlim(0, len(z_ord))
+
 
     f.tight_layout()
 

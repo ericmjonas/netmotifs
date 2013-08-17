@@ -73,56 +73,71 @@ def mat_xls_consistency((conn_areacount, xlsdata, somapos), adj_plots):
 #     f.savefig(synapse_hist)
 
 
-# @files(load_data, "synapse_pos.png")
-# def plot_synapses(infile, outfile):
-#     """
-#     normalize positions to the inbound light
-#     """
-#     d = pickle.load(open(infile))
-#     area_mat = d['area_mat']
-#     synapse_pos = d['synapse_pos']
+@files("synapses.pickle", "synapse_pos.png")
+def plot_synapses(infile, outfile):
+    """
+    """
+    d = pickle.load(open(infile))
+    df = d['synapsedf']
 
-#     all_synapses = []
-#     for k, x in synapse_pos.iteritems():
-#         all_synapses += x
+    f = pylab.figure(figsize=(16, 8))
 
-#     all_synapses = np.array(all_synapses)
+    alpha = 0.05
+    s = 1.0
+    ax_xz = f.add_subplot(2, 1, 1)
+    ax_xz.scatter(df['z'], df['x'], 
+                  edgecolor='none', s=df['area']*4, alpha=alpha, c='k')
+    ax_xz.set_xlim(0, MAX_DIM[2])
+    ax_xz.set_xlabel("z (um)")
+    ax_xz.set_ylim(0, MAX_DIM[0])
+    ax_xz.set_ylabel("x (um)")
 
+    ax_yz = f.add_subplot(2, 1, 2)
+    ax_yz.scatter(df['y'], df['x'], 
+                  edgecolor='none', s=df['area']*4, alpha=alpha, c='k')
+    ax_yz.set_xlim(0, MAX_DIM[1])
+    ax_yz.set_xlabel("y (um)")
+    ax_yz.set_ylim(0, MAX_DIM[0])
+    ax_yz.set_ylabel("x (um)")
 
-#     f = pylab.figure(figsize=(8, 8))
+    f.savefig(outfile, dpi=600)
 
-#     alpha = 0.01
-#     s = 1.0
-#     for i in range(3):
-#         ax = f.add_subplot(2, 2, i+1)
-        
-#         ax.scatter(all_synapses[:, (i) % 3], all_synapses[:, (i+1)%3], 
-#                    edgecolor='none', s=s, alpha=alpha, c='k')
+@files("conn.areacount.pickle", "cell_adj.png")
+def plot_adj(infile, outfile):
+    """
+    normalize positions to the inbound light
+    """
+    d = pickle.load(open(infile))
+    area_mat = d['area_mat']
+    CELL_N = len(area_mat)
+    p = np.random.permutation(CELL_N)
+    area_mat_p = area_mat[p, :]
+    area_mat_p = area_mat_p[:, p]
 
-#         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-#                      ax.get_xticklabels() + ax.get_yticklabels()):
-#             item.set_fontsize(8)
+    f = pylab.figure(figsize=(8, 8))
+    ax = f.add_subplot(1, 1, 1)
 
-#     f.savefig(outfile, dpi=600)
-
-# @files(load_data, "cell_adj.png")
-# def plot_adj(infile, outfile):
-#     """
-#     normalize positions to the inbound light
-#     """
-#     d = pickle.load(open(infile))
-#     area_mat = d['area_mat']
-#     CELL_N = len(area_mat)
-#     p = np.random.permutation(CELL_N)
-#     area_mat_p = area_mat[p, :]
-#     area_mat_p = area_mat_p[:, p]
-
-#     f = pylab.figure(figsize=(8, 8))
-#     ax = f.add_subplot(1, 1, 1)
-
-#     ax.imshow(area_mat_p['count'] > 0, interpolation='nearest', 
-#               cmap=pylab.cm.Greys)
+    ax.imshow(area_mat_p['count'] > 0, interpolation='nearest', 
+              cmap=pylab.cm.Greys)
     
-#     f.savefig(outfile, dpi=600)
+    f.savefig(outfile, dpi=600)
 
-pipeline_run([mat_xls_consistency])
+@files(["type_metadata.pickle", "soma.positions.pickle"], 
+       ['somapos.png'])
+def plot_somapos((type_file, pos_file), (pos_outfile,)):
+    soma_pos = pickle.load(open(pos_file, 'r'))
+    type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
+
+    pos_vec = soma_pos['pos_vec']
+
+    f = pylab.figure(figsize=(16, 8))
+    ax = f.add_subplot(2, 1, 1)
+    ax.scatter(pos_vec[:, 1], pos_vec[:, 0])
+
+    ax = f.add_subplot(2, 1, 2)
+    
+    ax.scatter(pos_vec[:, 2], pos_vec[:, 0])
+
+    f.savefig(pos_outfile)
+    
+pipeline_run([mat_xls_consistency, plot_synapses, plot_adj, plot_somapos])
