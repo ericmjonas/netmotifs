@@ -132,12 +132,62 @@ def plot_somapos((type_file, pos_file), (pos_outfile,)):
 
     f = pylab.figure(figsize=(16, 8))
     ax = f.add_subplot(2, 1, 1)
-    ax.scatter(pos_vec[:, 1], pos_vec[:, 0])
+    ax.scatter(pos_vec[:, 1], pos_vec[:, 0], edgecolor='none', s=3)
+    ax.set_xlim(0, 120)
+    ax.set_xlabel('y (um)')
+    ax.set_ylabel('x (um)')
 
     ax = f.add_subplot(2, 1, 2)
+    ax.scatter(pos_vec[:, 2], pos_vec[:, 0], edgecolor='none', s=3)
+    ax.set_xlim(0, 120)
     
-    ax.scatter(pos_vec[:, 2], pos_vec[:, 0])
+    ax.set_xlabel('z (um)')
+    ax.set_ylabel('x (um)')
 
     f.savefig(pos_outfile)
+
+EXAMPLES = [10, 50, 100, 150, 200, 250, 300, 350, 400]
+@files(['type_metadata.pickle', 'soma.positions.pickle', 'synapses.pickle'], 
+       ['example.%d.pdf' % e for e in EXAMPLES])
+def plot_example_cells((type_file, pos_file, synapse_file), output_files):
+    soma_pos = pickle.load(open(pos_file, 'r'))
+    type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
+    synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
+
+    for CELL_ID, output_file in zip(EXAMPLES,  output_files):
+        soma_pos_vec = soma_pos['pos_vec']
+
+
+        f = pylab.figure(figsize=(16, 8))
+        ax_yx = f.add_subplot(2, 1, 1)
+        ax_yx.scatter(soma_pos_vec[:, 1], soma_pos_vec[:, 0], 
+                      c='k', edgecolor='none', s=3)
+        ax_yx.set_xlim(120, 0)
+        ax_yx.set_ylim(160, 0)
+        ax_yx.set_xlabel('y (um)')
+        ax_yx.set_ylabel('x (um)')
+
+        ax_zx = f.add_subplot(2, 1, 2)
+        ax_zx.scatter(soma_pos_vec[:, 2], soma_pos_vec[:, 0], 
+                      c='k', edgecolor='none', s=3)
+        ax_zx.set_xlim(80, 0)
+        ax_zx.set_ylim(160, 0)
+        ax_zx.set_xlabel('z (um)')
+        ax_zx.set_ylabel('x (um)')
+
+        # now plot the target cell
+        tgt = soma_pos_vec[CELL_ID]
+        ax_yx.scatter(tgt[1], tgt[0], c='r', s=20)
+        ax_zx.scatter(tgt[2], tgt[0], c='r', s=20)
+
+        tgt_df = synapses[(synapses['from_id'] == CELL_ID) | (synapses['to_id'] == CELL_ID)]
+
+        ax_yx.scatter(tgt_df['y'], tgt_df['x'], s=1, c='b', edgecolor='none')
+        ax_zx.scatter(tgt_df['z'], tgt_df['x'], s=1, c='b', edgecolor='none')
+
+        f.savefig(output_file)
     
-pipeline_run([mat_xls_consistency, plot_synapses, plot_adj, plot_somapos])
+
+
+pipeline_run([mat_xls_consistency, plot_synapses, plot_adj, plot_somapos, 
+              plot_example_cells])

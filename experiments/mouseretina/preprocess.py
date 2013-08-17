@@ -193,7 +193,7 @@ def merge_positions(inputfiles, outputfile):
     coords = np.zeros((N, 3), dtype=np.float32)
     LEFT_1 = 100
     LEFT_2 = 1090
-    ZERO = 800
+    ZERO_OFFSET = 70
     for f in inputfiles:
         cell_id = int(os.path.basename(f[1])[:4])
         d = pickle.load(open(f[1]))
@@ -206,11 +206,11 @@ def merge_positions(inputfiles, outputfile):
             print "The coords are", c
             if c[0] < LEFT_2 and c[1] < 900:
                 # upper left plot in image, meaning u-z
-                x = (ZERO - c[1]) / PIX_PER_UM
-                y = (c[0] - LEFT_1) / PIX_PER_UM
+                x = (c[1] + ZERO_OFFSET) / PIX_PER_UM
+                y = MAX_DIM[1] - ((c[0] - LEFT_1) / PIX_PER_UM)
             elif c[0] > LEFT_2 and c[1] < 900:
-                x = (ZERO - c[1]) / PIX_PER_UM
-                z = (c[0] - LEFT_2) / PIX_PER_UM
+                x = (c[1] + ZERO_OFFSET) / PIX_PER_UM
+                z = MAX_DIM[2] - (c[0] - LEFT_2) / PIX_PER_UM
         
         if x == 0 or y == 0 or z == 0:
             raise Exception("did not find one!")
