@@ -15,10 +15,13 @@ import cloud
 BUCKET_BASE="srm/experiments/mos6502"
 
 
-EXPERIMENTS = [('mos6502.all.bb', 'fixed_20_200', 'default_10'), 
-               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_10'), 
-               ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
-               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
+EXPERIMENTS = [('mos6502.all.bb', 'fixed_2_40', 'default_1'), 
+               ('mos6502.all.ld', 'fixed_2_40', 'default_nc_1'), 
+               ('mos6502.dir.bb', 'fixed_2_40', 'default_1'), 
+               ('mos6502.dir.ld', 'fixed_2_40', 'default_nc_1'), 
+               
+               # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
+               # ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
            ]
 
 INIT_CONFIGS = {'fixed_20_200' : {'N' : 20, 
@@ -31,6 +34,10 @@ INIT_CONFIGS = {'fixed_20_200' : {'N' : 20,
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}}
                 
+WORKING_DIR = "data"
+
+def td(fname): # "to directory"
+    return os.path.join(WORKING_DIR, fname)
                 
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
@@ -48,6 +55,10 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_conj},
                   'default_100' : {'ITERS' : 100, 
                                   'kernels' : default_conj},
+                  'default_nc_1' : {'ITERS' : 1, 
+                                  'kernels' : default_nonconj},
+                  'default_1' : {'ITERS' : 1, 
+                                  'kernels' : default_conj},
                   }
 
 
@@ -58,15 +69,15 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 
-@split('adjmat.pickle', ['mos6502.all.data.pickle',])
-def data_mos6502_adj(infile, (all_file,)):
+@transform('*.adjmat.pickle', regex("(.+)\.adjmat.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
+def data_mos6502_adjmat(infile, all_file):
     data = pickle.load(open(infile, 'r'))
 
     
     pickle.dump({'dist_matrix' : data['adj_mat'], 
                  'infile' : infile}, open(all_file, 'w'))
-    
-@transform(data_mos6502_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
+
+@transform(data_mos6502_adjmat, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
 def create_latents_ld(infile, 
                       (data_filename, latent_filename, meta_filename)):
     print "INPUT FILE IS", infile
@@ -90,7 +101,7 @@ def create_latents_ld(infile,
                  }, open(meta_filename, 'w'))
 
 
-@transform(data_mos6502_adj, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
+@transform(data_mos6502_adjmat, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
 def create_latents_bb(infile, 
                       (data_filename, latent_filename, meta_filename)):
 

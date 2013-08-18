@@ -532,5 +532,5 @@ def plot_best_latent(exp_results,
 pipeline_run([data_retina_adj, create_latents_bb, create_latents_ld_truth, 
               plot_scores_z, 
               plot_best_latent, 
-              create_latents_ld_truth], multiprocess=4)
+              create_latents_ld_truth], multiprocess=2)
                         
