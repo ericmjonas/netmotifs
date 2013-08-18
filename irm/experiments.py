@@ -129,3 +129,34 @@ def plot_latent(latent, dist_matrix,
 
 
         f.savefig(truth_comparison_filename)
+
+
+def cluster_z_matrix(z_bin, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
+                     ITERS=4):
+
+    N = len(z_bin)
+    # create the data
+    data = {'domains' : {'d1' : {'N' : N}}, 
+            'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                   'model' : "BetaBernoulli", 
+                                   'data' : z_bin}}}
+
+    latent_init = {'domains' : {'d1' : {'assignment' : np.arange(N) % INIT_GROUPS, 
+                                        'hps' : {'alpha' : crp_alpha}}}, 
+                   'relations' : {'R1' : {'hps' : {'alpha' : beta, 
+                                                   'beta' : beta}}}}
+
+
+    rng = irm.RNG()
+    irm_model = irm.irmio.create_model_from_data(data, rng=rng)
+
+    irm.irmio.set_model_latent(irm_model, latent_init, rng=rng)
+
+
+    run = irm.runner.Runner(latent_init, data, 
+                            irm.runner.default_kernel_config())
+    run.run_iters(ITERS)
+
+    state = run.get_state()
+    return irm.util.canonicalize_assignment(state['domains']['d1']['assignment'])
+
