@@ -231,17 +231,17 @@ def type_metadata(xlsx_file, output_file):
     N = 71
     res = []
     
-    for cell_i in range(N):
-        cell_id = s.cell(cell_i + 1, 0).value
-        desig = s.cell(cell_i + 1, 1).value
-        volgyi = s.cell(cell_i + 1,2).value
-        macneil = s.cell(cell_i + 1, 3).value
-        certainty = s.cell(cell_i + 1, 4).value
+    for type_i in range(N):
+        type_id = s.cell(type_i + 1, 0).value
+        desig = s.cell(type_i + 1, 1).value
+        volgyi = s.cell(type_i + 1,2).value
+        macneil = s.cell(type_i + 1, 3).value
+        certainty = s.cell(type_i + 1, 4).value
         if volgyi != "":
             other = volgyi
         else:
             other=macneil
-        res.append({'id' : cell_id, 
+        res.append({'id' : type_id, 
                     'desig' : desig, 
                     'other' : other, 
                     'certainty' : certainty})

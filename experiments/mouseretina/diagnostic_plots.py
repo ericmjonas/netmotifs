@@ -122,23 +122,43 @@ def plot_adj(infile, outfile):
     
     f.savefig(outfile, dpi=600)
 
-@files(["type_metadata.pickle", "soma.positions.pickle"], 
-       ['somapos.png'])
-def plot_somapos((type_file, pos_file), (pos_outfile,)):
+@files(["type_metadata.pickle", "soma.positions.pickle", "xlsxdata.pickle"], 
+       ['somapos.pdf'])
+def plot_somapos((type_file, pos_file, xlsxdata_file), (pos_outfile,)):
     soma_pos = pickle.load(open(pos_file, 'r'))
     type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
-
+    types = pickle.load(open(xlsxdata_file, 'r'))['types']
     pos_vec = soma_pos['pos_vec']
+    CELL_N = len(pos_vec)
+    print "CELL_N=", CELL_N
+    gross_type_mapping = type_metadata['desig'].apply(lambda x: x[:2])
+    color_map = {'gc' : 'r', 
+                 'ac' : 'b', 
+                 'bc' : 'g', 
+                 'other' : 'k'}
+    print len(types)
+    colors = []
+    for t in types[:CELL_N]:
+        if t in gross_type_mapping:
+            gt = gross_type_mapping.loc[t]
+        else:
+            gt = 'other'
+        colors.append(color_map[gt])
+
 
     f = pylab.figure(figsize=(16, 8))
     ax = f.add_subplot(2, 1, 1)
-    ax.scatter(pos_vec[:, 1], pos_vec[:, 0], edgecolor='none', s=3)
+    S = 20
+    alpha = 0.7
+    ax.scatter(pos_vec[:, 1], pos_vec[:, 0], c=colors, 
+               edgecolor='none', s=S, alpha=alpha)
     ax.set_xlim(0, 120)
     ax.set_xlabel('y (um)')
     ax.set_ylabel('x (um)')
 
     ax = f.add_subplot(2, 1, 2)
-    ax.scatter(pos_vec[:, 2], pos_vec[:, 0], edgecolor='none', s=3)
+    ax.scatter(pos_vec[:, 2], pos_vec[:, 0], c = colors, 
+               edgecolor='none', s=S, alpha=alpha)
     ax.set_xlim(0, 120)
     
     ax.set_xlabel('z (um)')
@@ -147,11 +167,10 @@ def plot_somapos((type_file, pos_file), (pos_outfile,)):
     f.savefig(pos_outfile)
 
 EXAMPLES = [10, 50, 100, 150, 200, 250, 300, 350, 400]
-@files(['type_metadata.pickle', 'soma.positions.pickle', 'synapses.pickle'], 
+@files(['soma.positions.pickle', 'synapses.pickle'], 
        ['example.%d.pdf' % e for e in EXAMPLES])
 def plot_example_cells((type_file, pos_file, synapse_file), output_files):
     soma_pos = pickle.load(open(pos_file, 'r'))
-    type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
     synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
 
     for CELL_ID, output_file in zip(EXAMPLES,  output_files):
@@ -186,7 +205,6 @@ def plot_example_cells((type_file, pos_file, synapse_file), output_files):
         ax_zx.scatter(tgt_df['z'], tgt_df['x'], s=1, c='b', edgecolor='none')
 
         f.savefig(output_file)
-    
 
 
 pipeline_run([mat_xls_consistency, plot_synapses, plot_adj, plot_somapos, 
