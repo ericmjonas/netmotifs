@@ -2,6 +2,7 @@ import numpy as np
 import scipy.cluster.hierarchy as hier
 import util
 import cPickle as pickle
+import irm
 
 def plot_zmatrix(ax, zmatrix):
     from matplotlib import pylab
@@ -176,3 +177,159 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
 
+
+def plot_purity_hists(fig, assign_vect, true_assign_vect, 
+                      thold=0.9, clust_labels = None, plot_zero=True):
+    """
+
+    plot_zero : True, we plot every single true latent class. False, we compress
+    a bit
+    """
+    import matplotlib.gridspec as gridspec
+    
+
+    a = irm.util.canonicalize_assignment(assign_vect) # now 0 is biggest
+
+    CLASSES = np.sort(np.unique(a))
+
+    CLASSN = len(CLASSES)
+    class_sizes = np.zeros(CLASSN)
+    for i in range(CLASSN):
+        class_sizes[i] = np.sum(a == i)
+        
+        
+    height_ratios = class_sizes / np.sum(class_sizes)
+
+    CLASSN_TO_PLOT = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()[-1]
+
+    
+    gs = gridspec.GridSpec(CLASSN_TO_PLOT, 1,
+                           height_ratios=height_ratios)
+
+    true_classes = np.unique(true_assign_vect)
+    TRUE_CLASS_N = len(true_classes)
+    true_sizes = {i : np.sum(true_assign_vect ==i) for i in true_classes}
+
+    BAR_WIDTH = 0.8
+    BAR_SPACE = 0.2
+    BAR_TOTAL = BAR_WIDTH + BAR_SPACE
+    xpos = np.arange(TRUE_CLASS_N) * (BAR_TOTAL) + BAR_SPACE/2
+    
+    nonzero_counts = []
+    axes = []
+    for class_i in range(CLASSN_TO_PLOT):
+        # now build up the bar graph
+        ai = np.argwhere(a == class_i).flatten()
+        sg = true_assign_vect[ai]
+        ax = fig.add_subplot(gs[class_i, 0])
+        axes.append(ax)
+
+        ratios = []
+        for tc_i, tc in enumerate(true_classes):
+            c = np.sum(sg  == tc)
+            r = float(c) / true_sizes[tc]
+            ratios.append(r)
+        ratios = np.array(ratios)
+        ri = np.argsort(ratios).flatten()[::-1]
+        if plot_zero:
+            pass
+        else:
+            ratios = ratios[ri]
+            nonzero_counts.append(np.sum(ratios > 0))
+            
+        ax.bar(xpos, ratios)
+        ax.set_xlim(0, TRUE_CLASS_N)
+        ax.set_ylim(0, 1.0)
+        ax.set_yticks([0, 1.0])
+        if plot_zero:
+            if class_i < (CLASSN_TO_PLOT-1):
+                ax.set_xticks(xpos - BAR_SPACE/2 + BAR_WIDTH/2., minor=True)
+                ax.set_xticklabels([])
+                
+        
+        ax.grid(1)
+
+    if not plot_zero:
+        max_nonzero = np.max(nonzero_counts)
+    
+        for ax in axes:
+            ax.set_xlim(0, max_nonzero)
+        
+
+def plot_purity_hists_h(fig, assign_vect, true_assign_vect, 
+                      thold=0.9, clust_labels = None, plot_zero=True):
+    """
+
+    plot_zero : True, we plot every single true latent class. False, we compress
+    a bit
+    """
+    import matplotlib.gridspec as gridspec
+    
+
+    a = irm.util.canonicalize_assignment(assign_vect) # now 0 is biggest
+
+    CLASSES = np.sort(np.unique(a))
+
+    CLASSN = len(CLASSES)
+    class_sizes = np.zeros(CLASSN)
+    for i in range(CLASSN):
+        class_sizes[i] = np.sum(a == i)
+        
+        
+    height_ratios = class_sizes / np.sum(class_sizes)
+
+    CLASSN_TO_PLOT = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()[-1]
+
+    
+    gs = gridspec.GridSpec(1, CLASSN_TO_PLOT,
+                           width_ratios=height_ratios)
+
+    true_classes = np.unique(true_assign_vect)
+    TRUE_CLASS_N = len(true_classes)
+    true_sizes = {i : np.sum(true_assign_vect ==i) for i in true_classes}
+
+    BAR_WIDTH = 0.8
+    BAR_SPACE = 0.2
+    BAR_TOTAL = BAR_WIDTH + BAR_SPACE
+    xpos = np.arange(TRUE_CLASS_N) * (BAR_TOTAL) + BAR_SPACE/2
+    
+    nonzero_counts = []
+    axes = []
+    for class_i in range(CLASSN_TO_PLOT):
+        # now build up the bar graph
+        ai = np.argwhere(a == class_i).flatten()
+        sg = true_assign_vect[ai]
+        ax = fig.add_subplot(gs[0, class_i])
+        axes.append(ax)
+
+        ratios = []
+        for tc_i, tc in enumerate(true_classes):
+            c = np.sum(sg  == tc)
+            r = float(c) / true_sizes[tc]
+            ratios.append(r)
+        ratios = np.array(ratios)
+        ri = np.argsort(ratios).flatten()[::-1]
+        if plot_zero:
+            pass
+        else:
+            ratios = ratios[ri]
+            nonzero_counts.append(np.sum(ratios > 0))
+            
+        ax.barh(xpos, ratios)
+        ax.set_ylim(0, TRUE_CLASS_N)
+        ax.set_xlim(0, 1.0)
+        ax.set_xticks([0, 1.0])
+        if plot_zero:
+            if class_i > 0:
+                ax.set_yticks(xpos - BAR_SPACE/2 + BAR_WIDTH/2., minor=True)
+                ax.set_yticklabels([])
+                
+        
+        ax.grid(1)
+
+    # if not plot_zero:
+    #     max_nonzero = np.max(nonzero_counts)
+    
+    #     for ax in axes:
+    #         ax.set_ylim(0, max_nonzero)
+        
