@@ -17,6 +17,8 @@ BUCKET_BASE="srm/experiments/mos6502"
 
 EXPERIMENTS = [('mos6502.all.bb', 'fixed_20_200', 'default_10'), 
                ('mos6502.all.ld', 'fixed_20_200', 'default_nc_10'), 
+               ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
+               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
            ]
 
 INIT_CONFIGS = {'fixed_20_200' : {'N' : 20, 
@@ -43,6 +45,8 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                   'default_nc_10' : {'ITERS' : 10, 
                                   'kernels' : default_nonconj},
                   'default_10' : {'ITERS' : 10, 
+                                  'kernels' : default_conj},
+                  'default_100' : {'ITERS' : 100, 
                                   'kernels' : default_conj},
                   }
 

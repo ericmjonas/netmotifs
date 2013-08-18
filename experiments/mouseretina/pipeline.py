@@ -47,11 +47,11 @@ MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
 PMAXS = [0.95, 0.9, 0.7, 0.5]
 
 
-for i in range(len(THOLDS)):
-    for z in [0, 1]:
+for x in [1]:
+    for i in range(len(THOLDS)):
         for k in range(len(MULAMBS)):
             for l in range(len(PMAXS)):
-                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (i, z, k, l), 
+                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (x, i, k, l), 
                                     'fixed_20_100',
                                     'default_nc_100'))
             
@@ -105,14 +105,14 @@ def create_tholds():
     """
     infiles = ['xlsxdata.pickle', 
                'soma.positions.pickle']
-    for use_z in [0, 1]:
+    for use_x in [0, 1]:
         for tholdi, thold in enumerate(THOLDS):
-            outfile = td("retina.%d.%d.data.pickle" % (use_z, tholdi))
-            yield infiles, [outfile], thold, use_z
+            outfile = td("retina.%d.%d.data.pickle" % (use_x, tholdi))
+            yield infiles, [outfile], thold, use_x
 
 @files(create_tholds)
 def data_retina_adj((xlsx_infile, positions_infile), 
-                    (retina_outfile,), AREA_THOLD, USE_Z):
+                    (retina_outfile,), AREA_THOLD, USE_X):
     """
     From the raw file, create the adjacency matrix. 
 
@@ -149,9 +149,9 @@ def data_retina_adj((xlsx_infile, positions_infile),
         for n2 in range(NEURON_N):
             p1 = pos_vec[n1]
             p2 = pos_vec[n2]
-            if not USE_Z:
-                p1[2] = 0
-                p2[2] = 0
+            if not USE_X:
+                p1[0] = 0
+                p2[0] = 0
             
             dist_matrix[n1, n2]['distance'] = dist(p1, p2)
 
