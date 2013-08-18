@@ -412,7 +412,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
     av_idx = np.argsort(purity).flatten()
     ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
-    newclust = np.argwhere(np.diff(clusters[av_idx])).flatten()
+    newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
     for v in newclust:
         ax_purity.axvline(v)
     ax_purity.set_ylabel('true cell id')
