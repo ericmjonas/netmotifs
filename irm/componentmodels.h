@@ -376,7 +376,8 @@ struct LogisticDistance {
     static float rev_logistic_scaled(float x, float mu, float lambda, 
                                      float pmin, float pmax) { 
         // reversed logistic function 
-        float p_unscaled = 1.0/(1.0 + MYEXP((x-mu)/lambda)); 
+        float ratio = (x-mu)/lambda; 
+        float p_unscaled = 1.0/(1.0 + MYEXP(ratio)); 
         return p_unscaled * (pmax-pmin) + pmin;         
     }
 
