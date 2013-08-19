@@ -263,9 +263,10 @@ struct BetaBernoulliNonConj {
         float beta = hps->beta; 
 
         boost::math::beta_distribution<> dist(alpha, beta);
-        if((ss->p > 1.0) || (ss->p < 0.0)) { 
+        if((ss->p >= 1.0) || (ss->p < 0.0)) { 
             return -std::numeric_limits<float>::infinity();
         }
+
         return logf(boost::math::pdf(dist, ss->p)); 
     }
     
