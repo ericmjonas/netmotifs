@@ -79,7 +79,7 @@ void slice_sample_exec<LogisticDistance>
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->lambda = x; 
                                           return LogisticDistance::score(ss, hps, data, 
-                                                                         dppos);
+                                                                         dppos)/temp;
                                       }, 
                                       rng, width); 
     
