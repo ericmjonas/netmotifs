@@ -147,7 +147,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
 
             bins = np.linspace(0, MAX_DIST, 20)
             fine_bins = np.linspace(0, MAX_DIST, 100)
-
+            
             # compute prob as a function of distance for this class
             htrue, _ = np.histogram(conn_dist_hist, bins)
 
@@ -169,6 +169,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
             # ax.set_yticks([])
 
             if model == "LogisticDistance":
+                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)
                 c = ss[(c1, c2)]
                 y = util.logistic(fine_bins, c['mu'], c['lambda']) 
                 y = y * (hps['p_max'] - hps['p_min']) + hps['p_min']
@@ -176,6 +177,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
+            ax.set_xlim(0, MAX_DIST)
 
 
 def plot_purity_hists(fig, assign_vect, true_assign_vect, 

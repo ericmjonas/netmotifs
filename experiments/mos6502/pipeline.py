@@ -17,8 +17,8 @@ BUCKET_BASE="srm/experiments/mos6502"
 
 EXPERIMENTS = [('mos6502.all.bb', 'fixed_2_40', 'default_1'), 
                ('mos6502.all.ld', 'fixed_2_40', 'default_nc_1'), 
-               ('mos6502.dir.bb', 'fixed_2_40', 'default_1'), 
-               ('mos6502.dir.ld', 'fixed_2_40', 'default_nc_1'), 
+               ('mos6502.dir.bb', 'fixed_20_200', 'default_100'), 
+               ('mos6502.dir.ld', 'fixed_20_200', 'default_nc_100'), 
                
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
                # ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
@@ -160,7 +160,7 @@ def create_init(latent_filename, out_filenames,
 
 
 def get_dataset(data_name):
-    return glob.glob("%s.data" %  data_name)
+    return glob.glob(td("%s.data" %  data_name))
 
 def init_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
@@ -417,5 +417,6 @@ def plot_best_latent(exp_results,
     
 
 
-pipeline_run([create_inits, get_results, plot_best_latent, plot_scores_z])
+pipeline_run([data_mos6502_adjmat, 
+              create_inits, get_results, plot_best_latent, plot_scores_z])
                         

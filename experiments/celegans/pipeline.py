@@ -18,9 +18,9 @@ import cloud
 BUCKET_BASE="srm/experiments/celegans"
 
 
-EXPERIMENTS = [#('celegans.both.ld', 'fixed_100_200', 'default_nc_100'), 
+EXPERIMENTS = [('celegans.both.ld', 'fixed_100_200', 'default_nc_100'), 
                ('celegans.both.bb', 'fixed_100_200', 'default_1000'), 
-               
+               ('celegans.both.ld', 'fixed_100_200', 'default_nc_1000'),                
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -46,6 +46,8 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_nonconj},
                   'default_1000' : {'ITERS' : 1000, 
                                   'kernels' : default_conj},
+                  'default_nc_1000' : {'ITERS' : 1000, 
+                                  'kernels' : default_nonconj},
                   }
 
 
@@ -101,10 +103,10 @@ def create_latents_ld(infile,
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : 0.05, 
-           'lambda_hp' : 0.05, 
-           'p_min' : 0.05, 
-           'p_max' : 0.5}
+    HPS = {'mu_hp' : 0.2, 
+           'lambda_hp' : 0.2, 
+           'p_min' : 0.02, 
+           'p_max' : 0.98}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
@@ -271,8 +273,8 @@ def get_results(exp_wait, exp_results):
                  'exp' : d}, 
                 open(exp_results, 'w'))
 
-@transform(get_results, suffix(".samples"), [".latent.pdf"])
-def plot_latent(exp_results, (plot_latent_filename, )):
+@transform(get_results, suffix(".samples"), [".scoresz.pdf"])
+def plot_scores_z(exp_results, (plot_latent_filename,)):
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
     
@@ -282,41 +284,23 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     data_basename, _ = os.path.splitext(data_filename)
     meta = pickle.load(open(data_basename + ".meta"))
 
+    meta_infile = meta['infile']
 
-    # nodes_with_class = meta['nodes']
-    # conn_and_dist = meta['conn_and_dist']
-
-    # true_assignvect = nodes_with_class['class']
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
 
     f = pylab.figure(figsize= (12, 8))
-    ax_purity_control = f.add_subplot(2, 2, 1)
-    ax_z = f.add_subplot(2, 2, 2)
-    ax_score = f.add_subplot(2, 2, 3)
-    
-    # ###### plot purity #######################
-    # ###
-    # tv = true_assignvect.argsort()
-    # tv_i = true_assignvect[tv]
-    # vals = [tv_i]
-    # # get the chain order 
-    # chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
-    # sorted_assign_matrix = []
-    # for di in chains_sorted_order: 
-    #     d = chains[di] 
-    #     sample_latent = d['state']
-    #     a = np.array(sample_latent['domains']['d1']['assignment'])
-    #     print "di=%d unique classes:"  % di, np.unique(a)
-    #     sorted_assign_matrix.append(a)
-    # irm.plot.plot_purity(ax_purity_control, true_assignvect, sorted_assign_matrix)
+    ax_z = pylab.subplot2grid((2,2), (0, 0))
+    ax_score = pylab.subplot2grid((2,2), (0, 1))
 
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
-    irm.plot.plot_zmatrix(ax_z, z)
+    z_ord = irm.plot.plot_zmatrix(ax_z, z)
 
     ### Plot scores
     for di, d in enumerate(chains):
@@ -329,11 +313,62 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     ax_score.tick_params(axis='both', which='minor', labelsize=6)
     ax_score.set_xlabel('time (s)')
     ax_score.grid(1)
-    
+
+
+    # purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
+    # av_idx = np.argsort(purity).flatten()
+    # ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
+    # newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
+    # for v in newclust:
+    #     ax_purity.axvline(v)
+    # ax_purity.set_ylabel('true cell id')
+    # ax_purity.set_xlim(0, len(z_ord))
+
+
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
-    
 
-pipeline_run([create_inits, get_results, plot_latent])
+@transform(get_results, suffix(".samples"), 
+           [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
+def plot_best_latent(exp_results, 
+                     out_filenames):
+    from matplotlib.backends.backend_pdf import PdfPages
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    dist_matrix = d['dist_matrix']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+    for chain_pos, (latent_fname, types_fname) in enumerate(out_filenames):
+
+
+        best_chain_i = chains_sorted_order[chain_pos]
+        best_chain = chains[best_chain_i]
+        sample_latent = best_chain['state']
+        
+        irm.experiments.plot_latent(sample_latent, dist_matrix, 
+                                    latent_fname, #cell_types, 
+                                    #types_fname, 
+                                    model=data['relations']['R1']['model'], 
+                                    PLOT_MAX_DIST=1.2)
+
+
+pipeline_run([create_inits, get_results, plot_scores_z, plot_best_latent])
                         

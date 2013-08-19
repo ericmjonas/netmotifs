@@ -38,7 +38,7 @@ EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'),
     # ('retina.1.0.ld.1.0', 'fixed_20_100', 'default_nc_100'), 
     #('retina.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
-    #('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+               ('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
 ]
 
 THOLDS = [0.01, 0.1, 0.5, 1.0]
@@ -360,8 +360,8 @@ def get_results(exp_wait, exp_results):
                  'exp' : d}, 
                 open(exp_results, 'w'))
 
-@transform(get_results, suffix(".samples"), [".scoresz.pdf"])
-def plot_scores_z(exp_results, (plot_latent_filename,)):
+@transform(get_results, suffix(".samples"), [".scoresz.pdf", ".truth.pdf"])
+def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
     
@@ -410,6 +410,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
 
 
     purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
+    
     av_idx = np.argsort(purity).flatten()
     ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
     newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
@@ -418,13 +419,13 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_purity.set_ylabel('true cell id')
     ax_purity.set_xlim(0, len(z_ord))
 
-
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
-    f = pylab.figure(figsize=(20, 4))
-
-
+    f = pylab.figure(figsize=(16, 6))
+    irm.plot.plot_purity_hists_h(f, purity, cell_types)
+    f.tight_layout()
+    f.savefig(plot_truth_filename)
 
 @transform(get_results, suffix(".samples"), 
            [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
