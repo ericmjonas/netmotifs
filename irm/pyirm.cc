@@ -42,6 +42,9 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
     } else if(modeltype == "SigmoidDistance") { 
         IComponentContainer * cc = new ComponentContainer<SigmoidDistance>(data, data_dims_v); 
         return cc; 
+    } else if(modeltype == "LinearDistance") { 
+        IComponentContainer * cc = new ComponentContainer<LinearDistance>(data, data_dims_v); 
+        return cc; 
 
     } else { 
         throw std::runtime_error("unknown model type"); 

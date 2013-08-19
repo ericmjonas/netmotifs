@@ -104,7 +104,7 @@ def plot_latent(latent, dist_matrix,
         ax_types.set_yticks([])
 
     f.tight_layout()
-    f.set_title(latent_filename)
+    f.suptitle(latent_filename)
     pp = PdfPages(latent_filename)
     f.savefig(pp, format='pdf')
 
@@ -118,7 +118,7 @@ def plot_latent(latent, dist_matrix,
                               latent['relations']['R1']['hps'], 
                               MAX_DIST=PLOT_MAX_DIST, model=model, 
                               MAX_CLASSES=MAX_CLASSES   )
-    f.set_title(latent_filename)
+    f.suptitle(latent_filename)
     f2.savefig(pp, format='pdf')
 
     pp.close()

@@ -86,7 +86,8 @@ def test_io_score_t1t2():
 
     for D1_N, D2_N in [(10, 20), (20, 30), (200, 300)]:
         for model_name in ["BetaBernoulliNonConj", 
-                           "LogisticDistance"]: 
+                           "LogisticDistance", 
+                           "LinearDistance"]: 
 
             d = {'domains' : {'d1' : {'N' : D1_N}, 
                               'd2' : {'N' : D2_N}},
@@ -117,7 +118,8 @@ def test_io_score_t1t1():
 
     for D1_N in [10, 100, 1000]:
         for model_name in ["BetaBernoulliNonConj", 
-                           "LogisticDistance"]: 
+                           "LogisticDistance" ,
+                           "LinearDistance"]: 
 
             d = {'domains' : {'d1' : {'N' : D1_N}}, 
                     'relations' : {'R1' : {'relation' : ('d1', 'd1'), 

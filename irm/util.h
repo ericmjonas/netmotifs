@@ -9,6 +9,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 #include <stdlib.h>
+#include "fastonebigheader.h"
 
 #include "group_coords.h"
 
@@ -147,6 +148,23 @@ inline float log_exp_dist(float x, float lambda) {
     return logf(lambda) + -lambda*x; 
 
 }
+
+inline float logbeta(float alpha, float beta) { 
+    return fasterlgamma(alpha)  + fasterlgamma(beta) - fasterlgamma(alpha + beta); 
+}
+
+inline float log_beta_dist(float p, float alpha, float beta) {
+    if((p <0.0) or (p > 1.0)) { 
+            return -std::numeric_limits<float>::infinity();
+
+    }
+    float a = (alpha-1.)*logf(p) + (beta-1.)*(logf(1-p)); 
+    float b = logbeta(alpha, beta); 
+    
+    return a + b; 
+
+}
+
 
 #ifdef USE_LOGEXP_APPROX
 #define MYLOG fasterlog

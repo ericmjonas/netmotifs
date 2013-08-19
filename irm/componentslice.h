@@ -65,6 +65,17 @@ void slice_sample_exec<SigmoidDistance>
  const std::vector<dppos_t> & dppos, 
  float temp);
 
+
+template<>
+void slice_sample_exec<LinearDistance>
+(rng_t & rng, float width, 
+ LinearDistance::suffstats_t * ss, 
+ LinearDistance::hypers_t * hps, 
+ std::vector<LinearDistance::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos,
+ float temp);
+
+
 }
 
 

@@ -153,5 +153,38 @@ def test_generate_logistic_t1t2_full():
     np.testing.assert_approx_equal(np.mean(mu), 15.0, 2)
     np.testing.assert_approx_equal(np.mean(lamb), 1.0, 2)
     
+def test_generate_linear_t1t2_full():
+    np.random.seed(1)
+    D1_N = 400
+    D2_N = 300
+    # first, from the prior entirely
+    d = {'domains' : {'d1' : {'N' : D1_N}, 
+                      'd2' : {'N' : D2_N}},
+            'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
+                                   'model' : 'LinearDistance'}}}
+    l = {}
+
+    new_latent, new_data = data.synth.prior_generate(l, d)
+
+    assert_equal(new_data['relations']['R1']['data'].shape, (D1_N, D2_N))
+    assert_equal(new_data['relations']['R1']['data'].dtype, models.LinearDistance().data_dtype())
+
+    # then set some hyperparameters
+    new_latent['relations']['R1']['hps']['p_alpha'] = 1.0
+    new_latent['relations']['R1']['hps']['p_beta'] = 1.0
+    new_latent['relations']['R1']['hps']['mu_hp'] = 15.0
+    new_latent['domains']['d1']['assignment'] = np.arange(D1_N) % 400 
+    new_latent['domains']['d2']['assignment'] = np.arange(D2_N) % 300
+    del new_latent['relations']['R1']['ss']
+    del new_data['relations']['R1']['data']
+    new_latent, new_data = data.synth.prior_generate(new_latent, new_data)
+    
+    mu = np.array([v['mu'] for v in new_latent['relations']['R1']['ss'].values()])
+    p = np.array([v['p'] for v in new_latent['relations']['R1']['ss'].values()])
+    print "len(mu)=", len(mu)
+    np.testing.assert_approx_equal(np.mean(mu), 15.0, 2)
+    np.testing.assert_approx_equal(np.mean(p), 0.5, 2)
+    
+
 
 # # FIXME test CRP hyperparam

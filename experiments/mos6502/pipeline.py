@@ -15,8 +15,8 @@ import cloud
 BUCKET_BASE="srm/experiments/mos6502"
 
 
-EXPERIMENTS = [('mos6502.all.bb', 'fixed_2_40', 'default_1'), 
-               ('mos6502.all.ld', 'fixed_2_40', 'default_nc_1'), 
+EXPERIMENTS = [('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
+               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
                ('mos6502.dir.bb', 'fixed_20_200', 'default_100'), 
                ('mos6502.dir.ld', 'fixed_20_200', 'default_nc_100'), 
                

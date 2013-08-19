@@ -216,7 +216,6 @@ struct BetaBernoulliNonConj {
     static float sample_from_prior(hypers_t * hps, rng_t & rng) {
         float alpha = hps->alpha; 
         float beta = hps->beta; 
-
         boost::math::beta_distribution<> dist(alpha, beta);
         double p = quantile(dist, uniform_01(rng)); 
 
@@ -709,6 +708,187 @@ struct SigmoidDistance {
 
 }; 
 
+struct LinearDistance { 
+    class value_t {
+    public:
+        char link; 
+        float distance; 
+    } __attribute__((packed)); 
+    
+    class suffstats_t { 
+    public:
+        //std::unordered_set<uint32_t> datapoint_pos_; 
+        float mu; 
+        float p; 
+    }; 
+
+    class hypers_t {
+    public:
+        float mu_hp; 
+        float p_alpha; 
+        float p_beta; 
+        float p_min; 
+        inline hypers_t() : 
+            mu_hp(1.0), 
+            p_alpha(1.0), 
+            p_beta(1.0), 
+            p_min(0.01)
+        { 
+
+
+        }
+    }; 
+
+    static float linear_prob(float x, float mu, float p, float p_min) { 
+        if (x > mu) { 
+            return p_min; 
+        } 
+        return -p / mu * x + p; 
+    }
+
+    static std::pair<float, float> 
+    sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float mu_hp = hps->mu_hp; 
+        float p_alpha = hps->p_alpha; 
+        float p_beta = hps->p_beta;
+
+        float r1 = uniform_01(rng); 
+        float r2 = uniform_01(rng); 
+        
+        try { 
+            boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
+            float mu = quantile(mu_dist, r1); 
+
+            
+            boost::math::beta_distribution<> beta_dist(p_alpha, p_beta);
+            float p = quantile(beta_dist, r2); 
+            
+            return std::make_pair(mu, p); 
+
+        } catch (...){
+            
+            std::cout << "mu_hp=" << mu_hp 
+                      << " p_alpha=" << p_alpha << " p_beta=" << p_beta
+                      << std::endl; 
+            std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
+            throw std::runtime_error("Sample from prior error"); 
+
+        }
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->p = params.second; 
+    
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.insert(dp_pos); 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.erase(dp_pos); 
+    }
+
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+
+        float p = linear_prob(val.distance, ss->mu, ss->p, 
+                              hps->p_min); 
+
+        if (val.link) { 
+            return MYLOG(p); 
+        } else { 
+            return MYLOG(1-p); 
+        }
+    }
+    
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        float mu = ss->mu; 
+        float p = ss->p; 
+
+        float score = 0.0; 
+        score += log_exp_dist(mu, hps->mu_hp); 
+        score += log_beta_dist(p, hps->p_alpha, hps->p_beta); 
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+    {
+        float score = 0.0; 
+
+        for(auto dpi : dppos) { 
+            float p = linear_prob(data[dpi].distance, ss->mu, 
+                                  ss->p, hps->p_min); 
+
+            float lscore; 
+            if(data[dpi].link) {
+                lscore = logf(p); 
+            } else { 
+                lscore = logf(1 - p); 
+            }
+            score += lscore; 
+
+        }
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos)
+    { 
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        return prior_score + likelihood_score; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
+        hp.p_alpha = bp::extract<float>(hps["p_alpha"]);
+        hp.p_beta = bp::extract<float>(hps["p_beta"]);
+        hp.p_min = bp::extract<float>(hps["p_min"]);
+
+        return hp; 
+
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu_hp"] = hps.mu_hp; 
+        hp["p_alpha"] = hps.p_alpha; 
+        hp["p_beta"] = hps.p_beta; 
+        hp["p_min"] = hps.p_min; 
+
+        return hp; 
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = ss->mu; 
+        d["p"] = ss->p; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = bp::extract<float>(v["mu"]); 
+        ss->p = bp::extract<float>(v["p"]); 
+            
+    }
+
+}; 
 
 
 }

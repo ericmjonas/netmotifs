@@ -15,6 +15,8 @@ class Relation(object):
             modeltypestr = "LogisticDistance"
         elif isinstance(modeltype, models.SigmoidDistance):
             modeltypestr = "SigmoidDistance"
+        elif isinstance(modeltype, models.LinearDistance):
+            modeltypestr = "LinearDistance"
 
         else:
             raise NotImplementedError()
