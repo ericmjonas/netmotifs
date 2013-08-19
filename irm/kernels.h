@@ -59,9 +59,11 @@ T slice_sample(T x,
     }
 
     std::cout << "slice sampling failed failed " 
-              << "x_r =" << x_r 
-              << "x_l = " << x_l 
-              << "uprime=" << uprime  << std::endl; 
+              << " x_r =" << x_r 
+              << " x_l = " << x_l 
+              << " uprime=" << uprime 
+              << " Pstar=" << Pstar 
+              << " x=" << x << std::endl; 
     return x; 
 
 
