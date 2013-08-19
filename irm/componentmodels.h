@@ -471,12 +471,12 @@ struct LogisticDistance {
             float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
                                           ss->lambda, hps->p_min, 
                                           hps->p_max); 
-            p = p * p_range + hps->p_min; 
+            //p = p * p_range + hps->p_min;  // already calculated
             float lscore; 
             if(data[dpi].link) {
-                lscore = logf(p); 
+                lscore = MYLOG(p); 
             } else { 
-                lscore = logf(1 - p); 
+                lscore = MYLOG(1 - p); 
             }
             score += lscore; 
 
