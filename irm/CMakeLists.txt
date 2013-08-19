@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(irm)
 
-set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11 -DUSE_LOGEXP_APPROX" )
+set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11" )
 
 # boost requirements
 if(APPLE)
