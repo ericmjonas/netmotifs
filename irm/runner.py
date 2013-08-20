@@ -12,7 +12,7 @@ def default_kernel_config():
 
 def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
-            ('slice_params', {'width' : 0.5})]
+            ('slice_params', {'width' : 0.0})] # use default
     
 def do_inference(irm_model, rng, kernel_config, reverse=False, 
                  states_at_temps = None):

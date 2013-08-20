@@ -46,6 +46,10 @@ void slice_sample_exec<BetaBernoulliNonConj>
  std::vector<BetaBernoulliNonConj::value_t>::iterator data,
  const std::vector<dppos_t> & dppos, 
  float temp){
+    if (width == 0.0) { 
+        width = 0.1; 
+    }
+
     auto p = slice_sample<float>(ss->p, 
                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->p = x; 
@@ -65,6 +69,9 @@ void slice_sample_exec<LogisticDistance>
  std::vector<LogisticDistance::value_t>::iterator data,
  const std::vector<dppos_t> & dppos,
  float temp){
+    if (width == 0.0) {
+        width = hps->mu_hp/4.0; 
+    }
     auto mu = slice_sample<float>(ss->mu, 
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
@@ -95,6 +102,10 @@ void slice_sample_exec<SigmoidDistance>
  std::vector<SigmoidDistance::value_t>::iterator data,
  const std::vector<dppos_t> & dppos, 
  float temp){
+    if (width == 0.0) {
+        width = hps->mu_hp/4.0; 
+    }
+
     auto mu = slice_sample<float>(ss->mu, 
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
@@ -126,6 +137,11 @@ template<> void slice_sample_exec<LinearDistance>
  std::vector<LinearDistance::value_t>::iterator data,
  const std::vector<dppos_t> & dppos,
  float temp){
+
+    if (width == 0.0) {
+        width = hps->mu_hp/4.0; 
+    }
+
     auto mu = slice_sample<float>(ss->mu, 
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
