@@ -19,11 +19,11 @@ BUCKET_BASE="srm/experiments/mixing"
 
 
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'), 
-               ('connmat0', 'fixed_10_40', 'default20'), 
+               # ('connmat0', 'fixed_10_40', 'default20'), 
                ('connmat0', 'fixed_10_40', 'default200'), 
-               ('connmat0', 'fixed_10_100', 'default200'), 
-               ('connmat0', 'fixed_10_40', 'pt100'),
-               ('connmat0', 'fixed_10_40', 'default20_m100'), 
+               # ('connmat0', 'fixed_10_100', 'default200'), 
+               # ('connmat0', 'fixed_10_40', 'pt100'),
+               # ('connmat0', 'fixed_10_40', 'default20_m100'), 
            ]
 
 INIT_CONFIGS = {'fixed_4_10' : {'N' : 4, 
@@ -64,13 +64,15 @@ def dataset_connectivity_matrix_params():
                               'side_n' : [5, 10], 
                               'class_n' : [5, 10], 
                               'nonzero_frac' : [0.1, 0.2, 0.5], 
-                              'jitter' : [0.001, 0.01, 0.1]}, 
+                              'jitter' : [0.001, 0.01, 0.1], 
+                              'models' : ['ld', 'lind']}, 
                 'trivial' : {'seeds' : range(1), 
                              'side_n' : [4], 
                              'class_n' : [2], 
                              'nonzero_frac' : [1.0], 
-                             'jitter' : [0.001]}}
-
+                             'jitter' : [0.001], 
+                             'models' : ['ld', 'lind']}}
+    
     for dataset_name, ds in datasets.iteritems():
         for side_n in ds['side_n']:
             for class_n in ds['class_n']:
@@ -78,17 +80,18 @@ def dataset_connectivity_matrix_params():
                     for jitter in ds['jitter']:
 
                         for seed in ds['seeds']:
+                            for model in ds['models']:
 
-                            filename_base = "data.%s.%d.%d.%3.3f.%3.3f.%s" % (dataset_name, side_n, class_n, nonzero_frac, jitter, seed)
-                        
-                            yield None, [filename_base + ".data", 
-                                         filename_base + ".latent", 
-                            filename_base + ".meta"], seed, side_n, class_n, nonzero_frac, jitter
+                                filename_base = "data.%s.%s.%d.%d.%3.3f.%3.3f.%s" % (dataset_name, model, side_n, class_n, nonzero_frac, jitter, seed)
+
+                                yield None, [filename_base + ".data", 
+                                             filename_base + ".latent", 
+                                filename_base + ".meta"], model, seed, side_n, class_n, nonzero_frac, jitter
                             
 @files(dataset_connectivity_matrix_params)
 def dataset_connectivity_matrix(infile, (data_filename, latent_filename, 
                                          meta_filename), 
-                                seed, side_n, class_n, nonzero_frac, jitter):
+                                model, seed, side_n, class_n, nonzero_frac, jitter):
 
     np.random.seed(seed)
             
@@ -129,17 +132,25 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
 
     # now create the latents
 
-    model_name= "LogisticDistance" 
+    if model == 'ld':
+        model_name= "LogisticDistance" 
+
+        HPS = {'mu_hp' : 1.0, 
+               'lambda_hp' : 1.0, 
+               'p_min' : 0.1, 
+               'p_max' : 0.9}
+    elif model == 'lind':
+        model_name= "LinearDistance"
+
+        HPS = {'mu_hp' : 1.0, 
+               'p_alpha' : 1.0, 
+               'p_beta': 1.0, 
+               'p_min' : 0.01}
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
     irm_latent['domains']['d1']['assignment'] = nodes_with_class['class']
 
     # FIXME is the assignment vector ground-truth here? 
-
-    HPS = {'mu_hp' : 1.0, 
-           'lambda_hp' : 1.0, 
-           'p_min' : 0.1, 
-           'p_max' : 0.9}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
@@ -308,6 +319,25 @@ def get_results(exp_wait, exp_results):
                  'exp' : d}, 
                 open(exp_results, 'w'))
 
+def parse_filename(fn):
+     data_part = fn.split('-')[0]
+     s = data_part.split(".")
+     print "S=", s
+     s.pop(0)
+     dataset_name = s[0]
+     model = s[1]
+     side_n = int(s[2])
+     class_n = int(s[3])
+     nonzero_frac = float(s[4] + '.' + s[5])
+     jitter = float(s[6] + '.' + s[7])
+     return {'dataset_name' : dataset_name, 
+             'model' : model, 
+             'side_n' : side_n, 
+             'class_n' : class_n, 
+             'nonzero_frac' : nonzero_frac, 
+             'jitter' : jitter}
+
+
 @transform(get_results, suffix(".samples"), [".latent.pdf"])
 def plot_latent(exp_results, (plot_latent_filename, )):
     sample_d = pickle.load(open(exp_results))
@@ -370,11 +400,12 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     ax_score.set_xlabel('time (s)')
     ax_score.grid(1)
     
-    f.tight_layout()
+    file_params = parse_filename(exp_results)
+    f.suptitle(str(file_params))
 
     f.savefig(plot_latent_filename)
     
 
 pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
-              get_results, plot_latent], multiprocess=4)
+              get_results, plot_latent], multiprocess=6)
                         
