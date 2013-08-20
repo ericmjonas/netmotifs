@@ -32,28 +32,36 @@ EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'),
 
     #('retina.bb', 'fixed_100_200', 'default_100'), 
     #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
-    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), 
-    # ('retina.1.0.ld.0.0', 'fixed_20_100', 'default_nc_100'), 
-    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_100'), 
-    # ('retina.1.0.ld.1.0', 'fixed_20_100', 'default_nc_100'), 
-    #('retina.ld', 'fixed_100_200', 'default_nc_100')
+    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.0.lind.3', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.lind.0', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.lind.1', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.lind.2', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.lind.3', 'fixed_20_100', 'default_nc_1000'), 
+    #('Retinaun.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
-               ('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+    ('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
 ]
 
 THOLDS = [0.01, 0.1, 0.5, 1.0]
     
 MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
-PMAXS = [0.95, 0.9, 0.7, 0.5]
+PMAXS = [0.95, 0.9, 0.7]
 
 
-for x in [1]:
-    for i in range(len(THOLDS)):
-        for k in range(len(MULAMBS)):
-            for l in range(len(PMAXS)):
-                EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (x, i, k, l), 
-                                    'fixed_20_100',
-                                    'default_nc_100'))
+# for x in [1]:
+#     for i in range(len(THOLDS)):
+#         for k in range(len(MULAMBS)):
+#             for l in range(len(PMAXS)):
+#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (x, i, k, l), 
+#                                     'fixed_20_100',
+#                                     'default_nc_100'))
             
             
 INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
@@ -197,6 +205,40 @@ def create_latents_ld(infile,
                  }, open(meta_filename, 'w'))
 
 
+def create_latents_lind_params():
+    for a in create_tholds():
+        inf = a[1][0]
+        for mli, mulamb in enumerate(MULAMBS):
+            outf_base = inf[:-len('.data.pickle')]
+            outf = "%s.lind.%d" % (outf_base, mli)
+            yield inf, [outf + '.data', 
+                        outf + '.latent', outf + '.meta'], mulamb
+        
+    
+@files(create_latents_lind_params)
+def create_latents_lind(infile, 
+                      (data_filename, latent_filename, meta_filename), 
+                      mulamb):
+
+    d = pickle.load(open(infile, 'r'))
+    conn_and_dist = d['dist_matrix']
+    
+    model_name= "LinearDistance" 
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+
+    HPS = {'mu_hp' : mulamb,
+           'p_alpha' : 1.0, 
+           'p_beta' : 3.0, 
+           'p_min' : 0.01}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 }, open(meta_filename, 'w'))
+
 @transform(data_retina_adj, suffix(".data.pickle"), 
            [".bb.data", ".bb.latent", ".bb.meta"])
 def create_latents_bb((infile, ),
@@ -273,6 +315,7 @@ def init_generator():
             
 @follows(create_latents_ld_truth)
 @follows(create_latents_ld)
+@follows(create_latents_lind)
 @follows(create_latents_bb)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):

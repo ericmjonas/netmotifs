@@ -233,4 +233,3 @@ def linear_dist(x, p, mu):
     y[x > mu] = 0
     return y
 
-b
