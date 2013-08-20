@@ -177,6 +177,13 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
+            elif model == "LinearDistance":
+                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)
+                c = ss[(c1, c2)]
+                y = util.linear_dist(fine_bins, c['p'], c['mu']) 
+                y += hps['p_min']
+                ax.plot(fine_bins, y, c='r') 
+
             ax.set_xlim(0, MAX_DIST)
 
 
