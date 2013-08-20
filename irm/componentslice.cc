@@ -127,7 +127,7 @@ void slice_sample_exec<SigmoidDistance>
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
-                                                                    dppos);
+                                                                    dppos)/temp;
                           }, 
                           rng, width); 
     
@@ -164,7 +164,7 @@ template<> void slice_sample_exec<LinearDistance>
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return LinearDistance::score(ss, hps, data, 
-                                                                         dppos);
+                                                                         dppos)/temp;
                                       }, 
                                       rng, 0.1); 
     
