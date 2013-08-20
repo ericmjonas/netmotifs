@@ -71,6 +71,12 @@ void slice_sample_exec<LogisticDistance>
  float temp){
     if (width == 0.0) {
         width = hps->mu_hp/4.0; 
+    } else {
+        std::cout << "Slice width manually set to " << width 
+                  << " (automatic would have been " 
+                  << hps->mu_hp/4.0 << ")" << std::endl; 
+
+
     }
     auto mu = slice_sample<float>(ss->mu, 
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
