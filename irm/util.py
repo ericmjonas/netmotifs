@@ -222,4 +222,15 @@ def compute_purity(clustering, truth):
 
         results[c] = d
     return results
-        
+
+def linear_dist(x, p, mu):
+    """
+    compute our linear distance func
+    """
+
+
+    y =  - x * p/mu + p 
+    y[x > mu] = 0
+    return y
+
+b
