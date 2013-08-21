@@ -1,0 +1,25 @@
+<HTML>
+<HEAD>
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
+</HEAD>
+<BODY>
+
+<table>
+{%for cluster in clusters %}
+<tr> 
+<td>
+{%for neuron in cluster['neurons'] %}
+{{neuron}} 
+{%endfor%}
+</td>
+<td>
+<img src="{{cluster['soma_pos_file']}}"></img>
+</td>
+</tr>
+{%endfor%}
+
+</table>
+
+
+</BODY>
+</html>

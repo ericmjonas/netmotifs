@@ -47,6 +47,9 @@ EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'),
     #('Retinaun.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
     ('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+
+    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), # just for slice sampler testing
+               
 ]
 
 THOLDS = [0.01, 0.1, 0.5, 1.0]

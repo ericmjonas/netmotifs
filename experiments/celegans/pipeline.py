@@ -5,7 +5,7 @@ import copy
 import os, glob
 import time
 from matplotlib import pylab
-
+from jinja2 import Template
 import irm
 import irm.data
 
@@ -288,6 +288,9 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
 
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
+    very_original_data = d['infile']
+    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+    canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -296,12 +299,14 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_z = pylab.subplot2grid((2,2), (0, 0))
     ax_score = pylab.subplot2grid((2,2), (0, 1))
 
+    ax_neuron_clusters = pylab.subplot2grid((2,2), (1, 0), colspan=2)
+
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
     z_ord = irm.plot.plot_zmatrix(ax_z, z)
-
+    
     ### Plot scores
     for di, d in enumerate(chains):
         subsamp = 4
@@ -315,22 +320,12 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_score.grid(1)
 
 
-    # purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
-    # av_idx = np.argsort(purity).flatten()
-    # ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
-    # newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
-    # for v in newclust:
-    #     ax_purity.axvline(v)
-    # ax_purity.set_ylabel('true cell id')
-    # ax_purity.set_xlim(0, len(z_ord))
-
-
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
+           [(".%d.latent.pdf" % d,)  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
     from matplotlib.backends.backend_pdf import PdfPages
@@ -350,13 +345,17 @@ def plot_best_latent(exp_results,
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
     dist_matrix = d['dist_matrix']
+    
+    very_original_data = d['infile']
+    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+    canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
 
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, types_fname) in enumerate(out_filenames):
+    for chain_pos, (latent_fname, ) in enumerate(out_filenames):
 
 
         best_chain_i = chains_sorted_order[chain_pos]
@@ -369,6 +368,80 @@ def plot_best_latent(exp_results,
                                     model=data['relations']['R1']['model'], 
                                     PLOT_MAX_DIST=1.2)
 
+@transform(get_results, suffix(".samples"), [".clusters.html"])
+def cluster_interpretation(exp_results, (output_filename,)):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
 
-pipeline_run([create_inits, get_results, plot_scores_z, plot_best_latent])
+    meta_infile = meta['infile']
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    very_original_data = d['infile']
+    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+    canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    ###### zmatrix
+    av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
+    z = irm.util.compute_zmatrix(av)    
+
+    purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
+    av_idx = np.argsort(purity).flatten()
+    no = np.array(canonical_neuron_ordering)
+
+    template = Template(open("report.template", 'r').read())
+    neuron_data = orig_processed_data['neurons']
+
+    clusters = []
+    f = pylab.figure(figsize=(8, 2))
+    ax = f.add_subplot(1, 1, 1)
+    for cluster_i in range(len(np.unique(purity))):
+        cluster = []
+        
+        for n_i, n in enumerate(no[cluster_i == purity]):
+            cluster.append(n)
+        cluster_size = len(cluster)
+
+        positions = [neuron_data[n]['soma_pos'] for n in cluster]
+        ax.plot([0.0, 1.0], [0.5, 0.5], linewidth=1, c='k')
+        ax.scatter(positions, np.random.normal(0, 0.01, cluster_size)  + 0.5, 
+                   c='r', s=12, 
+                   edgecolor='none')
+        ax.set_xlim(-0.05, 1.05)
+        ax.set_ylim(0.3, 0.7)
+        ax.set_yticks([])
+        
+        fig_fname = "%s.%d.somapos.png" % (output_filename, cluster_i)
+        f.savefig(fig_fname)
+        ax.cla()
+        
+        clusters.append({'neurons' : cluster, 
+                         'soma_pos_file' : fig_fname})
+
+    fid = open(output_filename, 'w')
+    fid.write(template.render(clusters=clusters))
+    
+
+    
+    # ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
+    # newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
+    # for v in newclust:
+    #     ax_purity.axvline(v)
+    # ax_purity.set_ylabel('true cell id')
+    # ax_purity.set_xlim(0, len(z_ord))
+
+#FIXME other metrics: L/R successful grouping
+#FIXME other metrics: *n grouping
+
+pipeline_run([create_inits, get_results, plot_scores_z, plot_best_latent, 
+              cluster_interpretation])
                         
