@@ -133,6 +133,7 @@ def prior_generate(latent, data):
     warning: SUFFSTATS ARE ALWAYS DRAWN FROM THE PRIOR. 
     if data and latent are specified but suffstats are not, we
     will happily fill with bullshit suffstats (that is, suffstats that 
+    are drawn from the prior, and may have no relation to group structure)
     
     """ 
     

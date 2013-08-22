@@ -252,10 +252,21 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
             if relation.modeltypestr == "LogisticDistance":
                 params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
+ 
+            elif relation.modeltypestr == "SigmoidDistance":
+                params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+ 
             elif relation.modeltypestr == "LinearDistance":
                 params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
+
+            elif relation.modeltypestr == "BetaBernoulliNonConj":
+                params = {'width' : 0.1}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+
             elif relation.modeltypestr == "BetaBernoulli":
                 pass
+
             else:
                 raise NotImplementedError() 

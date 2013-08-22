@@ -412,7 +412,9 @@ class LinearDistance(object):
         """
         d = np.random.exponential(hps['mu_hp'])
         p = - d * ss['p'] / ss['mu']+ ss['p']
-        
+        if d > ss['mu']:
+            p = hps['p_min']
+
         link = np.random.rand() < p
         
         x = np.zeros(1, dtype=self.data_dtype())

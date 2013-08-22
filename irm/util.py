@@ -157,8 +157,25 @@ def compute_zmatrix(list_of_assignment):
     return z
 
 def crp_draw(N, alpha):
-    # FIXME FIXME
-    return np.random.permutation(N) % 10
+    group_counts = []
+    assignments = np.zeros(N, dtype=np.uint32)
+    for i in range(N):
+        if i == 0:
+            group_counts.append(1)
+            a = 0
+        else:
+            scores = np.zeros(len(group_counts) + 1)
+            scores[:-1] = np.array(group_counts)
+            scores[-1] = alpha
+            p = scores/(i + alpha)
+            idx = die_roll(p)
+            if idx == len(group_counts):
+                group_counts.append(1)
+            else:
+                group_counts[idx] += 1
+            assignments[i] = idx
+    return assignments
+    
 
 def logistic(x, mu, lamb):
     return 1.0/(1 + np.exp((x - mu)/lamb))
