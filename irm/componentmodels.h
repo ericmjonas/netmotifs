@@ -465,7 +465,6 @@ struct LogisticDistance {
                                   RandomAccessIterator data, const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
-        float p_range = hps->p_max - hps->p_min; 
 
         for(auto dpi : dppos) { 
             float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
@@ -816,6 +815,9 @@ struct LinearDistance {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float mu = ss->mu; 
         float p = ss->p; 
+        if((p >= 1.0) || (p < 0.0) || mu < 0.0) { 
+            return -std::numeric_limits<float>::infinity();
+        }
 
         float score = 0.0; 
         score += log_exp_dist(mu, hps->mu_hp); 
