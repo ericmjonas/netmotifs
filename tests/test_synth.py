@@ -42,7 +42,10 @@ def test_generate_bb_t1t1_full():
     ps = []
     for g1 in groups:
         for g2 in groups:
-            data_subset = r1d[a==g1, a==g2].flatten()
+            print g1, g2, a.shape, r1d.shape, np.sum(a==g1), np.sum(a==g2)
+            data_subset = r1d[a==g1]
+            data_subset = data_subset[:, a==g2]
+            data_subset = data_subset.flatten()
             p = float(np.sum(data_subset))/len(data_subset)
             ps.append(p)
     p = np.array(ps)

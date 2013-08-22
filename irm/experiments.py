@@ -46,7 +46,8 @@ def create_init(latent_filename, data_filename, out_filenames,
 
         elif init['type'] == 'crp':
             alpha = init['alpha']
-            raise NotImplementedError("crp not done")
+            a = irm.util.crp_draw(d_N, 1.0)
+            a = np.random.permutation(a) 
         elif init['type'] == 'truth':
             a = latent['domains']['d1']['assignment']
             
