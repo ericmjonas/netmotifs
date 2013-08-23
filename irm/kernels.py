@@ -148,11 +148,11 @@ def anneal(model, rng, anneal_config,
     
     temps = np.logspace(np.log(start_temp), np.log(stop_temp), 
                         iterations, base=np.e)
-
     if iteration >= iterations:
         cur_temp = stop_temp
     else:
         cur_temp = temps[iteration]
+    print "Annealing at temp=", cur_temp
 
     set_temp(model, cur_temp)
 
