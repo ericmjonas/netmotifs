@@ -28,6 +28,10 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
     if(modeltype == "BetaBernoulli") { 
         IComponentContainer * cc = new ComponentContainer<BetaBernoulli>(data, data_dims_v); 
         return cc; 
+    } else    if(modeltype == "GammaPoisson") { 
+
+        IComponentContainer * cc = new ComponentContainer<GammaPoisson>(data, data_dims_v); 
+        return cc; 
     }     else if(modeltype == "BetaBernoulliNonConj") { 
         IComponentContainer * cc = new ComponentContainer<BetaBernoulliNonConj>(data, data_dims_v); 
         return cc; 

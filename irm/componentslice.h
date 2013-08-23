@@ -75,6 +75,24 @@ void slice_sample_exec<LinearDistance>
  const std::vector<dppos_t> & dppos,
  float temp);
 
+template<>
+void slice_sample_exec<BetaBernoulli>
+(rng_t & rng, float width, 
+ BetaBernoulli::suffstats_t * ss, 
+ BetaBernoulli::hypers_t * hps, 
+ std::vector<BetaBernoulli::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos, 
+ float temp);
+
+template<>
+void slice_sample_exec<GammaPoisson>
+(rng_t & rng, float width, 
+ GammaPoisson::suffstats_t * ss, 
+ GammaPoisson::hypers_t * hps, 
+ std::vector<GammaPoisson::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos, 
+ float temp);
+
 
 }
 

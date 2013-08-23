@@ -153,6 +153,10 @@ inline float logbeta(float alpha, float beta) {
     return fasterlgamma(alpha)  + fasterlgamma(beta) - fasterlgamma(alpha + beta); 
 }
 
+inline float log_factorial(int N) { 
+    return lgamma(N + 1.0); 
+}
+
 inline float log_beta_dist(float p, float alpha, float beta) {
     if((p <0.0) or (p > 1.0)) { 
             return -std::numeric_limits<float>::infinity();

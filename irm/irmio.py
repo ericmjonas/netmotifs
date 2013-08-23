@@ -30,6 +30,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
         domaindef = [(tn, domains_config[tn]['N']) for tn in rel_config['relation']]
         if rel_config['model'] == "BetaBernoulli":
             m = models.BetaBernoulli()
+        elif rel_config['model'] == "GammaPoisson":
+            m = models.GammaPoisson()
         elif rel_config['model'] == "BetaBernoulliNonConj":
             m = models.BetaBernoulliNonConj()
         elif rel_config['model'] == "LogisticDistance":
@@ -137,12 +139,16 @@ def init_domain(domain_obj, assign_vect):
         domain_obj.add_entity_to_group(ai_to_gid[ai], ei)
     return ai_to_gid
     
-def default_graph_init(connectivity, model = 'BetaBernoulli'):
+def default_graph_init(connectivity, model = 'BetaBernoulli', extra_conn = None):
     """
-    Create a default IRM config from a graph connectivity matrix
+    Create a default IRM config from a graph connectivity matrix. 
+
+    Extra_conn are extra additional relations we glue on top
+
     """
     T1_N = connectivity.shape[0]
     assert connectivity.shape[0] == connectivity.shape[1]
+
     latent = {'domains' : {'d1' : {'hps' : {'alpha' : 1.0},
                                    'assignment' : np.arange(T1_N) % 50} 
                            },
@@ -153,6 +159,18 @@ def default_graph_init(connectivity, model = 'BetaBernoulli'):
             'relations' : { 'R1' : {'relation' : ('d1', 'd1'), 
                                     'model' : model, 
                                     'data' : connectivity}}}
+    if extra_conn != None:
+        for c_i, connectivity in enumerate(extra_conn):
+            assert T1_N ==  connectivity.shape[0]
+            assert connectivity.shape[0] == connectivity.shape[1]
+            r_name = 'R%d' % (c_i +2)
+            latent['relations'][r_name] = {'hps' : {'alpha' : 1.0, 
+                                                    'beta' : 1.0}}
+            data['relations'][r_name] = {'relation' : ('d1', 'd1'), 
+                                         'model' : model, 
+                                         'data' : connectivity}
+            
+
     return latent, data
 
 def get_latent(model_obj):
@@ -266,6 +284,8 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
             elif relation.modeltypestr == "BetaBernoulli":
+                pass
+            elif relation.modeltypestr == "GammaPoisson":
                 pass
 
             else:

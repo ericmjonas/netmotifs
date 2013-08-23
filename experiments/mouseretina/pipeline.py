@@ -441,7 +441,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     z = irm.util.compute_zmatrix(av)    
 
     z_ord = irm.plot.plot_zmatrix(ax_z, z)
-
+    
     ### Plot scores
     for di, d in enumerate(chains):
         subsamp = 4
@@ -456,7 +456,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
 
 
     purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
-    
+
     av_idx = np.argsort(purity).flatten()
     ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
     newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
@@ -576,7 +576,7 @@ def plot_best_latent(exp_results,
         # f.savefig(types_fname)
     
 
-pipeline_run([data_retina_adj, create_latents_bb, create_latents_ld_truth, 
+pipeline_run([data_retina_adj, create_latents_bb, 
               plot_scores_z, 
               plot_best_latent, 
               create_latents_ld_truth], multiprocess=2)

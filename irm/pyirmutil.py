@@ -5,8 +5,13 @@ import models
 class Relation(object):
     def __init__(self, relation_def, data, modeltype = None):
 
+        self.conjugate = False
         if isinstance(modeltype, models.BetaBernoulli):
             modeltypestr = "BetaBernoulli"
+            self.conjugate = True
+        elif isinstance(modeltype, models.GammaPoisson):
+            modeltypestr = "GammaPoisson"
+            self.conjugate = True
         elif isinstance(modeltype, models.BetaBernoulliNonConj):
             modeltypestr = "BetaBernoulliNonConj"
         elif isinstance(modeltype, models.AccumModel):

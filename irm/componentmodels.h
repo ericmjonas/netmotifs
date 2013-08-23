@@ -894,6 +894,105 @@ struct LinearDistance {
 }; 
 
 
+struct GammaPoisson { 
+    typedef uint32_t value_t; 
+    
+    struct suffstats_t { 
+        uint32_t n; 
+        uint32_t sum; 
+        float log_prod; 
+    }; 
+
+    struct hypers_t { 
+        float alpha; 
+        float beta; 
+    }; 
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        ss->n = 0; 
+        ss->sum = 0; 
+        ss->log_prod = 0.0; 
+    }
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->n++; 
+        ss->sum += val; 
+        ss->log_prod += log_factorial(val); 
+    }
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->n--; 
+        ss->sum -= val; 
+        ss->log_prod -= log_factorial(val);
+        
+    }
+
+    static std::pair<float, float> intermediates(hypers_t * hps, suffstats_t * ss)
+    {
+        float alpha_n = hps->alpha + ss->sum; 
+        float beta_n = 1.0 / (ss->n + 1. / hps->beta); 
+        return std::make_pair(alpha_n, beta_n); 
+    }
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        
+        auto im = intermediates(hps, ss); 
+        float alpha_z = im.first; 
+        float beta_z = im.second; 
+        
+        return lgamma(alpha_z + val) - lgamma(alpha_z) - alpha_z * log(beta_z) + (alpha_z + val) * log(1.0 / (1.0 + 1./beta_z)) - log_factorial(val);
+
+    }
+
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data,
+                       const std::vector<dppos_t> & dppos) { 
+        auto im = intermediates(hps, ss); 
+        float alpha_z = im.first; 
+        float beta_z = im.second; 
+        return lgamma(alpha_z) - lgamma(hps->alpha) + alpha_z*log(beta_z) - hps->alpha * log(hps->beta) - ss->log_prod; 
+
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.alpha = bp::extract<float>(hps["alpha"]); 
+        hp.beta = bp::extract<float>(hps["beta"]);
+        return hp; 
+
+    }
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["alpha"] = hps.alpha; 
+        hp["beta"] = hps.beta; 
+        
+        return hp; 
+
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["n"] = ss->n; 
+        d["sum"] = ss->sum; 
+        d["log_prod"] = ss->log_prod; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->n = bp::extract<uint32_t>(v["n"]); 
+        ss->sum = bp::extract<uint32_t>(v["sum"]); 
+        ss->log_prod = bp::extract<float>(v["log_prod"]); 
+
+    }
+
+}; 
+
 }
 
 #endif

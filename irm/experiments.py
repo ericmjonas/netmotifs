@@ -38,15 +38,16 @@ def create_init(latent_filename, data_filename, out_filenames,
 
         latent = copy.deepcopy(irm_latent)
 
+        d_N = len(latent['domains']['d1']['assignment'])
         if init['type'] == 'fixed':
             group_num = init['group_num']
 
-            a = np.arange(len(latent['domains']['d1']['assignment'])) % group_num
+            a = np.arange(d_N) % group_num
             a = np.random.permutation(a)
 
         elif init['type'] == 'crp':
             alpha = init['alpha']
-            a = irm.util.crp_draw(d_N, 1.0)
+            a = irm.util.crp_draw(d_N, alpha)
             a = np.random.permutation(a) 
         elif init['type'] == 'truth':
             a = latent['domains']['d1']['assignment']
@@ -134,20 +135,33 @@ def plot_latent(latent, dist_matrix,
         f.savefig(truth_comparison_filename)
 
 
-def cluster_z_matrix(z_bin, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
-                     ITERS=4):
+def cluster_z_matrix(z, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
+                     ITERS=4, method='dpmm_bb'):
 
-    N = len(z_bin)
+    N = len(z)
     # create the data
+    if method == 'dpmm_bb':
+        model = "BetaBernoulli"
+        assert z.dtype == np.bool
+        hps = {'alpha' : beta, 
+               'beta' : beta}
+
+    elif method == "dpmm_gp":
+        model = "GammaPoisson"
+        assert z.dtype == np.uint32
+        hps = {'alpha': 2.0, 'beta' : 2.0}
+
+    else:
+        raise NotImplementedError("unknown method")
+
     data = {'domains' : {'d1' : {'N' : N}}, 
             'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
-                                   'model' : "BetaBernoulli", 
-                                   'data' : z_bin}}}
+                                   'model' : model, 
+                                   'data' : z}}}
 
     latent_init = {'domains' : {'d1' : {'assignment' : np.arange(N) % INIT_GROUPS, 
                                         'hps' : {'alpha' : crp_alpha}}}, 
-                   'relations' : {'R1' : {'hps' : {'alpha' : beta, 
-                                                   'beta' : beta}}}}
+                   'relations' : {'R1' : {'hps' : hps}}}
 
 
     rng = irm.RNG()

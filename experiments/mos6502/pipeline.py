@@ -90,7 +90,7 @@ def create_latents_ld(infile,
 
     HPS = {'mu_hp' : 1000., 
            'lambda_hp' : 1000., 
-           'p_min' : 0.05, 
+           'p_min' : 0.0001, 
            'p_max' : 0.95}
 
     irm_latent['relations']['R1']['hps'] = HPS
@@ -112,8 +112,8 @@ def create_latents_bb(infile,
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn, model_name)
 
-    HPS = {'alpha' : 1.0, 
-           'beta' : 1.0}
+    HPS = {'alpha' : 0.1, 
+           'beta' : 0.1}
 
     irm_latent['relations']['R1']['hps'] = HPS
 

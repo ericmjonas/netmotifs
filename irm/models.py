@@ -428,10 +428,47 @@ class LinearDistance(object):
         
         """
 
+class GammaPoisson(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return np.uint32
+
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'alpha' :  np.random.gamma(1, 2), 
+                'beta' : np.random.gamma(1, 2)}    
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        lamb = np.random.gamma(hps['alpha'], hps['beta'])
+        
+        return {'lambda' : lamb}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        return np.random.poisson(ss['lambda'])
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
 
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
          'SigmoidDistance' : SigmoidDistance, 
          'LogisticDistance' : LogisticDistance, 
          'LinearDistance' : LinearDistance, 
+         'GammaPoisson' : GammaPoisson
 }
