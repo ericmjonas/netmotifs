@@ -134,3 +134,26 @@ def parallel_tempering(model, chain_states,
     
     
 
+def anneal(model, rng, anneal_config, 
+           iteration,
+           set_temp, do_inference):
+    """
+    Simple annealing schedule. 
+
+    """
+
+    start_temp = anneal_config['start_temp']
+    stop_temp = anneal_config['stop_temp']
+    iterations = anneal_config['iterations']
+    
+    temps = np.logspace(np.log(start_temp), np.log(stop_temp), 
+                        iterations, base=np.e)
+
+    if iteration >= iterations:
+        cur_temp = stop_temp
+    else:
+        cur_temp = temps[iteration]
+
+    set_temp(model, cur_temp)
+
+    do_inference(model, rng)

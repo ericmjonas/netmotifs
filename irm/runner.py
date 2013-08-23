@@ -14,7 +14,14 @@ def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
             ('slice_params', {'width' : 0.0})] # use default
     
-def do_inference(irm_model, rng, kernel_config, reverse=False, 
+def default_kernel_anneal():
+    return [('anneal', {'anneal_sched': {'start_temp' : 32.0, 
+                                         'stop_temp' : 1.0, 
+                                         'iterations' : 100}, 
+                         'subkernels': default_kernel_nonconj_config()})]
+
+def do_inference(irm_model, rng, kernel_config, iteration,
+                 reverse=False, 
                  states_at_temps = None):
 
     """
@@ -50,7 +57,7 @@ def do_inference(irm_model, rng, kernel_config, reverse=False,
                                          irmio.get_latent, 
                                          lambda x, y : irmio.set_model_latent(x, y, rng), 
                                          model.IRM.set_temp, 
-                                         lambda x, y, r: do_inference(x, y, subkernels, r))
+                                         lambda x, y, r: do_inference(x, y, subkernels, iteration, r))
         elif kernel_name == "parallel_tempering":
             temps = params['temps']
             subkernels = params['subkernels']
@@ -61,10 +68,20 @@ def do_inference(irm_model, rng, kernel_config, reverse=False,
                                                          irmio.get_latent, 
                                                          lambda x, y : irmio.set_model_latent(x, y, rng), 
                                                          model.IRM.set_temp, 
-                                                         lambda x, y: do_inference(x, y, subkernels))
+                                                         lambda x, y: do_inference(x, y, subkernels, iteration))
 
             irmio.set_model_latent(irm_model, states_at_temps[0], rng)
             res = states_at_temps
+
+        elif kernel_name == "anneal":
+            temp_sched = params['anneal_sched']
+            subkernels = params['subkernels']
+
+            kernels.anneal(irm_model, rng, temp_sched, 
+                           iteration, 
+                           model.IRM.set_temp, 
+                           lambda x, y: do_inference(x, y, subkernels, iteration))
+
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
         t2 = time.time()
@@ -104,10 +121,10 @@ class Runner(object):
         for i in range(N):
             if self.PT :
                 self.chain_states = do_inference(self.model, self.rng,
-                                                 self.kernel_config, 
-                                                states_at_temps = self.chain_states)
+                                                 self.kernel_config, self.iters,
+                                                 states_at_temps = self.chain_states)
             else:
-                do_inference(self.model, self.rng, self.kernel_config)
+                do_inference(self.model, self.rng, self.kernel_config, self.iters)
             self.iters += 1
 
             if logger:
