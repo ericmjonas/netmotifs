@@ -43,6 +43,7 @@ class DomainInterface(object):
         self.g_pos = 0
         self.assignments = np.ones(ENT_N, dtype=np.int)
         self.assignments[:] = NOT_ASSIGNED
+        self.temp = 1.0
 
     def get_relation_pos(self, relation_name):
         return self.relation_pos[relation_name]
@@ -58,6 +59,9 @@ class DomainInterface(object):
 
     def get_groups(self):
         return self.gid_mapping.keys()
+
+    def set_temp(self, t):
+        self.temp = t
 
     def create_group(self, rng):
         """
@@ -135,7 +139,7 @@ class DomainInterface(object):
         
         prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
         
-        return np.sum(scores) + prior_score
+        return np.sum(scores) + prior_score/self.temp
 
 class IRM(object):
     def __init__(self, domains, relations):
@@ -148,6 +152,9 @@ class IRM(object):
     def set_temp(self, t):
         for r in self.relations.values():
             r.set_temp(t)
+
+        for d in self.domains.values():
+            d.set_temp(t)
 
     def get_score(self):
         return self.total_score()
