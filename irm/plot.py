@@ -110,7 +110,6 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
     CLASSES = np.sort(np.unique(canon_assign_vect)) 
     
     CLASSN = len(CLASSES)
-    print CLASSN, len(CLASSES)
 
     if CLASSN > MAX_CLASSES:
         print "WARNING, TOO MANY CLASSES" 
@@ -130,7 +129,6 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
             c1 = canon_to_old[c1_canon]
             c2 = canon_to_old[c2_canon]
             ax_pos = c1i * CLASSN + c2i
-            print 'ax_pos=', ax_pos, c1i, c2i
             ax = img_grid[ax_pos]
 
             nodes_1 = np.argwhere(assign_vect == c1).flatten()
