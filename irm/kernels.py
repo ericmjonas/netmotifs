@@ -158,3 +158,4 @@ def anneal(model, rng, anneal_config,
 
     do_inference(model, rng)
     set_temp(model, 1.0)
+

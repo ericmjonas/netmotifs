@@ -5,6 +5,7 @@ import copy
 import os, glob
 import time
 from matplotlib import pylab
+import pandas
 
 import matplotlib.gridspec as gridspec
 
@@ -421,6 +422,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
 
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
     orig_data = pickle.load(open(d['infile']))
     print "len(dist_matrix):", conn.shape
     cell_types = d['types'][:len(conn)]
@@ -468,8 +470,48 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     f.tight_layout()
 
     f.savefig(plot_latent_filename)
-    f = pylab.figure(figsize=(16, 6))
-    irm.plot.plot_purity_hists_h(f, purity, cell_types)
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    synapses = pickle.load(open('synapses.pickle', 'r'))['synapsedf']
+
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+    f = pylab.figure(figsize=(16, 9))
+    X_MIN = np.min(pos_vec[:, 0])
+    X_MAX = np.max(pos_vec[:, 0])
+    reorder = np.argsort(cell_id_permutation).flatten()
+
+    THOLDS = [1.0]
+    def extra_plot_func(axs, cells_idx, col_i):
+        cells = pos_vec[cells_idx]
+   
+
+        bins = np.linspace(X_MIN, X_MAX, 40)
+        hist, bin_edges = np.histogram(cells[:, 0], bins=bins, normed=True)
+
+        ax_x = axs[0]
+        ax_yz = axs[1]
+
+        ax_x.plot(hist, bins[:-1], c='b')
+        ax_yz.scatter(cells[:, 1], cells[:, 2], c='b', edgecolor='none', s=5)
+                
+        ax_x.set_ylim(X_MAX, X_MIN)
+        ax_x.set_xlim(0, 0.2)
+        if col_i > 0:
+            ax_x.set_yticklabels([])
+
+        tgt_ids = [reorder[cell_id] for cell_id in cells_idx]
+        synapse_area_thold = THOLDS[0]
+        sub_dfs = [synapses[(synapses['from_id'] == cell_id) | (synapses['to_id'] == cell_id)] for cell_id in tgt_ids]
+        sub_merge_df = pandas.concat(sub_dfs)
+        syn_th = sub_merge_df[sub_merge_df['area']>synapse_area_thold]
+        syn_hist, syn_bin_edges = np.histogram(syn_th['x'], bins=bins, normed=True)
+
+        ax_x.plot(syn_hist, bins[:-1], c='r', 
+                  linewidth=1, alpha=0.5)
+        ax_yz.scatter(syn_th['y'], syn_th['z'], c='r', s=1, edgecolor='none')
+
+
+    irm.plot.plot_purity_hists_h(f, purity, cell_types, extra_rows=2, 
+                                 extra_row_func=extra_plot_func)
     f.tight_layout()
     f.savefig(plot_truth_filename)
 
@@ -521,60 +563,6 @@ def plot_best_latent(exp_results,
                          types_fname, 
                          model=data['relations']['R1']['model'])
 
-        # a = np.array(sample_latent['domains']['d1']['assignment'])
-
-        # f = pylab.figure(figsize= (24, 26))
-
-        # gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
-
-
-        # ax = pylab.subplot(gs[1])
-        # ax_types = pylab.subplot(gs[0])
-
-        # ai = irm.plot.plot_t1t1_latent(ax, conn, a)
-
-
-        # # gross_types = np.zeros_like(cell_types)
-        # # gross_types[:12] = 0
-        # # gross_types[12:57] = 1
-        # # gross_types[58:] = 2 
-
-        # # cluster_types = irm.util.compute_purity(a, gross_types)
-        # # for k, v in cluster_types.iteritems():
-        # #     print k, ":",  v
-
-        # for i in  np.argwhere(np.diff(a[ai]) != 0):
-        #     ax_types.axvline(i, c='b', alpha=0.7, linewidth=1.0)
-
-        # ax_types.scatter(np.arange(len(cell_types)), 
-        #                  cell_types[ai], edgecolor='none', c='k', 
-        #                  s=2)
-
-        # ax_types.set_xlim(0, len(cell_types))
-        # ax_types.set_ylim(0, 80)
-        # ax_types.set_xticks([])
-        # ax_types.set_yticks([])
-
-        # f.tight_layout()
-        # pp = PdfPages(latent_fname)
-        # f.savefig(pp, format='pdf')
-
-
-        # f2 =  pylab.figure(figsize= (12, 12))
-        # irm.plot.plot_t1t1_params(f2, dist_matrix, a, 
-        #                           sample_latent['relations']['R1']['ss'], 
-        #                           MAX_DIST=200)
-        # f2.savefig(pp, format='pdf')
-        # pp.close()
-
-
-        # f = pylab.figure()
-        # ax_types = pylab.subplot(1, 1, 1)
-        # irm.plot.plot_purity_ratios(ax_types, a, cell_types)
-
-
-        # f.savefig(types_fname)
-    
 
 pipeline_run([data_retina_adj, create_latents_bb, 
               plot_scores_z, 

@@ -21,8 +21,9 @@ BUCKET_BASE="srm/experiments/mixing"
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'), 
                # ('connmat0', 'fixed_10_40', 'default20'), 
                ('connmat0', 'fixed_10_40', 'default200'), 
+               ('connmat0', 'fixed_10_40', 'default_anneal'),
                # ('connmat0', 'fixed_10_100', 'default200'), 
-               # ('connmat0', 'fixed_10_40', 'pt100'),
+               ('connmat0', 'fixed_10_40', 'pt200'),
                # ('connmat0', 'fixed_10_40', 'default20_m100'), 
            ]
 
@@ -40,6 +41,8 @@ INIT_CONFIGS = {'fixed_4_10' : {'N' : 4,
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 nonconj_m100 = copy.deepcopy(default_nonconj)
 nonconj_m100[0][1]['M'] = 100
+default_anneal = irm.runner.default_kernel_anneal()
+
 
 KERNEL_CONFIGS = {'default20' : {'ITERS' : 20, 
                                  'kernels' : default_nonconj},
@@ -47,10 +50,13 @@ KERNEL_CONFIGS = {'default20' : {'ITERS' : 20,
                                       'kernels' : nonconj_m100},
                   'default200' : {'ITERS' : 200, 
                                   'kernels' : default_nonconj},
-                  'pt100' : {'ITERS' : 100, 
+                  'pt200' : {'ITERS' : 200, 
                              'kernels' : [('parallel_tempering', 
-                                           {'temps' : [1.0, 2.0, 4.0, 8.0], 
-                                            'subkernels' : default_nonconj})]}}
+                                           {'temps' : [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0], 
+                                            'subkernels' : default_nonconj})]}, 
+                  'default_anneal' : {'ITERS' : 200, 
+                                      'kernels' : default_anneal}}
+
 
 def to_bucket(filename):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))

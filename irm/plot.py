@@ -210,7 +210,7 @@ def plot_purity_hists(fig, assign_vect, true_assign_vect,
     CLASSN_TO_PLOT = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()[-1]
 
     
-    gs = gridspec.GridSpec(CLASSN_TO_PLOT, 1,
+    gs = gridspec.GridSpec(CLASSN_TO_PLOT, 1, 
                            height_ratios=height_ratios)
 
     true_classes = np.unique(true_assign_vect)
@@ -264,11 +264,16 @@ def plot_purity_hists(fig, assign_vect, true_assign_vect,
         
 
 def plot_purity_hists_h(fig, assign_vect, true_assign_vect, 
-                      thold=0.9, clust_labels = None, plot_zero=True):
+                        thold=0.9, clust_labels = None, plot_zero=True, 
+                        extra_rows = 0, extra_row_func = None):
     """
 
     plot_zero : True, we plot every single true latent class. False, we compress
     a bit
+    
+    # extra rows: how many extra rows are we plotting
+    # extra row func: call sig is ax, entities_in_this_clust
+
     """
     import matplotlib.gridspec as gridspec
     
@@ -287,9 +292,13 @@ def plot_purity_hists_h(fig, assign_vect, true_assign_vect,
 
     CLASSN_TO_PLOT = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()[-1]
 
-    
-    gs = gridspec.GridSpec(1, CLASSN_TO_PLOT,
-                           width_ratios=height_ratios)
+
+    width_ratios = np.ones(1+extra_rows)
+    width_ratios[0] += extra_rows
+
+    gs = gridspec.GridSpec(1+extra_rows, CLASSN_TO_PLOT,
+                           width_ratios=height_ratios, 
+                           height_ratios = width_ratios)
 
     true_classes = np.unique(true_assign_vect)
     TRUE_CLASS_N = len(true_classes)
@@ -333,7 +342,12 @@ def plot_purity_hists_h(fig, assign_vect, true_assign_vect,
                 
         
         ax.grid(1)
+        axs = []
+        axs = [fig.add_subplot(gs[1 + er, class_i]) for er in range(extra_rows)]
+        if len(axs) > 0:
+            extra_row_func(axs, ai, class_i)
 
+    return fig
     # if not plot_zero:
     #     max_nonzero = np.max(nonzero_counts)
     

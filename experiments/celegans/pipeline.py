@@ -22,11 +22,11 @@ import cloud
 BUCKET_BASE="srm/experiments/celegans"
 
 
-EXPERIMENTS = [('celegans.both.ld', 'fixed_100_200', 'default_nc_100'), 
-               ('celegans.both.bb', 'fixed_100_200', 'default_1000'), 
-               ('celegans.both.ld', 'fixed_100_200', 'default_nc_1000'),  
-               ('celegans.2r.bb', 'fixed_100_200', 'default_1000'),  
-               ('celegans.2r.ld', 'fixed_100_200', 'default_nc_1000'),  
+EXPERIMENTS = [
+               ('celegans.2r.bb', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb', 'crp_100_20', 'anneal_vslow_1000'),  
+               ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
+               ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -50,7 +50,14 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
+default_anneal = irm.runner.default_kernel_anneal()
+slow_anneal = irm.runner.default_kernel_anneal()
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
+slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
+vslow_anneal = irm.runner.default_kernel_anneal()
+vslow_anneal[0][1]['anneal_sched']['start_temp'] = 256.0
+vslow_anneal[0][1]['anneal_sched']['iterations'] = 800
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
@@ -60,6 +67,12 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_conj},
                   'default_nc_1000' : {'ITERS' : 1000, 
                                   'kernels' : default_nonconj},
+                  'anneal_200' : {'ITERS' : 200, 
+                                  'kernels' : default_anneal},
+                  'anneal_slow_400' : {'ITERS' : 400, 
+                                       'kernels' : slow_anneal},
+                  'anneal_vslow_1000' : {'ITERS' : 1000, 
+                                       'kernels' : vslow_anneal}
                   }
 
 
@@ -196,8 +209,8 @@ def create_latents_2rld((both_dist_filename, chem_dist_filename,
     irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
                                                         extra_conn=[elec_conn])
 
-    HPS = {'mu_hp' : 0.2, 
-           'lambda_hp' : 0.2, 
+    HPS = {'mu_hp' : 1.0, 
+           'lambda_hp' : 1.0, 
            'p_min' : 0.02, 
            'p_max' : 0.98}
 
@@ -483,7 +496,7 @@ def cluster_interpretation(exp_results, (output_filename,)):
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
-    purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains), ITERS=10)
+    purity = irm.experiments.cluster_z_matrix(z, ITERS=10, method='dpmm_bb')
     av_idx = np.argsort(purity).flatten()
     no = np.array(canonical_neuron_ordering)
 
@@ -593,7 +606,7 @@ def cluster_interpretation_plot(exp_results, (output_filename,)):
 def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9):
     df = metadata_df
 
-
+    purity = irm.util.canonicalize_assignment(purity)
     CLASSES = np.sort(np.unique(purity))
 
     CLASSN = len(CLASSES)
@@ -603,8 +616,11 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
         class_sizes[i] = np.sum(purity == i)
     height_ratios = class_sizes / np.sum(class_sizes)
 
-
-    CLASSN_TO_PLOT = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()[-1]
+    w = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()
+    if len(w) == 0:
+        CLASSN_TO_PLOT = 1
+    else:
+        CLASSN_TO_PLOT = w[-1] + 1
 
     clusters = []
     fig = pylab.figure(figsize=(8, 6))
@@ -701,7 +717,6 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
             ax_nc.set_yticks([])
         ax_nc.set_ylim(0, len(NEURON_CLASSES))
         ax_nc.set_xlim(0, 1.0)
-        print bars
 
 
         clusters.append({'neurons' : cluster})
@@ -713,5 +728,5 @@ pipeline_run([create_inits, get_results, plot_scores_z,
               plot_best_latent, 
               cluster_interpretation, 
               cluster_interpretation_plot
-          ])
+          ], multiprocess=3)
                         
