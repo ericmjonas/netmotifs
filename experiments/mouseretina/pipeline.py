@@ -26,10 +26,10 @@ WORKING_DIR = "data"
 def td(fname): # "to directory"
     return os.path.join(WORKING_DIR, fname)
 
-EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'), 
-               ('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
-               ('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
-               ('retina.0.1.bb', 'fixed_10_200', 'default_100'), 
+EXPERIMENTS = [#('retina.0.0.bb', 'fixed_10_200', 'default_100'), 
+               #('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
+               #('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
+               #('retina.0.1.bb', 'fixed_10_200', 'default_100'), 
 
     #('retina.bb', 'fixed_100_200', 'default_100'), 
     #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
@@ -37,19 +37,23 @@ EXPERIMENTS = [('retina.0.0.bb', 'fixed_10_200', 'default_100'),
     ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_1000'), 
     ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_1000'), 
     ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.lind.3', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.1.lind.0', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.1.lind.1', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.1.lind.2', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.1.lind.3', 'fixed_20_100', 'default_nc_1000'), 
+    ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.0.ld.0.1', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.1.ld.1.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.0.ld.1.1', 'fixed_20_100', 'anneal_slow_400'), 
+    # ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.0.lind.3', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.lind.0', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.lind.1', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.lind.2', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.lind.3', 'fixed_20_100', 'default_nc_1000'), 
     #('Retinaun.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
-    ('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+    #('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
 
-    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), # just for slice sampler testing
+    #('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), # just for slice sampler testing
                
 ]
 
@@ -86,6 +90,9 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
+slow_anneal = irm.runner.default_kernel_anneal()
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
+slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
@@ -96,6 +103,9 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_conj},
                   'default_100' : {'ITERS' : 100, 
                                   'kernels' : default_conj},
+                  'anneal_slow_400' : {'ITERS' : 400, 
+                                       'kernels' : slow_anneal},
+
                   'default_nc_1000' : {'ITERS' : 1000, 
                                        'kernels' : default_nonconj},
                   }
@@ -183,7 +193,7 @@ def create_latents_ld_params():
                 yield inf, [outf + '.data', 
                             outf + '.latent', outf + '.meta'], mulamb, p
         
-    
+@follows(data_retina_adj)
 @files(create_latents_ld_params)
 def create_latents_ld(infile, 
                       (data_filename, latent_filename, meta_filename), 
@@ -219,6 +229,7 @@ def create_latents_lind_params():
                         outf + '.latent', outf + '.meta'], mulamb
         
     
+@follows(data_retina_adj)
 @files(create_latents_lind_params)
 def create_latents_lind(infile, 
                       (data_filename, latent_filename, meta_filename), 
@@ -456,9 +467,8 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     ax_score.set_xlabel('time (s)')
     ax_score.grid(1)
 
-
     purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains))
-
+    
     av_idx = np.argsort(purity).flatten()
     ax_purity.scatter(np.arange(len(z)), cell_types[av_idx], s=2)
     newclust = np.argwhere(np.diff(purity[av_idx])).flatten()
@@ -472,51 +482,17 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     f.savefig(plot_latent_filename)
     soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
     synapses = pickle.load(open('synapses.pickle', 'r'))['synapsedf']
+    # only take the first 950
+    synapses = synapses[(synapses['from_id'] < len(cell_id_permutation) )  & (synapses['to_id']<len(cell_id_permutation))]
+
+    reorder_synapses = util.reorder_synapse_ids(synapses, cell_id_permutation)
 
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
-    f = pylab.figure(figsize=(16, 9))
-    X_MIN = np.min(pos_vec[:, 0])
-    X_MAX = np.max(pos_vec[:, 0])
-    reorder = np.argsort(cell_id_permutation).flatten()
-
-    THOLDS = [1.0]
-    def extra_plot_func(axs, cells_idx, col_i):
-        cells = pos_vec[cells_idx]
-   
-
-        bins = np.linspace(X_MIN, X_MAX, 40)
-        hist, bin_edges = np.histogram(cells[:, 0], bins=bins, normed=True)
-
-        ax_x = axs[0]
-        ax_yz = axs[1]
-
-        ax_x.plot(hist, bins[:-1], c='b')
-        ax_yz.scatter(cells[:, 1], cells[:, 2], c='b', edgecolor='none', s=5)
-                
-        ax_x.set_ylim(X_MAX, X_MIN)
-        ax_x.set_xlim(0, 0.2)
-        if col_i > 0:
-            ax_x.set_yticklabels([])
-
-        tgt_ids = [reorder[cell_id] for cell_id in cells_idx]
-        synapse_area_thold = THOLDS[0]
-        sub_dfs = [synapses[(synapses['from_id'] == cell_id) | (synapses['to_id'] == cell_id)] for cell_id in tgt_ids]
-        sub_merge_df = pandas.concat(sub_dfs)
-        syn_th = sub_merge_df[sub_merge_df['area']>synapse_area_thold]
-        syn_hist, syn_bin_edges = np.histogram(syn_th['x'], bins=bins, normed=True)
-
-        ax_x.plot(syn_hist, bins[:-1], c='r', 
-                  linewidth=1, alpha=0.5)
-        ax_yz.scatter(syn_th['y'], syn_th['z'], c='r', s=1, edgecolor='none')
-
-
-    irm.plot.plot_purity_hists_h(f, purity, cell_types, extra_rows=2, 
-                                 extra_row_func=extra_plot_func)
-    f.tight_layout()
-    f.savefig(plot_truth_filename)
+    util.plot_cluster_properties(purity, cell_types, pos_vec, reorder_synapses, 
+                                 plot_truth_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, ".%d.types.pdf" % d)  for d in range(3)])
+           [(".%d.clusters.pdf" % d, )  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
     from matplotlib.backends.backend_pdf import PdfPages
@@ -535,34 +511,40 @@ def plot_best_latent(exp_results,
 
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
+
     dist_matrix = d['dist_matrix']
     orig_data = pickle.load(open(d['infile']))
-    cell_types = orig_data['types'][:len(conn)]
+    cell_types = d['types'][:len(conn)]
 
     type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
-    
-    # nodes_with_class = meta['nodes']
-    # conn_and_dist = meta['conn_and_dist']
-
-    # true_assignvect = nodes_with_class['class']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
 
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, types_fname) in enumerate(out_filenames):
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    synapses = pickle.load(open('synapses.pickle', 'r'))['synapsedf']
+    # only take the first 950
+    synapses = synapses[(synapses['from_id'] < len(cell_id_permutation) )  & (synapses['to_id']<len(cell_id_permutation))]
 
+    reorder_synapses = util.reorder_synapse_ids(synapses, cell_id_permutation)
 
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+
+    for chain_pos, (cluster_fname, ) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
-        
-        util.plot_latent(sample_latent, dist_matrix, 
-                         latent_fname, cell_types, 
-                         types_fname, 
-                         model=data['relations']['R1']['model'])
+        cell_assignment = sample_latent['domains']['d1']['assignment']
 
+        a = irm.util.canonicalize_assignment(cell_assignment)
+
+        util.plot_cluster_properties(a, cell_types, 
+                                     pos_vec, reorder_synapses, 
+                                     cluster_fname)
+        
 
 pipeline_run([data_retina_adj, create_latents_bb, 
               plot_scores_z, 

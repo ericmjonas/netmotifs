@@ -23,7 +23,7 @@ EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'),
                ('connmat0', 'fixed_10_40', 'default200'), 
                ('connmat0', 'fixed_10_40', 'default_anneal'),
                # ('connmat0', 'fixed_10_100', 'default200'), 
-               ('connmat0', 'fixed_10_40', 'pt200'),
+               #('connmat0', 'fixed_10_40', 'pt200'),
                # ('connmat0', 'fixed_10_40', 'default20_m100'), 
            ]
 

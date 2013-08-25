@@ -27,6 +27,13 @@ EXPERIMENTS = [
                ('celegans.2r.bb', 'crp_100_20', 'anneal_vslow_1000'),  
                ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
                ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
+               ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb.03', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -47,6 +54,9 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
                                }
                 
                 
+
+BB_HPS = [(0.1, 0.1), (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
+GP_HPS = [(1.0, 2.0), (2.0, 2.0), (3.0, 2.0)]
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
@@ -115,6 +125,7 @@ def data_celegans_adj(infile, (both_file, electrical_file, chemical_file)):
     dist_matrix['link'] = adj_mat_elec
     pickle.dump({'dist_matrix' : dist_matrix, 
                  'infile' : infile}, open(electrical_file, 'w'))
+    
     
     
 @transform(data_celegans_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
@@ -189,6 +200,58 @@ def create_latents_2rbb((both_dist_filename, chem_dist_filename,
     pickle.dump(irm_latent, open(latent_filename, 'w'))
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : [chem_dist_filename, elec_dist_filename]}, 
+                open(meta_filename, 'w'))
+
+
+def create_latents_2r_param():
+    infile = 'data.processed.pickle'
+    for bb_hpi in range(len(BB_HPS)):
+        base = 'celegans.2r.bb.%02d' % bb_hpi
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'BetaBernoulli', bb_hpi
+    for gp_hpi in range(len(GP_HPS)):
+        base = 'celegans.2r.gp.%02d' % gp_hpi
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'GammaPoisson', gp_hpi
+        
+@files(create_latents_2r_param)
+def create_latents_2r_paramed(infile, 
+                              (data_filename, latent_filename, meta_filename), 
+                              model_name, hp_i):
+
+
+    data = pickle.load(open(infile, 'r'))
+    conn_matrix = data['conn_matrix']
+
+    if model_name == "BetaBernoulli":
+        chem_conn = conn_matrix['chemical'] > 0 
+
+        elec_conn = conn_matrix['electrical'] > 0 
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'alpha' : BB_HPS[hp_i][0], 
+               'beta' : BB_HPS[hp_i][1]}
+
+    elif model_name == "GammaPoisson":
+        chem_conn = conn_matrix['chemical'].astype(np.uint32)
+
+        elec_conn = conn_matrix['electrical'].astype(np.uint32)
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'alpha' : GP_HPS[hp_i][0], 
+               'beta' : GP_HPS[hp_i][1]}
+               
+    
+    irm_latent['relations']['R1']['hps'] = HPS
+    irm_latent['relations']['R2']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 'r1' : chem_conn, 
+                 'r2' : elec_conn},
                 open(meta_filename, 'w'))
 
 
@@ -273,7 +336,7 @@ def init_generator():
             
 
 @follows(create_latents_ld, create_latents_bb, create_latents_2rbb, 
-         create_latents_2rld)
+         create_latents_2rld, create_latents_2r_paramed)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -376,9 +439,12 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
         meta_infile = meta_infile[0] 
 
     d = pickle.load(open(meta_infile, 'r'))
-    conn = d['dist_matrix']['link']
-    very_original_data = d['infile']
-    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+        # of the hypers above, where we directly generate the .data from the raw source=
+        orig_processed_data = d
+    else:
+        very_original_data = d['infile']
+        orig_processed_data = pickle.load(open(very_original_data, 'r'))
     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
     chains = [c for c in chains if type(c['scores']) != int]
@@ -429,16 +495,21 @@ def plot_best_latent(exp_results,
     meta = pickle.load(open(data_basename + ".meta"))
 
     meta_infile = meta['infile']
-    print "meta_infile=", meta_infile
+    #print "meta_infile=", meta_infile
 
     if isinstance(meta_infile, list): # hack to correct for the fact that multi-relation datasets have multiple infiles. Should fix 
         meta_infile = meta_infile[0] 
+
+
     d = pickle.load(open(meta_infile, 'r'))
 
-    dist_matrix = d['dist_matrix']
-    
-    very_original_data = d['infile']
-    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+        # of the hypers above, where we directly generate the .data from the raw source=
+        orig_processed_data = d
+    else:
+        very_original_data = d['infile']
+        orig_processed_data = pickle.load(open(very_original_data, 'r'))
+
     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
     no = np.array(canonical_neuron_ordering)
 
@@ -459,11 +530,11 @@ def plot_best_latent(exp_results,
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
         
-        irm.experiments.plot_latent(sample_latent, dist_matrix, 
-                                    latent_fname, #cell_types, 
-                                    #types_fname, 
-                                    model=data['relations']['R1']['model'], 
-                                    PLOT_MAX_DIST=1.2)
+        # irm.experiments.plot_latent(sample_latent, dist_matrix, 
+        #                             latent_fname, #cell_types, 
+        #                             #types_fname, 
+        #                             model=data['relations']['R1']['model'], 
+        #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
         fig = plot_clusters_pretty_figure(a, neuron_data, metadata_df, no)
         fig.savefig(cluster_fname)
@@ -484,9 +555,13 @@ def cluster_interpretation(exp_results, (output_filename,)):
         meta_infile = meta_infile[0] 
 
     d = pickle.load(open(meta_infile, 'r'))
-    conn = d['dist_matrix']['link']
-    very_original_data = d['infile']
-    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+
+    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+        # of the hypers above, where we directly generate the .data from the raw source=
+        orig_processed_data = d
+    else:
+        very_original_data = d['infile']
+        orig_processed_data = pickle.load(open(very_original_data, 'r'))
     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
     chains = [c for c in chains if type(c['scores']) != int]
@@ -576,9 +651,13 @@ def cluster_interpretation_plot(exp_results, (output_filename,)):
         meta_infile = meta_infile[0] 
 
     d = pickle.load(open(meta_infile, 'r'))
-    conn = d['dist_matrix']['link']
-    very_original_data = d['infile']
-    orig_processed_data = pickle.load(open(very_original_data, 'r'))
+
+    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+        # of the hypers above, where we directly generate the .data from the raw source=
+        orig_processed_data = d
+    else:
+        very_original_data = d['infile']
+        orig_processed_data = pickle.load(open(very_original_data, 'r'))
     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
     chains = [c for c in chains if type(c['scores']) != int]
@@ -588,7 +667,7 @@ def cluster_interpretation_plot(exp_results, (output_filename,)):
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
     z = irm.util.compute_zmatrix(av)    
 
-    purity = irm.experiments.cluster_z_matrix(z > 0.75 * len(chains), ITERS=10)
+    purity = irm.experiments.cluster_z_matrix(z, ITERS=10, method='dpmm_gp')
 
 
 
@@ -726,7 +805,7 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
 
 pipeline_run([create_inits, get_results, plot_scores_z, 
               plot_best_latent, 
-              cluster_interpretation, 
+              #cluster_interpretation, 
               cluster_interpretation_plot
           ], multiprocess=3)
                         
