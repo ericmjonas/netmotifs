@@ -48,11 +48,13 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
                                               'group_num' : 100}}, 
                 'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
-                                              'group_num' : 200}},
+                                              'group_num' : 200}}, 
                 'crp_100_20' : {'N' : 100, 
                                'config' : {'type' : 'crp', 
-                                           'alpha' : 20.0}}, 
-                               }
+                                           'alpha' : 20.0}}
+}
+
+                               
                 
                 
 
@@ -87,7 +89,9 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
                   'anneal_vslow_1000' : {'ITERS' : 1000, 
-                                       'kernels' : vslow_anneal}
+                                       'kernels' : vslow_anneal},
+                  'nonconj_crp' : {'ITERS' : 100, 
+                                   'kernels' : nonconj_crp}
                   }
 
 
@@ -200,8 +204,8 @@ def init_generator():
 
             
 
-@follows(create_latents_ld, create_latents_bb, create_latents_2rbb, 
-         create_latents_2rld, create_latents_2r_paramed)
+@follows(create_latents_2r_paramed)
+
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)

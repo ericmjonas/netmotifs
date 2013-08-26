@@ -24,7 +24,7 @@ def default_kernel_anneal():
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
     kl = copy.deepcopy(kernel_list)
     if grid == None:
-        grid == gridgibbshps.default_grid_crp()
+        grid = gridgibbshps.default_grid_crp()
     kl.append(('domain_hp_grid', {'grid': grid}))
     return kl
 
