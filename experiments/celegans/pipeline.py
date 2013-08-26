@@ -10,7 +10,7 @@ from jinja2 import Template
 import irm
 import irm.data
 import matplotlib.gridspec as gridspec
-
+import copy
 
 
 def dist(a, b):
@@ -76,7 +76,8 @@ slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
-slow_anneal_crp = irm.runner.add_domain_hp_grid_kernel(slow_anneal)
+slow_anneal_crp = copy.deepcopy(slow_anneal)
+slow_anneal_crp[0][1]['subkernels'] = irm.runner.add_domain_hp_grid_kernel(slow_anneal[0][1]['subkernels'])
 
 vslow_anneal = irm.runner.default_kernel_anneal()
 vslow_anneal[0][1]['anneal_sched']['start_temp'] = 256.0

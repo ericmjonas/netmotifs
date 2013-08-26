@@ -82,3 +82,51 @@ def test_bb_hps():
         print sample_hps
         fid.write("hps=%s\n" % str(hps))
         fid.write("samps= %s\n" % str(sample_hps))
+
+
+def test_ld_hps():
+    vals = [{'mu_hp' : 0.1, 'lambda_hp' : 0.1, 
+             'p_min' : 0.01, 'p_max' : 0.80}, 
+            {'mu_hp' : 5.0, 'lambda_hp' : 5.0, 
+             'p_min' : 0.001, 'p_max' : 0.90}]
+            
+    N = 500
+    ITERS = 20
+    SAMPLES = 10
+    kernel_config = irm.runner.default_kernel_nonconj_config()
+    kernel_config = irm.runner.add_relation_hp_grid_kernel(kernel_config)
+
+    fid = open('ld.test.out', 'w')
+
+    # create fake data with crp val
+    for hps in vals:
+        latent = {'domains' : 
+                  {'d1' : 
+                   {'hps' : {'alpha' : 20.0}}}, 
+                  'relations' : 
+                  {'R1' : 
+                   {'hps' : hps}}}
+                  
+        model_name = "LogisticDistance"
+
+        data = {'domains' : {'d1' : {'N' : N}}, 
+                'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                       'model' : model_name}}}
+
+        
+        new_latent, new_data = irm.data.synth.prior_generate(latent, data)
+        new_latent['relations']['R1']['hps'] = {'lambda_hp' : 1.0, 
+                                                'mu_hp' : 1.0, 
+                                                'p_min' : 0.01, 
+                                                'p_max' : 0.95}
+
+        run_truth = irm.runner.Runner(new_latent, new_data, kernel_config)
+        sample_hps = []
+        for si in range(SAMPLES):
+            run_truth.run_iters(ITERS)
+            s =run_truth.get_state()
+            sample_hps.append(s['relations']['R1']['hps'])
+        
+        print sample_hps
+        fid.write("hps=%s\n" % str(hps))
+        fid.write("samps= %s\n" % str(sample_hps))
