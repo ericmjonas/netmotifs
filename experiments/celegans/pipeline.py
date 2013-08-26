@@ -34,7 +34,12 @@ EXPERIMENTS = [
                ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
+               ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
                ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
+               ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_crp_400'),  
+               ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_crp_400'),  
+               ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_crp_400'),  
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -68,6 +73,8 @@ slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
+slow_anneal_crp = irm.runner.add_domain_hp_grid_kernel(slow_anneal)
+
 vslow_anneal = irm.runner.default_kernel_anneal()
 vslow_anneal[0][1]['anneal_sched']['start_temp'] = 256.0
 vslow_anneal[0][1]['anneal_sched']['iterations'] = 800
@@ -88,6 +95,8 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_anneal},
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
+                  'anneal_slow_crp_400' : {'ITERS' : 400, 
+                                           'kernels' : slow_anneal_crp},
                   'anneal_vslow_1000' : {'ITERS' : 1000, 
                                        'kernels' : vslow_anneal},
                   'nonconj_crp' : {'ITERS' : 100, 

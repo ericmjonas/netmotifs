@@ -170,3 +170,17 @@ def domain_hp_grid(model, rng, grid):
             return domain.get_prior_score()
 
         gridgibbshps.grid_gibbs(set_func, get_score, grid)
+
+def relation_hp_grid(model, rng, grids):
+    for relation_name, relation in model.relations.iteritems():
+        model_name = relation.modeltypestr
+        if model_name not in grids:
+            raise RuntimeError("model %s is not in the provided grids" % model_name)
+
+        def set_func(val):
+            relation.set_hps(val)
+
+        def get_score():
+            return relation.total_score()
+
+        gridgibbshps.grid_gibbs(set_func, get_score, grids[model_name])

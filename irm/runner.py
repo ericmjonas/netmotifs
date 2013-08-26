@@ -28,6 +28,18 @@ def add_domain_hp_grid_kernel(kernel_list, grid=None):
     kl.append(('domain_hp_grid', {'grid': grid}))
     return kl
 
+def add_relation_hp_grid_kernel(kernel_list, grids=None):
+    kl = copy.deepcopy(kernel_list)
+    if grids == None:
+        grids = gridgibbshps.default_grid_relation_hps()
+    else:
+        default_grid = copy.deepcopy(gridgibbshps.default_grid_relation_hps())
+        default_grid.update(grids)
+        grids = default_grid
+
+    kl.append(('relation_hp_grid', {'grids': grids}))
+    return kl
+
               
 def do_inference(irm_model, rng, kernel_config, iteration,
                  reverse=False, 
@@ -93,6 +105,9 @@ def do_inference(irm_model, rng, kernel_config, iteration,
         elif kernel_name == "domain_hp_grid":
             grid = params['grid']
             kernels.domain_hp_grid(irm_model, rng, grid)
+        elif kernel_name == "relation_hp_grid":
+            grids = params['grids']
+            kernels.relation_hp_grid(irm_model, rng, grids)
             
 
         else:
