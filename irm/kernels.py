@@ -159,3 +159,13 @@ def anneal(model, rng, anneal_config,
     do_inference(model, rng)
     set_temp(model, 1.0)
 
+def domain_hp_grid(model, rng, grid):
+    for domain_name, domain in model.domains.iteritems():
+        
+        def set_func(val):
+            domain.set_hps({'alpha' : val})
+
+        def get_score():
+            return domain.get_prior_score()
+
+        gridgibbshps.grid_gibbs(set_func, get_score, grid)

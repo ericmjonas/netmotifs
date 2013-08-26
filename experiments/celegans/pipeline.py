@@ -34,6 +34,7 @@ EXPERIMENTS = [
                ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -68,6 +69,10 @@ slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 vslow_anneal = irm.runner.default_kernel_anneal()
 vslow_anneal[0][1]['anneal_sched']['start_temp'] = 256.0
 vslow_anneal[0][1]['anneal_sched']['iterations'] = 800
+
+nonconj_crp = irm.runner.default_kernel_nonconj_config()
+nonconj_crp = irm.runner.add_domain_hp_grid_kernel(nonconj_crp)
+
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
@@ -128,79 +133,6 @@ def data_celegans_adj(infile, (both_file, electrical_file, chemical_file)):
     
     
     
-@transform(data_celegans_adj, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
-def create_latents_ld(infile, 
-                      (data_filename, latent_filename, meta_filename)):
-    print "INPUT FILE IS", infile
-    d = pickle.load(open(infile, 'r'))
-    conn_and_dist = d['dist_matrix']
-    
-    model_name= "LogisticDistance" 
-
-    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
-
-    HPS = {'mu_hp' : 0.2, 
-           'lambda_hp' : 0.2, 
-           'p_min' : 0.02, 
-           'p_max' : 0.98}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile, 
-                 }, open(meta_filename, 'w'))
-
-
-@transform(data_celegans_adj, suffix(".data.pickle"), 
-           [".bb.data", ".bb.latent", ".bb.meta"])
-def create_latents_bb(infile, 
-                      (data_filename, latent_filename, meta_filename)):
-
-    d = pickle.load(open(infile, 'r'))
-    conn = d['dist_matrix']['link']
-    
-    model_name= "BetaBernoulli"
-
-    irm_latent, irm_data = irm.irmio.default_graph_init(conn, model_name)
-
-    HPS = {'alpha' : 1.0, 
-           'beta' : 1.0}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
-
-
-@files(data_celegans_adj, 
-       ["celegans.2r.bb.data", "celegans.2r.bb.latent", "celegans.2r.bb.meta"])
-def create_latents_2rbb((both_dist_filename, chem_dist_filename, 
-                         elec_dist_filename), 
-                        (data_filename, latent_filename, meta_filename)):
-
-    chem_d = pickle.load(open(chem_dist_filename, 'r'))
-    chem_conn = chem_d['dist_matrix']['link']
-    
-    elec_d = pickle.load(open(elec_dist_filename, 'r'))
-    elec_conn = elec_d['dist_matrix']['link']
-
-    model_name= "BetaBernoulli"
-
-    irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
-                                                        extra_conn=[elec_conn])
-
-    HPS = {'alpha' : 1.0, 
-           'beta' : 1.0}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-    irm_latent['relations']['R2']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : [chem_dist_filename, elec_dist_filename]}, 
-                open(meta_filename, 'w'))
 
 
 def create_latents_2r_param():
@@ -255,73 +187,6 @@ def create_latents_2r_paramed(infile,
                 open(meta_filename, 'w'))
 
 
-@files(data_celegans_adj, 
-       ["celegans.2r.ld.data", "celegans.2r.ld.latent", "celegans.2r.ld.meta"])
-def create_latents_2rld((both_dist_filename, chem_dist_filename, 
-                         elec_dist_filename), 
-                        (data_filename, latent_filename, meta_filename)):
-
-    chem_d = pickle.load(open(chem_dist_filename, 'r'))
-    chem_conn = chem_d['dist_matrix']
-    
-    elec_d = pickle.load(open(elec_dist_filename, 'r'))
-    elec_conn = elec_d['dist_matrix']
-
-    model_name= "LogisticDistance"
-
-    irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
-                                                        extra_conn=[elec_conn])
-
-    HPS = {'mu_hp' : 1.0, 
-           'lambda_hp' : 1.0, 
-           'p_min' : 0.02, 
-           'p_max' : 0.98}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-    irm_latent['relations']['R2']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : [chem_dist_filename, elec_dist_filename]}, 
-                open(meta_filename, 'w'))
-
-# def create_init(latent_filename, out_filenames, 
-#                 init= None):
-#     """ 
-#     CONVENTION: when we create N inits, the first is actually 
-#     initialized from the "ground truth" of the intial init (whatever
-#     that happened to be)
-#     """
-#     irm_latent = pickle.load(open(latent_filename, 'r'))
-    
-#     irm_latents = []
-
-#     for c, out_f in enumerate(out_filenames):
-#         np.random.seed(c)
-
-#         latent = copy.deepcopy(irm_latent)
-
-#         if init['type'] == 'fixed':
-#             group_num = init['group_num']
-
-#             a = np.arange(len(latent['domains']['d1']['assignment'])) % group_num
-#             a = np.random.permutation(a)
-
-#         elif init['type'] == 'crp':
-#             alpha = init['alpha']
-#         else:
-#             raise NotImplementedError("Unknown init type")
-            
-#         if c > 0: # first one stays the same
-#             latent['domains']['d1']['assignment'] = a
-
-#         # delete the suffstats
-#         if 'ss' in latent['relations']['R1']:
-#             del latent['relations']['R1']['ss']
-
-#         pickle.dump(latent, open(out_f, 'w'))
-
-
 def get_dataset(data_name):
     return glob.glob("%s.data" %  data_name)
 
@@ -330,7 +195,7 @@ def init_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            yield data_filename, ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
+            yield data_filename, ["%s-%s.%02d.init" % (name, init_config_name,  i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
 
 
             

@@ -6,6 +6,7 @@ import irmio
 import kernels, models, model
 import pyirm
 import sys
+import copy
 
 def default_kernel_config():
     return [('conj_gibbs', {})]
@@ -20,6 +21,10 @@ def default_kernel_anneal():
                                          'iterations' : 100}, 
                          'subkernels': default_kernel_nonconj_config()})]
 
+def add_domain_hp_grid_kernel(kernel_list, grid=None):
+    kl = copy.deepcopy(kernel_list)
+    kl.append(('domain_hp_grid', {'grid': gridgibbshps.default_grid_crp()}))
+              
 def do_inference(irm_model, rng, kernel_config, iteration,
                  reverse=False, 
                  states_at_temps = None):
@@ -81,6 +86,10 @@ def do_inference(irm_model, rng, kernel_config, iteration,
                            iteration, 
                            model.IRM.set_temp, 
                            lambda x, y: do_inference(x, y, subkernels, iteration))
+        elif kernel_name == "domain_hp_grid":
+            grid = params['grid']:
+            kernels.domain_hp_grid(irm_model, rng, grid)
+            
 
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
