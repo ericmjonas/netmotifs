@@ -3,7 +3,7 @@ import cPickle as pickle
 import time
 import gibbs
 import irmio
-import kernels, models, model
+import kernels, models, model, gridgibbshps
 import pyirm
 import sys
 import copy
@@ -23,7 +23,11 @@ def default_kernel_anneal():
 
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
     kl = copy.deepcopy(kernel_list)
-    kl.append(('domain_hp_grid', {'grid': gridgibbshps.default_grid_crp()}))
+    if grid == None:
+        grid == gridgibbshps.default_grid_crp()
+    kl.append(('domain_hp_grid', {'grid': grid}))
+    return kl
+
               
 def do_inference(irm_model, rng, kernel_config, iteration,
                  reverse=False, 
@@ -87,7 +91,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
                            model.IRM.set_temp, 
                            lambda x, y: do_inference(x, y, subkernels, iteration))
         elif kernel_name == "domain_hp_grid":
-            grid = params['grid']:
+            grid = params['grid']
             kernels.domain_hp_grid(irm_model, rng, grid)
             
 
