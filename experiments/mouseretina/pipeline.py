@@ -41,6 +41,10 @@ EXPERIMENTS = [#('retina.0.0.bb', 'fixed_10_200', 'default_100'),
     ('retina.1.0.ld.0.1', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.1.ld.1.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.0.ld.1.1', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
     # ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
     # ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
     # ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
@@ -93,6 +97,9 @@ default_conj = irm.runner.default_kernel_config()
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
+default_nonconj_crp = irm.runner.add_domain_hp_grid_kernel(default_nonconj)
+
+default_nonconj_crp_rhp = irm.runner.add_relation_hp_grid_kernel(default_nonconj_crp)
 
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
@@ -108,6 +115,8 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
 
                   'default_nc_1000' : {'ITERS' : 1000, 
                                        'kernels' : default_nonconj},
+                  'default_nc_crp_rhp_1000' : {'ITERS' : 1000, 
+                                               'kernels' : default_nonconj_crp_rhp},
                   }
 
 

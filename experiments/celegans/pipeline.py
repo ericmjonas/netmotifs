@@ -37,6 +37,9 @@ EXPERIMENTS = [
                ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
                ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
                ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
+               ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp_rhp'),  
+               ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp_rhp'),  
+               ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp_rhp'),  
                ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_crp_400'),  
                ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_crp_400'),  
                ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_crp_400'),  
@@ -82,6 +85,7 @@ vslow_anneal[0][1]['anneal_sched']['iterations'] = 800
 nonconj_crp = irm.runner.default_kernel_nonconj_config()
 nonconj_crp = irm.runner.add_domain_hp_grid_kernel(nonconj_crp)
 
+nonconj_crp_rhp = irm.runner.add_relation_hp_grid_kernel(nonconj_crp)
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
@@ -100,7 +104,9 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                   'anneal_vslow_1000' : {'ITERS' : 1000, 
                                        'kernels' : vslow_anneal},
                   'nonconj_crp' : {'ITERS' : 100, 
-                                   'kernels' : nonconj_crp}
+                                   'kernels' : nonconj_crp}, 
+                  'nonconj_crp_rhp' : {'ITERS' : 100, 
+                                       'kernels' : nonconj_crp_rhp}
                   }
 
 
