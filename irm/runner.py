@@ -13,7 +13,7 @@ def default_kernel_config():
 
 def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
-            ('slice_params', {'width' : 0.0})] # use default
+            ('continuous_mh_params', {'iters' : 10, 'log_scale_min': -3, 'log_scale_max' : 4})] # use default
     
 
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
@@ -76,6 +76,9 @@ def do_inference(irm_model, rng, kernel_config, iteration,
         elif kernel_name == "slice_params":
             for relation_name, relation in irm_model.relations.iteritems():
                 relation.apply_comp_kernel("slice_sample", rng, params)
+        elif kernel_name == "continuous_mh_params":
+            for relation_name, relation in irm_model.relations.iteritems():
+                relation.apply_comp_kernel("continuous_mh", rng, params)
         elif kernel_name == "tempered_transitions":
             temps = params['temps']
             subkernels = params['subkernels']
