@@ -315,7 +315,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_z = pylab.subplot2grid((2,2), (0, 0))
     ax_score = pylab.subplot2grid((2,2), (0, 1))
 
-    ax_neuron_clusters = pylab.subplot2grid((2,2), (1, 0), colspan=2)
+    ax_crp_alpha = pylab.subplot2grid((2,2), (1, 0))
 
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
@@ -329,6 +329,9 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
         s = np.array(d['scores'])[::subsamp]
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
+
+        ax_crp_alpha.plot(d['latents'].keys(), 
+                          [l['domains']['d1']['hps']['alpha'] for l in d['latents'].values()])
 
     ax_score.tick_params(axis='both', which='major', labelsize=6)
     ax_score.tick_params(axis='both', which='minor', labelsize=6)

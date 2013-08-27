@@ -178,10 +178,10 @@ def cluster_z_matrix(z, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
     return irm.util.canonicalize_assignment(state['domains']['d1']['assignment'])
 
 
-def to_bucket(filename):
+def to_bucket(filename, BUCKET_BASE):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
 
-def from_bucket(filename):
+def from_bucket(filename, BUCKET_BASE):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 def inference_run(latent_filename, 
