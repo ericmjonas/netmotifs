@@ -123,11 +123,6 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
 def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
 
-def to_bucket(filename):
-    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
-
-def from_bucket(filename):
-    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 def create_tholds():
     """
@@ -386,19 +381,20 @@ def experiment_generator():
 @files(experiment_generator)
 def run_exp((data_filename, inits), wait_file, kernel_config_name):
     # put the filenames in the data
-    to_bucket(data_filename)
-    [to_bucket(init_f) for init_f in inits]
+    irm.experiments.to_bucket(data_filename, BUCKET_BASE)
+    [irm.experiments.to_bucket(init_f, BUCKET_BASE) for init_f in inits]
 
     kc = KERNEL_CONFIGS[kernel_config_name]
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(inference_run, inits, 
+    jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
+                     [BUCKET_BASE]*CHAINS_TO_RUN, 
                      _env='connectivitymotif', 
                      _type='f2')
 

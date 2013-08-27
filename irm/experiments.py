@@ -209,3 +209,56 @@ def inference_run(latent_filename,
     chain_runner.run_iters(ITERS, logger)
         
     return scores, chain_runner.get_state(), times, latents
+
+def plot_chains_hypers(f, chains, data)
+    CHAINN = len(chains)
+    RELATIONS = data['relations'].keys()
+    per_r_hp = {}
+    per_r_hp_ax = {}
+    hp_n = 0
+    f = pylab.figure(figsize= (12, 8))
+
+    for r in RELATIONS:
+        m = data['relations'][r]['model']
+        per_r_hp[r] = []
+        per_r_hp_ax[r] = []
+        if m == 'BetaBernoulli':
+            per_r_hp[r].append('alpha')
+            hp_n +=1 
+            per_r_hp[r].append('beta')
+            hp_n +=1 
+
+        elif m == 'GammaPoisson':
+            per_r_hp[r].append('alpha')
+            hp_n +=1 
+            per_r_hp[r].append('beta')
+            hp_n +=1 
+        else:
+            raise RuntimeError("Unknown model")
+    pos = 1
+    for r in RELATIONS:   
+        per_r_hp_ax[r] = [] 
+        for hp_name in per_r_hp[r]:
+            per_r_hp_ax[r].append(pylab.subplot2grid((1+hp_n, 1), (pos, 0)))
+            pos += 1
+    ax_crp_alpha = pylab.subplot2grid((1+hp_n, 1), (0, 0))
+
+    ### Plot scores
+    for di, d in enumerate(chains):
+        ki = sorted(d['latents'].keys())
+        alpha_x_jitter = 0.1
+        alpha_y_jitter = 0.5
+        alphas = np.array([d['latents'][k]['domains']['d1']['hps']['alpha'] for k in ki])
+        y_jitter = np.random.normal(0, alpha_y_jitter, size=len(alphas))
+        ax_crp_alpha.scatter(ki, alphas + y_jitter, edgecolor='none', 
+                             alpha=0.2)
+
+        for ri, rel_name in enumerate(per_r_hp.keys()):
+            print "rel_name", rel_name
+            for hp_i, hp_name in enumerate(per_r_hp[rel_name]):
+                print "hp_name=", hp_name
+                ax = per_r_hp_ax[rel_name][hp_i]
+                vals = np.array([d['latents'][k]['relations'][rel_name]['hps'][hp_name] for k in ki])
+                ax.plot(vals)
+                ax.set_title("relation %s : %s" % (rel_name, hp_name))
+            

@@ -23,10 +23,10 @@ BUCKET_BASE="srm/experiments/celegans"
 
 
 EXPERIMENTS = [
-               ('celegans.2r.bb', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.bb', 'crp_100_20', 'anneal_vslow_1000'),  
-               ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
-               ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
+               # ('celegans.2r.bb', 'crp_100_20', 'anneal_slow_400'),  
+               # ('celegans.2r.bb', 'crp_100_20', 'anneal_vslow_1000'),  
+               # ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
+               # ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
                ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_400'),  
@@ -34,15 +34,18 @@ EXPERIMENTS = [
                ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
-               ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
-               ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
-               ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp_rhp'),  
-               ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp_rhp'),  
-               ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp_rhp'),  
-               ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_crp_400'),  
-               ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_crp_400'),  
-               ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_crp_400'),  
+               # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
+               # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
+               # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
+               # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.gp.00', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.gp.01', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.gp.02', 'crp_100_20', 'nonconj_crp_rhp'),  
+               # ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_crp_400'),  
+               # ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_crp_400'),  
+               # ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_crp_400'),  
                # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
                # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
                
@@ -315,7 +318,6 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     ax_z = pylab.subplot2grid((2,2), (0, 0))
     ax_score = pylab.subplot2grid((2,2), (0, 1))
 
-    ax_crp_alpha = pylab.subplot2grid((2,2), (1, 0))
 
     ###### zmatrix
     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
@@ -330,9 +332,6 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
 
-        ki = sorted(d['latents'].keys())
-        ax_crp_alpha.plot(ki, 
-                          [d['latents'][k]['domains']['d1']['hps']['alpha'] for k in ki])
 
     ax_score.tick_params(axis='both', which='major', labelsize=6)
     ax_score.tick_params(axis='both', which='minor', labelsize=6)
@@ -344,8 +343,28 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
 
     f.savefig(plot_latent_filename)
 
+@transform(get_results, suffix(".samples"), [".hypers.pdf"])
+def plot_hypers(exp_results, (plot_hypers_filename,)):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+
+    f = pylab.figure(figsize= (12, 8))
+
+    
+    chains = [c for c in chains if type(c['scores']) != int]
+
+    irm.experiments.plot_chains_hypers(f, chains, data)
+    
+    f.tight_layout()
+
+    f.savefig(plot_hypers_filename)
+
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, ".%d.clusters.pdf" % d)  for d in range(3)])
+           [(".%d.clusters.pdf" % d, )  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
     from matplotlib.backends.backend_pdf import PdfPages
@@ -388,7 +407,7 @@ def plot_best_latent(exp_results,
 
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, cluster_fname) in enumerate(out_filenames):
+    for chain_pos, (cluster_fname, ) in enumerate(out_filenames):
 
 
         best_chain_i = chains_sorted_order[chain_pos]
@@ -671,6 +690,7 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
 pipeline_run([create_inits, get_results, plot_scores_z, 
               plot_best_latent, 
               #cluster_interpretation, 
-              cluster_interpretation_plot
+              cluster_interpretation_plot, 
+              plot_hypers
           ], multiprocess=3)
                         

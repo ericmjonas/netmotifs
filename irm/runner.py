@@ -15,11 +15,6 @@ def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
             ('slice_params', {'width' : 0.0})] # use default
     
-def default_kernel_anneal():
-    return [('anneal', {'anneal_sched': {'start_temp' : 32.0, 
-                                         'stop_temp' : 1.0, 
-                                         'iterations' : 100}, 
-                         'subkernels': default_kernel_nonconj_config()})]
 
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
     kl = copy.deepcopy(kernel_list)
@@ -39,6 +34,17 @@ def add_relation_hp_grid_kernel(kernel_list, grids=None):
 
     kl.append(('relation_hp_grid', {'grids': grids}))
     return kl
+
+
+def default_kernel_anneal():
+    dk = default_kernel_nonconj_config()
+    dk = add_domain_hp_grid_kernel(dk)
+    dk = add_relation_hp_grid_kernel(dk)
+    
+    return [('anneal', {'anneal_sched': {'start_temp' : 32.0, 
+                                         'stop_temp' : 1.0, 
+                                         'iterations' : 100}, 
+                         'subkernels': dk})]
 
               
 def do_inference(irm_model, rng, kernel_config, iteration,
