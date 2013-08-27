@@ -158,8 +158,8 @@ class Runner(object):
             if logger:
                 logger(self.iters, self.model)
 
-    def get_state(self):
-        return irmio.get_latent(self.model)
+    def get_state(self, include_ss=True):
+        return irmio.get_latent(self.model, include_ss)
         
 
 if __name__ == "__main__":

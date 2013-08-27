@@ -111,11 +111,6 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                   }
 
 
-def to_bucket(filename):
-    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
-
-def from_bucket(filename):
-    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 
 @split('data.processed.pickle', ['celegans.both.data.pickle', 
@@ -231,27 +226,6 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
                                 init= init_config['config'])
 
 
-
-def inference_run_ld(latent_filename, 
-                     data_filename, 
-                     kernel_config,  ITERS, seed):
-
-    latent = from_bucket(latent_filename)
-    data = from_bucket(data_filename)
-
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
-
-    scores = []
-    times = []
-    def logger(iter, model):
-        print "Iter", iter
-        scores.append(model.total_score())
-        times.append(time.time())
-    chain_runner.run_iters(ITERS, logger)
-        
-    return scores, chain_runner.get_state(), times
-
-
 def experiment_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
         for data_filename in get_dataset(data_name):
@@ -266,19 +240,20 @@ def experiment_generator():
 @files(experiment_generator)
 def run_exp((data_filename, inits), wait_file, kernel_config_name):
     # put the filenames in the data
-    to_bucket(data_filename)
-    [to_bucket(init_f) for init_f in inits]
+    irm.experiments.to_bucket(data_filename, BUCKET_BASE)
+    [irm.experiments.to_bucket(init_f, BUCKET_BASE) for init_f in inits]
 
     kc = KERNEL_CONFIGS[kernel_config_name]
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(inference_run_ld, inits, 
+    jids = cloud.map(irm.experiments.inference_run_ld, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
+                     [BUCKET_BASE]*CHAINS_TO_RUN, 
                      _env='connectivitymotif', 
                      _type='f2')
 
@@ -300,7 +275,8 @@ def get_results(exp_wait, exp_results):
         
         chains.append({'scores' : chain_data[0], 
                        'state' : chain_data[1], 
-                       'times' : chain_data[2]})
+                       'times' : chain_data[2], 
+                       'latents' : chain_data[3]})
         
         
     pickle.dump({'chains' : chains, 

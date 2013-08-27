@@ -173,7 +173,7 @@ def default_graph_init(connectivity, model = 'BetaBernoulli', extra_conn = None)
 
     return latent, data
 
-def get_latent(model_obj):
+def get_latent(model_obj, include_ss=True):
     domains_out = {}
     for domain_name, domain_obj in model_obj.domains.iteritems():
         hps = domain_obj.get_hps()
@@ -195,8 +195,8 @@ def get_latent(model_obj):
                                         
         
         doms = [(model_obj.domains[dn], model_obj.domains[dn].get_relation_pos(relation_name)) for dn in rel_obj.get_axes()] # dom_names]
-
-        relations_out[relation_name]['ss'] = model.get_components_in_relation(doms, rel_obj)
+        if include_ss:
+            relations_out[relation_name]['ss'] = model.get_components_in_relation(doms, rel_obj)
 
     return {'domains' : domains_out, 
             'relations' : relations_out}
@@ -290,3 +290,4 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
 
             else:
                 raise NotImplementedError() 
+

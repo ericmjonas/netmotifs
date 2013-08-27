@@ -177,3 +177,34 @@ def cluster_z_matrix(z, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
     state = run.get_state()
     return irm.util.canonicalize_assignment(state['domains']['d1']['assignment'])
 
+
+def to_bucket(filename):
+    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
+
+def from_bucket(filename):
+    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
+
+def inference_run(latent_filename, 
+                     data_filename, 
+                     kernel_config,  ITERS, seed, BUCKET_BASE, latent_samp_freq=20):
+    """
+    For running on the cloud
+    """
+
+    latent = from_bucket(latent_filename, BUCKET_BASE)
+    data = from_bucket(data_filename, BUCKET_BASE)
+
+    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
+
+    scores = []
+    times = []
+    latents = {}
+    def logger(iter, model):
+        print "Iter", iter
+        scores.append(model.total_score())
+        times.append(time.time())
+        if iter % latent_samp_freq == 0:
+            latents[iter] = chain_runner.get_state(include_ss=False)
+    chain_runner.run_iters(ITERS, logger)
+        
+    return scores, chain_runner.get_state(), times, latents
