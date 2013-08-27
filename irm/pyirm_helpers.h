@@ -28,4 +28,8 @@ bp::list unique_axes_pos_helper_py(bp::list axes_pos, irm::groupid_t val,
 float slice_sampler_wrapper(float x, bp::object P, 
                             irm::rng_t & rng, float w); 
 
+float continuous_mh_sampler_wrapper(float x, bp::object P, 
+                                    irm::rng_t & rng, int iters, 
+                                    float scale_min, float scale_max); 
+
 #endif

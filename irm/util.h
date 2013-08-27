@@ -8,6 +8,7 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/normal_distribution.hpp>
 #include <stdlib.h>
 #include "fastonebigheader.h"
 
@@ -168,6 +169,13 @@ inline float log_beta_dist(float p, float alpha, float beta) {
     return a + b; 
 
 }
+
+inline float normal_sample(float mean, float var, rng_t & rng) { 
+
+    boost::random::normal_distribution<> real(mean, var); 
+ return real(rng);
+}
+
 
 
 #ifdef USE_LOGEXP_APPROX

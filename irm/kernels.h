@@ -70,6 +70,39 @@ T slice_sample(T x,
 
 }
 
+template<typename T>
+T continuous_mh_sample(T x, 
+                       std::function<float(T)> P, rng_t &  rng, 
+                       int ITERS, float LOG_SCALE_MIN, float LOG_SCALE_MAX)
+{
+    /* run ITERS of a mh where the width is drawn from 
+       a distribution exp(unif(LOG_SCALE_MIN, LOG_SCALE_MAX))
+       
+       x: initial value
+       P: function to evaluate log score
+       ITERS :  how many internal loops 
+
+    */ 
+    T cur_x = x; 
+    float cur_score = P(cur_x); 
+    for(int i = 0; i < ITERS; ++i) { 
+        float width = pow(uniform(LOG_SCALE_MIN, LOG_SCALE_MAX, rng), 10); 
+        T new_x = normal_sample(cur_x, width, rng); 
+        float new_score = P(new_x); 
+
+        if(uniform_01(rng) < MYEXP(new_score - cur_score)) { 
+            cur_score = new_score; 
+            cur_x = new_x; 
+        } else { 
+            
+        }
+    }
+    
+    return cur_x; 
+
+
+
+}
 
 
 

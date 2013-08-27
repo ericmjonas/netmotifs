@@ -110,6 +110,7 @@ BOOST_PYTHON_MODULE(pyirm)
       ; 
 
   def("slice_sample", &slice_sampler_wrapper); 
+  def("continuous_mh_sample", &continuous_mh_sampler_wrapper); 
   def("uniform_01", &uniform_01); 
 
   // helper class

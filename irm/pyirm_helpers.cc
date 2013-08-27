@@ -69,3 +69,19 @@ float slice_sampler_wrapper(float x, bp::object P,
 
 
 }
+
+
+float continuous_mh_sampler_wrapper(float x, bp::object P, 
+                                    irm::rng_t & rng, int iters, 
+                                    float scale_min, float scale_max) { 
+    /* 
+       Only works for floats, oh well
+    */ 
+
+    return irm::continuous_mh_sample<float>(x,
+                                    [&P](float t) -> float
+        { return bp::extract<float>(P(t));}, 
+                                            rng, iters, scale_min, scale_max);
+
+
+}

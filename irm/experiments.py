@@ -210,7 +210,7 @@ def inference_run(latent_filename,
         
     return scores, chain_runner.get_state(), times, latents
 
-def plot_chains_hypers(f, chains, data)
+def plot_chains_hypers(f, chains, data):
     CHAINN = len(chains)
     RELATIONS = data['relations'].keys()
     per_r_hp = {}

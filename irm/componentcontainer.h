@@ -11,6 +11,7 @@
 #include "util.h"
 
 #include "componentslice.h"
+#include "componentmh.h"
 
 namespace bp=boost::python; 
 
@@ -191,6 +192,18 @@ public:
                 group_hash_t gh = hash_coords(c.first); 
                 sswrapper_t * ssw = components_[gh]; 
                 slice_sample_exec<CM>(rng, width, 
+                                      &(ssw->ss), 
+                                      &hps_, data_.begin(), 
+                                      c.second, temp_); 
+            }
+        } else if(name == "continuous_mh") { 
+            int iters = bp::extract<int>(config["iters"]); 
+            float min = bp::extract<float>(config["log_scale_min"]); 
+            float max = bp::extract<float>(config["log_scale_max"]); 
+            for(auto c : dppos) { 
+                group_hash_t gh = hash_coords(c.first); 
+                sswrapper_t * ssw = components_[gh]; 
+                continuous_mh_sample_exec<CM>(rng, iters, min, max, 
                                       &(ssw->ss), 
                                       &hps_, data_.begin(), 
                                       c.second, temp_); 

@@ -36,6 +36,8 @@ add_library(irm
    relation.cc
    componentmodels.cc
    componentslice.cc
+   componentmh.cc
+
 )
 
 add_library(pyirm SHARED
