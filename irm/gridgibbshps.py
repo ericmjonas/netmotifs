@@ -35,7 +35,7 @@ DEFAULT_RELATION_GRIDS['LogisticDistance'] = default_grid_logstic_distance()
 
 
 def default_grid_crp():
-    return np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0])
+    return np.logspace(np.log10(0.1), np.log10(50), 40)
 
 def default_grid_relation_hps():
     return DEFAULT_RELATION_GRIDS

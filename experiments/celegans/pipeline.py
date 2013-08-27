@@ -248,7 +248,7 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(irm.experiments.inference_run_ld, inits, 
+    jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
@@ -330,8 +330,9 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
 
-        ax_crp_alpha.plot(d['latents'].keys(), 
-                          [l['domains']['d1']['hps']['alpha'] for l in d['latents'].values()])
+        ki = sorted(d['latents'].keys())
+        ax_crp_alpha.plot(ki, 
+                          [d['latents'][k]['domains']['d1']['hps']['alpha'] for k in ki])
 
     ax_score.tick_params(axis='both', which='major', labelsize=6)
     ax_score.tick_params(axis='both', which='minor', labelsize=6)
