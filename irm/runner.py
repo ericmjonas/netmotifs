@@ -11,9 +11,14 @@ import copy
 def default_kernel_config():
     return [('conj_gibbs', {})]
 
+def kernel_nonconj_contmh_config():
+    return [('nonconj_gibbs', {'M' : 10}), 
+            ('continuous_mh_params', {'iters' : 10, 'log_scale_min': -3, 'log_scale_max' : 4})] 
+    
 def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
-            ('continuous_mh_params', {'iters' : 10, 'log_scale_min': -3, 'log_scale_max' : 4})] # use default
+            ('slice_params', {'width' : 0.0})] # use default
+
     
 
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
