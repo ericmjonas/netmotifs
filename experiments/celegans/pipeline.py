@@ -21,6 +21,11 @@ import cloud
 
 BUCKET_BASE="srm/experiments/celegans"
 
+WORKING_DIR = "data"
+
+def td(fname): # "to directory"
+    return os.path.join(WORKING_DIR, fname)
+
 
 EXPERIMENTS = [
                # ('celegans.2r.bb', 'crp_100_20', 'anneal_slow_400'),  
@@ -142,14 +147,14 @@ def data_celegans_adj(infile, (both_file, electrical_file, chemical_file)):
 def create_latents_2r_param():
     infile = 'data.processed.pickle'
     for bb_hpi in range(len(BB_HPS)):
-        base = 'celegans.2r.bb.%02d' % bb_hpi
+        base = td('celegans.2r.bb.%02d' % bb_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'BetaBernoulli', bb_hpi
     for gp_hpi in range(len(GP_HPS)):
-        base = 'celegans.2r.gp.%02d' % gp_hpi
+        base = td('celegans.2r.gp.%02d' % gp_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'GammaPoisson', gp_hpi
 
     for ld_hpi in range(len(LD_HPS)):
-        base = 'celegans.2r.ld.%02d' % ld_hpi
+        base = td('celegans.2r.ld.%02d' % ld_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistance', ld_hpi
         
 @files(create_latents_2r_param)
@@ -232,7 +237,7 @@ def create_latents_2r_paramed(infile,
 
 
 def get_dataset(data_name):
-    return glob.glob("%s.data" %  data_name)
+    return glob.glob(td("%s.data" %  data_name))
 
 def init_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
@@ -245,7 +250,6 @@ def init_generator():
             
 
 @follows(create_latents_2r_paramed)
-
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -260,7 +264,7 @@ def experiment_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            inits = ["%s.%02d.init" % (name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
+            inits = ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
             
             exp_name = "%s-%s-%s.wait" % (data_filename, init_config_name, kernel_config_name)
             yield [data_filename, inits], exp_name, kernel_config_name
