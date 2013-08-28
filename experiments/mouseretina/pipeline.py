@@ -345,28 +345,6 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
                                 out_filenames, 
                                 init= init_config['config'])
 
-
-
-def inference_run(latent_filename, 
-                     data_filename, 
-                     kernel_config,  ITERS, seed):
-
-    latent = from_bucket(latent_filename)
-    data = from_bucket(data_filename)
-
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
-
-    scores = []
-    times = []
-    def logger(iter, model):
-        print "Iter", iter
-        scores.append(model.total_score())
-        times.append(time.time())
-    chain_runner.run_iters(ITERS, logger)
-        
-    return scores, chain_runner.get_state(), times
-
-
 def experiment_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
         for data_filename in get_dataset(data_name):

@@ -1,9 +1,6 @@
-Experiment goals: 
-1. Compute adjacency and distance matrix, synapse numbers
-2. Create binary data based upon: 
-   1. any connection
-   2. chemical only
-   3. gap junction only
+Space of configurations we now care about: 
 
-3. compute relevant hyperparams for distance matrix
-4. 
+with/without motor neuron attachments
+correct count of synapses y/n
+logistic distance or simple bb
+

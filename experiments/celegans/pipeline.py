@@ -34,6 +34,9 @@ EXPERIMENTS = [
                ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.ld.00', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.ld.01', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.ld.02', 'crp_100_20', 'anneal_slow_400'),  
                # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
                # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
                # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
@@ -71,7 +74,8 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
 
 BB_HPS = [(0.1, 0.1), (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
 GP_HPS = [(1.0, 2.0), (2.0, 2.0), (3.0, 2.0)]
-
+LD_HPS = [(1.0, 1.0, 0.9, 0.01), (1.0, 1.0, 0.5, 0.001),
+          (0.1, 0.1, 0.9, 0.01), (0.1, 0.1, 0.5, 0.001)]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
@@ -79,17 +83,6 @@ slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
-slow_anneal_crp = copy.deepcopy(slow_anneal)
-slow_anneal_crp[0][1]['subkernels'] = irm.runner.add_domain_hp_grid_kernel(slow_anneal[0][1]['subkernels'])
-
-vslow_anneal = irm.runner.default_kernel_anneal()
-vslow_anneal[0][1]['anneal_sched']['start_temp'] = 256.0
-vslow_anneal[0][1]['anneal_sched']['iterations'] = 800
-
-nonconj_crp = irm.runner.default_kernel_nonconj_config()
-nonconj_crp = irm.runner.add_domain_hp_grid_kernel(nonconj_crp)
-
-nonconj_crp_rhp = irm.runner.add_relation_hp_grid_kernel(nonconj_crp)
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
                                   'kernels' : default_nonconj},
@@ -103,14 +96,7 @@ KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100,
                                   'kernels' : default_anneal},
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
-                  'anneal_slow_crp_400' : {'ITERS' : 400, 
-                                           'kernels' : slow_anneal_crp},
-                  'anneal_vslow_1000' : {'ITERS' : 1000, 
-                                       'kernels' : vslow_anneal},
-                  'nonconj_crp' : {'ITERS' : 100, 
-                                   'kernels' : nonconj_crp}, 
-                  'nonconj_crp_rhp' : {'ITERS' : 100, 
-                                       'kernels' : nonconj_crp_rhp}
+
                   }
 
 
@@ -161,6 +147,10 @@ def create_latents_2r_param():
     for gp_hpi in range(len(GP_HPS)):
         base = 'celegans.2r.gp.%02d' % gp_hpi
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'GammaPoisson', gp_hpi
+
+    for ld_hpi in range(len(LD_HPS)):
+        base = 'celegans.2r.ld.%02d' % ld_hpi
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistance', ld_hpi
         
 @files(create_latents_2r_param)
 def create_latents_2r_paramed(infile, 
@@ -170,6 +160,16 @@ def create_latents_2r_paramed(infile,
 
     data = pickle.load(open(infile, 'r'))
     conn_matrix = data['conn_matrix']
+    neurons = data['neurons']
+    canonical_neuron_ordering = data['canonical_neuron_ordering']
+    NEURON_N = len(canonical_neuron_ordering)
+    dist_matrix = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+    for n1_i, n1 in enumerate(canonical_neuron_ordering):
+        for n2_i, n2 in enumerate(canonical_neuron_ordering):
+            dist_matrix[n1_i, n2_i] = np.abs(neurons[n1]['soma_pos'] - neurons[n2]['soma_pos'])
 
     if model_name == "BetaBernoulli":
         chem_conn = conn_matrix['chemical'] > 0 
@@ -181,6 +181,32 @@ def create_latents_2r_paramed(infile,
 
         HPS = {'alpha' : BB_HPS[hp_i][0], 
                'beta' : BB_HPS[hp_i][1]}
+ 
+    elif model_name == "LogisticDistance":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] > 0 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical'] > 0 
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'mu_hp' : LD_HPS[hp_i][0], 
+               'lambda_hp' : LD_HPS[hp_i][1], 
+               'p_max' : LD_HPS[hp_i][2], 
+               'p_min' : LD_HPS[hp_i][3]}
 
     elif model_name == "GammaPoisson":
         chem_conn = conn_matrix['chemical'].astype(np.uint32)
