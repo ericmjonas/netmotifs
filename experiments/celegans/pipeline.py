@@ -10,6 +10,7 @@ from jinja2 import Template
 import irm
 import irm.data
 import matplotlib.gridspec as gridspec
+from matplotlib import colors
 import copy
 
 
@@ -85,8 +86,24 @@ default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
 slow_anneal = irm.runner.default_kernel_anneal()
-slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
+
+def generate_ld_hypers():
+    mu_min = 0.01
+    mu_max = 1.0
+    space_vals =  np.logspace(np.log10(mu_min), np.log10(mu_max), 50)
+    p_mins = np.array([0.001])
+    p_maxs = np.array([0.90]) # , 0.80, 0.50, 0.20])
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for p_max in p_maxs:
+                res.append({'lambda_hp' : s, 'mu_hp' : s, 
+                           'p_min' : p_min, 'p_max' : p_max})
+    return res
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = generate_ld_hypers()
 
 
 KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
@@ -122,7 +139,7 @@ def data_celegans_adj(infile, (both_file, electrical_file, chemical_file)):
     # compute distance
     for n1_i, n1 in enumerate(canonical_neuron_ordering):
         for n2_i, n2 in enumerate(canonical_neuron_ordering):
-            dist_matrix[n1_i, n2_i]['distance'] = np.abs(neurons[n1]['soma_pos'] - neurons[n2]['soma_pos'])
+            dist_matrix[n1_i, n2_i]['distance'] = np.abs(neurons.loc(n1)['soma_pos'] - neurons.loc(n2)['soma_pos'])
     
     adj_mat_chem = conn_matrix['chemical'] > 0
     adj_mat_elec = conn_matrix['electrical'] > 0
@@ -174,7 +191,7 @@ def create_latents_2r_paramed(infile,
 
     for n1_i, n1 in enumerate(canonical_neuron_ordering):
         for n2_i, n2 in enumerate(canonical_neuron_ordering):
-            dist_matrix[n1_i, n2_i] = np.abs(neurons[n1]['soma_pos'] - neurons[n2]['soma_pos'])
+            dist_matrix[n1_i, n2_i] = np.abs(neurons.loc[n1]['soma_pos'] - neurons.loc[n2]['soma_pos'])
 
     if model_name == "BetaBernoulli":
         chem_conn = conn_matrix['chemical'] > 0 
@@ -388,14 +405,13 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
     chains = [c for c in chains if type(c['scores']) != int]
 
     irm.experiments.plot_chains_hypers(f, chains, data)
-    
-    f.tight_layout()
+
 
     f.savefig(plot_hypers_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.clusters.pdf" % d, )  for d in range(3)])
-def plot_best_latent(exp_results, 
+           [(".%d.clusters.pdf" % d, )  for d in range(1)])
+def plot_best_cluster(exp_results, 
                      out_filenames):
     from matplotlib.backends.backend_pdf import PdfPages
 
@@ -427,10 +443,8 @@ def plot_best_latent(exp_results,
     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
     no = np.array(canonical_neuron_ordering)
 
-    neuron_data = orig_processed_data['neurons']
-    metadata_df = pandas.io.excel.read_excel("../../../data/celegans/manualmetadata.xlsx", 
-                                             'properties', 
-                                             index_col=0)
+    neurons = orig_processed_data['neurons']
+
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -453,90 +467,90 @@ def plot_best_latent(exp_results,
         fig = plot_clusters_pretty_figure(a, neuron_data, metadata_df, no)
         fig.savefig(cluster_fname)
 
-@transform(get_results, suffix(".samples"), [".clusters.html"])
-def cluster_interpretation(exp_results, (output_filename,)):
-    sample_d = pickle.load(open(exp_results))
-    chains = sample_d['chains']
+# @transform(get_results, suffix(".samples"), [".clusters.html"])
+# def cluster_interpretation(exp_results, (output_filename,)):
+#     sample_d = pickle.load(open(exp_results))
+#     chains = sample_d['chains']
     
-    exp = sample_d['exp']
-    data_filename = exp['data_filename']
-    data = pickle.load(open(data_filename))
-    data_basename, _ = os.path.splitext(data_filename)
-    meta = pickle.load(open(data_basename + ".meta"))
+#     exp = sample_d['exp']
+#     data_filename = exp['data_filename']
+#     data = pickle.load(open(data_filename))
+#     data_basename, _ = os.path.splitext(data_filename)
+#     meta = pickle.load(open(data_basename + ".meta"))
 
-    meta_infile = meta['infile']
-    if isinstance(meta_infile, list): # hack to correct for the fact that multi-relation datasets have multiple infiles. Should fix 
-        meta_infile = meta_infile[0] 
+#     meta_infile = meta['infile']
+#     if isinstance(meta_infile, list): # hack to correct for the fact that multi-relation datasets have multiple infiles. Should fix 
+#         meta_infile = meta_infile[0] 
 
-    d = pickle.load(open(meta_infile, 'r'))
+#     d = pickle.load(open(meta_infile, 'r'))
 
-    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
-        # of the hypers above, where we directly generate the .data from the raw source=
-        orig_processed_data = d
-    else:
-        very_original_data = d['infile']
-        orig_processed_data = pickle.load(open(very_original_data, 'r'))
-    canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
+#     if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+#         # of the hypers above, where we directly generate the .data from the raw source=
+#         orig_processed_data = d
+#     else:
+#         very_original_data = d['infile']
+#         orig_processed_data = pickle.load(open(very_original_data, 'r'))
+#     canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
 
-    chains = [c for c in chains if type(c['scores']) != int]
-    CHAINN = len(chains)
+#     chains = [c for c in chains if type(c['scores']) != int]
+#     CHAINN = len(chains)
 
-    ###### zmatrix
-    av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
-    z = irm.util.compute_zmatrix(av)    
+#     ###### zmatrix
+#     av = [np.array(d['state']['domains']['d1']['assignment']) for d in chains]
+#     z = irm.util.compute_zmatrix(av)    
 
-    purity = irm.experiments.cluster_z_matrix(z, ITERS=10, method='dpmm_bb')
-    av_idx = np.argsort(purity).flatten()
-    no = np.array(canonical_neuron_ordering)
+#     purity = irm.experiments.cluster_z_matrix(z, ITERS=10, method='dpmm_bb')
+#     av_idx = np.argsort(purity).flatten()
+#     no = np.array(canonical_neuron_ordering)
 
-    template = Template(open("report.template", 'r').read())
-    neuron_data = orig_processed_data['neurons']
+#     template = Template(open("report.template", 'r').read())
+#     neuron_data = orig_processed_data['neurons']
 
-    df = pandas.io.excel.read_excel("../../../data/celegans/manualmetadata.xlsx", 
-                                    'properties', 
-                                    index_col=0)
-    print df.head()
+#     df = pandas.io.excel.read_excel("../../../data/celegans/manualmetadata.xlsx", 
+#                                     'properties', 
+#                                     index_col=0)
+#     print df.head()
 
-    clusters = []
-    f = pylab.figure(figsize=(8, 2))
-    ax = f.add_subplot(1, 1, 1)
-    for cluster_i in range(len(np.unique(purity))):
-        cluster = []
-        def nc(x):
-            print type(x)
-            if isinstance(x, unicode):
-                return x
-            if np.isnan(x):
-                return ""
-            return x
+#     clusters = []
+#     f = pylab.figure(figsize=(8, 2))
+#     ax = f.add_subplot(1, 1, 1)
+#     for cluster_i in range(len(np.unique(purity))):
+#         cluster = []
+#         def nc(x):
+#             print type(x)
+#             if isinstance(x, unicode):
+#                 return x
+#             if np.isnan(x):
+#                 return ""
+#             return x
         
-        for n_i, n in enumerate(no[cluster_i == purity]):
-            cluster.append({'id' : n, 
-                            'neurotransmitters' : nc(df.loc[n]['neurotransmitters']), 
-                            'role' : nc(df.loc[n]['role']), 
-                            'basic' : nc(df.loc[n]['basic']), 
-                            'extended' : nc(df.loc[n]['extended'])})
-        cluster.sort(key=lambda x: x['id'])
-        cluster_size = len(cluster)
+#         for n_i, n in enumerate(no[cluster_i == purity]):
+#             cluster.append({'id' : n, 
+#                             'neurotransmitters' : nc(df.loc[n]['neurotransmitters']), 
+#                             'role' : nc(df.loc[n]['role']), 
+#                             'basic' : nc(df.loc[n]['basic']), 
+#                             'extended' : nc(df.loc[n]['extended'])})
+#         cluster.sort(key=lambda x: x['id'])
+#         cluster_size = len(cluster)
 
-        positions = [neuron_data[n['id']]['soma_pos'] for n in cluster]
-        ax.plot([0.0, 1.0], [0.5, 0.5], linewidth=1, c='k')
-        ax.scatter(positions, np.random.normal(0, 0.01, cluster_size)  + 0.5, 
-                   c='r', s=12, 
-                   edgecolor='none')
-        ax.set_xlim(-0.05, 1.05)
-        ax.set_ylim(0.3, 0.7)
-        ax.set_yticks([])
+#         positions = [neuron_data[n['id']]['soma_pos'] for n in cluster]
+#         ax.plot([0.0, 1.0], [0.5, 0.5], linewidth=1, c='k')
+#         ax.scatter(positions, np.random.normal(0, 0.01, cluster_size)  + 0.5, 
+#                    c='r', s=12, 
+#                    edgecolor='none')
+#         ax.set_xlim(-0.05, 1.05)
+#         ax.set_ylim(0.3, 0.7)
+#         ax.set_yticks([])
         
-        fig_fname = "%s.%d.somapos.png" % (output_filename, cluster_i)
-        f.savefig(fig_fname)
-        ax.cla()
+#         fig_fname = "%s.%d.somapos.png" % (output_filename, cluster_i)
+#         f.savefig(fig_fname)
+#         ax.cla()
         
-        clusters.append({'neurons' : cluster, 
-                         'soma_pos_file' : fig_fname})
+#         clusters.append({'neurons' : cluster, 
+#                          'soma_pos_file' : fig_fname})
 
-    fid = open(output_filename, 'w')
-    fid.write(template.render(clusters=clusters))
+#     fid = open(output_filename, 'w')
+#     fid.write(template.render(clusters=clusters))
     
 
     
@@ -589,14 +603,12 @@ def cluster_interpretation_plot(exp_results, (output_filename,)):
 
     neuron_data = orig_processed_data['neurons']
 
-    df = pandas.io.excel.read_excel("../../../data/celegans/manualmetadata.xlsx", 
-                                    'properties', 
-                                    index_col=0)
-    fig = plot_clusters_pretty_figure(purity, neuron_data, df, no, thold=thold)
+    df = orig_processed_data['neurons']
+    fig = plot_clusters_pretty_figure(purity, df, no, thold=thold)
 
     fig.savefig(output_filename)
 
-def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9):
+def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
     df = metadata_df
 
     purity = irm.util.canonicalize_assignment(purity)
@@ -670,7 +682,7 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
 
         colors = [role_color_lut[r] for r in roles]
         
-        positions = [neuron_data[n['id']]['soma_pos'] for n in cluster]
+        positions = [df.loc[n['id']]['soma_pos'] for n in cluster]
         ax = fig.add_subplot(gs[0, cluster_i])
 
         ax.plot([0.5, 0.5], [0.0, 1.0], linewidth=1, c='k')
@@ -698,7 +710,11 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
         bars = []
         bar_colors = []
         for nc, nc_type in zip(NEURON_CLASSES[::-1], NEURON_CLASSES_ROLES[::-1]):
-            bars.append(cluster_neuron_classes[nc] / float(neuron_classes_size[nc]))
+            nc_size =  float(neuron_classes_size[nc])
+            if nc_size > 0:
+                bars.append(cluster_neuron_classes[nc] / float(neuron_classes_size[nc]))
+            else:
+                bars.append(0)
             bar_colors.append(role_color_lut[nc_type])
         ax_nc.barh(np.arange(len(NEURON_CLASSES)), 
                     bars, color=bar_colors)
@@ -717,9 +733,68 @@ def plot_clusters_pretty_figure(purity, neuron_data, metadata_df, no, thold=0.9)
 #FIXME other metrics: L/R successful grouping
 #FIXME other metrics: *n grouping
 
+@transform(get_results, suffix(".samples"), 
+           [(".%d.latent.pdf" % d, )  for d in range(1)])
+def plot_best_latent(exp_results, 
+                     out_filenames):
+    print "Plotting best latent", exp_results
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    # d = pickle.load(open(meta_infile, 'r'))
+    # dist_matrix = d['dist_matrix']
+
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+    for chain_pos, (latent_fname, ) in enumerate(out_filenames):
+        print "plotting chain", chain_pos
+
+        best_chain_i = chains_sorted_order[chain_pos]
+        best_chain = chains[best_chain_i]
+        sample_latent = best_chain['state']
+
+        model = data['relations']['R1']['model']
+        
+        f = pylab.figure(figsize= (24, 26))
+        
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
+        ax = f.add_subplot(gs[1, 0])
+
+        cmap = colors.ListedColormap(['white', 'red', 'blue', 
+                                      'purple'])
+        bounds=[0,1, 2, 3, 5]
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+
+        if model == "BetaBernoulli":
+            data_mat = data['relations']['R1']['data'].astype(int)
+
+            data_mat += data['relations']['R2']['data'].astype(int)*2
+
+        if model == "GammaPoisson":
+            data_mat = data['relations']['R1']['data']
+        elif model == "LogisticDistance":
+            data_mat = data['relations']['R1']['data']['link'].astype(int)
+            data_mat += data['relations']['R2']['data']['link'].astype(int)*2
+        a = sample_latent['domains']['d1']['assignment']
+        irm.plot.plot_t1t1_latent(ax, data_mat, a, cmap=cmap, norm=norm)
+                                  
+        
+        f.savefig(latent_fname)
+
 pipeline_run([create_inits, get_results, plot_scores_z, 
               plot_best_latent, 
-              #cluster_interpretation, 
               cluster_interpretation_plot, 
               plot_hypers
           ], multiprocess=3)

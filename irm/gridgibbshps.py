@@ -17,8 +17,8 @@ DEFAULT_RELATION_GRIDS['BetaBernoulliNonConj'] =  [{'alpha' : a, 'beta' : b} for
 
 DEFAULT_RELATION_GRIDS['GammaPoisson'] =  [{'alpha' : a, 'beta' : b} for a, b in util.cart_prod([[0.1, 0.5, 1.0, 2.0, 5.0, 10.0], [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]])]
 
-def default_grid_logstic_distance():
-    space_vals =  np.array([0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0])
+def default_grid_logistic_distance(scale=1.0):
+    space_vals =  np.logspace(-1.5, 1.8, 50)*scale
     p_mins = np.array([0.001, 0.01, 0.02])
     p_maxs = np.array([0.90, 0.80, 0.50, 0.20])
     res = []
@@ -30,7 +30,7 @@ def default_grid_logstic_distance():
     return res
 
 
-DEFAULT_RELATION_GRIDS['LogisticDistance'] = default_grid_logstic_distance()
+DEFAULT_RELATION_GRIDS['LogisticDistance'] = default_grid_logistic_distance()
 
 
 

@@ -59,7 +59,7 @@ def plot_purity_ratios(ax, clustering, truth):
     ax.bar(left, height, width= true_sizes)
     
     
-def plot_t1t1_latent(ax, adj_matrix, assign_vect):
+def plot_t1t1_latent(ax, adj_matrix, assign_vect, cmap=None, norm=None):
     """
     Plot a latent with the assign vect
 
@@ -73,13 +73,20 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect):
     ai = np.argsort(a).flatten()
         
     conn = adj_matrix
-
+    
     s_conn =conn[ai]
     s_conn = s_conn[:, ai]
-    ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
+    if cmap == None:
+        ax.imshow(s_conn, interpolation='nearest', cmap=pylab.cm.Greys)
+    else:
+        ax.imshow(s_conn, interpolation='nearest', cmap=cmap,
+                  norm=norm)
+
+    x_line_offset = 0.5
+    y_line_offset = 0.4
     for i in  np.argwhere(np.diff(a[ai]) > 0):
-        ax.axhline(i, c='b', alpha=0.7, linewidth=1.0)
-        ax.axvline(i, c='b', alpha=0.7, linewidth=1.0)
+        ax.axhline(i + y_line_offset, c='b', alpha=0.7, linewidth=1.0)
+        ax.axvline(i + x_line_offset, c='b', alpha=0.7, linewidth=1.0)
         
     ax.set_xticks([])
     ax.set_yticks([])

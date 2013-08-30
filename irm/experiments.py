@@ -211,13 +211,13 @@ def inference_run(latent_filename,
     return scores, chain_runner.get_state(), times, latents
 
 def plot_chains_hypers(f, chains, data):
+    from matplotlib import pylab
+
     CHAINN = len(chains)
     RELATIONS = data['relations'].keys()
     per_r_hp = {}
     per_r_hp_ax = {}
     hp_n = 0
-    f = pylab.figure(figsize= (12, 8))
-
     for r in RELATIONS:
         m = data['relations'][r]['model']
         per_r_hp[r] = []
@@ -233,6 +233,10 @@ def plot_chains_hypers(f, chains, data):
             hp_n +=1 
             per_r_hp[r].append('beta')
             hp_n +=1 
+        elif m == 'LogisticDistance':
+            for p in ['mu_hp', 'lambda_hp', 'p_min', 'p_max']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
         else:
             raise RuntimeError("Unknown model")
     pos = 1
@@ -247,18 +251,34 @@ def plot_chains_hypers(f, chains, data):
     for di, d in enumerate(chains):
         ki = sorted(d['latents'].keys())
         alpha_x_jitter = 0.1
-        alpha_y_jitter = 0.5
+        alpha_y_jitter = 1.0
         alphas = np.array([d['latents'][k]['domains']['d1']['hps']['alpha'] for k in ki])
         y_jitter = np.random.normal(0, alpha_y_jitter, size=len(alphas))
         ax_crp_alpha.scatter(ki, alphas + y_jitter, edgecolor='none', 
                              alpha=0.2)
-
+        ax_crp_alpha.grid(1)
         for ri, rel_name in enumerate(per_r_hp.keys()):
             print "rel_name", rel_name
             for hp_i, hp_name in enumerate(per_r_hp[rel_name]):
                 print "hp_name=", hp_name
                 ax = per_r_hp_ax[rel_name][hp_i]
                 vals = np.array([d['latents'][k]['relations'][rel_name]['hps'][hp_name] for k in ki])
-                ax.plot(vals)
-                ax.set_title("relation %s : %s" % (rel_name, hp_name))
+                min_val = np.min(vals)
+                max_val = np.max(vals)
+                range_mid = (min_val + max_val)/2. 
+                range_val = max_val - min_val
+                ax.set_ylim(range_mid - range_val, 
+                            range_mid + range_val)
+                y_jitter = np.random.normal(0, 1, size=len(vals)) * (range_val * 0.05)
+
+                ax.scatter(ki, vals + y_jitter, edgecolor='none', 
+                           alpha=0.2)
+                ax.set_ylabel("%s : %s" % (rel_name, hp_name), 
+                             fontsize=6)
+                ax.grid(1)
             
+                for tick in ax.xaxis.get_major_ticks():
+                    tick.label.set_fontsize(6) 
+
+                for tick in ax.yaxis.get_major_ticks():
+                    tick.label.set_fontsize(6) 

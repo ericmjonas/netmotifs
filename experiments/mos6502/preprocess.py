@@ -124,6 +124,14 @@ def load_data(input_file, output_file):
     pickle.dump({'tfdf' : tfdf, 'wiredf'  : df}, 
                 open(output_file, 'w'))
 
+# x1 y1 x2 y2
+ 
+REGIONS = {'decode' : (7650, 750, 8700, 8200), 
+           'xysregs' : (500, 1000, 4400, 2400), 
+           'all' : (0, 0, 900, 9000)}
+
+
+
 @files(load_data, "transistors.pdf")
 def plot_transistors(input_file, output_file):
     d = pickle.load(open(input_file, 'r'))
@@ -464,10 +472,44 @@ def plot_adj_matrix(infile, (adj_matrix_outfile, distance_outfile)):
     ax_conndist.hist(conn_only.flat, bins=40)
     f.savefig(distance_outfile)
 
+@transform([create_all_adj_matrix, create_dir_adj_matrix], 
+           regex(r"(.+).adjmat.pickle"), 
+           [r"\1.%s.region.pickle" % r for r in REGIONS.keys() ])
+def carve_out_region(infile, outfiles):
+
+    d = pickle.load(open('data.pickle', 'r'))
+    tfdf = d['tfdf']
+    wiredf = d['wiredf']
+    raw_adj_mat = pickle.load(open(infile, 'r'))['adj_mat']
+
+    for region_i, (region_name, region) in enumerate(REGIONS.iteritems()):
+        # select the transitors in the region
+        x_mask = (tfdf['x'] >= region[0] ) & (tfdf['x'] <= region[2])
+        y_mask = (tfdf['y'] >= region[1] ) & (tfdf['y'] <= region[3])
+        idx = x_mask & y_mask
+        sub_df = tfdf[idx]
+        indices = np.argwhere(idx).flatten()
+
+        # get the resulting indices in the matrix
+        sub_mat = raw_adj_mat[indices, :]
+        sub_mat = sub_mat[:, indices]
+        adj_mat = sub_mat
+        # save the positions
+
+        pickle.dump({'infile' : infile, 
+                     'region_name' : region_name, 
+                     'region' : region, 
+                     'subdf' : sub_df, 
+                     'indices' : indices, 
+                     'adj_mat' : adj_mat}, 
+                    open(outfiles[region_i], 'w'))
+
+
 
 pipeline_run([load_data, plot_transistors, create_raw_graph, 
               plot_raw_graph, #analysis, 
               plot_merged_graph, 
               create_all_adj_matrix, create_dir_adj_matrix, 
-              plot_adj_matrix
+              plot_adj_matrix, 
+              carve_out_region
           ])

@@ -15,13 +15,17 @@ import cloud
 BUCKET_BASE="srm/experiments/mos6502"
 
 
-EXPERIMENTS = [('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
-               ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
-               ('mos6502.dir.bb', 'fixed_20_200', 'default_100'), 
-               ('mos6502.dir.ld', 'fixed_20_200', 'default_nc_100'), 
-               
+EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.all.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.all.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.all.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
-               # ('mos6502.all.ld', 'fixed_20_200', 'default_nc_100'), 
+               # ('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
            ]
 
 INIT_CONFIGS = {'fixed_20_200' : {'N' : 20, 
@@ -40,25 +44,17 @@ def td(fname): # "to directory"
     return os.path.join(WORKING_DIR, fname)
                 
 
-default_nonconj = irm.runner.default_kernel_nonconj_config()
-default_nonconj[1][1]['width'] = 500. 
+slow_anneal = irm.runner.default_kernel_anneal()
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
+slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 
-default_conj = irm.runner.default_kernel_config()
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = irm.gridgibbshps.default_grid_logistic_distance(500)
 
-pickle.dump(default_nonconj, open("test.config", 'w'))
 
-KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
-                                  'kernels' : default_nonconj},
-                  'default_nc_10' : {'ITERS' : 10, 
-                                  'kernels' : default_nonconj},
-                  'default_10' : {'ITERS' : 10, 
-                                  'kernels' : default_conj},
-                  'default_100' : {'ITERS' : 100, 
-                                  'kernels' : default_conj},
-                  'default_nc_1' : {'ITERS' : 1, 
-                                  'kernels' : default_nonconj},
-                  'default_1' : {'ITERS' : 1, 
-                                  'kernels' : default_conj},
+KERNEL_CONFIGS = {
+                  'anneal_slow_400' : {'ITERS' : 400, 
+                                       'kernels' : slow_anneal},
+
                   }
 
 
@@ -69,15 +65,15 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 
-@transform('*.adjmat.pickle', regex("(.+)\.adjmat.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
-def data_mos6502_adjmat(infile, all_file):
+@transform('*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
+def data_mos6502_region(infile, all_file):
     data = pickle.load(open(infile, 'r'))
 
     
     pickle.dump({'dist_matrix' : data['adj_mat'], 
                  'infile' : infile}, open(all_file, 'w'))
 
-@transform(data_mos6502_adjmat, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
+@transform(data_mos6502_region, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
 def create_latents_ld(infile, 
                       (data_filename, latent_filename, meta_filename)):
     print "INPUT FILE IS", infile
@@ -101,7 +97,7 @@ def create_latents_ld(infile,
                  }, open(meta_filename, 'w'))
 
 
-@transform(data_mos6502_adjmat, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
+@transform(data_mos6502_region, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
 def create_latents_bb(infile, 
                       (data_filename, latent_filename, meta_filename)):
 
@@ -167,7 +163,7 @@ def init_generator():
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            yield data_filename, ["%s.%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
+            yield data_filename, ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
 
 
             
@@ -183,33 +179,12 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
                                 init= init_config['config'])
 
 
-
-def inference_run_ld(latent_filename, 
-                     data_filename, 
-                     kernel_config,  ITERS, seed):
-
-    latent = from_bucket(latent_filename)
-    data = from_bucket(data_filename)
-
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
-
-    scores = []
-    times = []
-    def logger(iter, model):
-        print "Iter", iter
-        scores.append(model.total_score())
-        times.append(time.time())
-    chain_runner.run_iters(ITERS, logger)
-        
-    return scores, chain_runner.get_state(), times
-
-
 def experiment_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
 
-            inits = ["%s.%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
+            inits = ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])]
             
             exp_name = "%s-%s-%s.wait" % (data_filename, init_config_name, kernel_config_name)
             yield [data_filename, inits], exp_name, kernel_config_name
@@ -218,19 +193,20 @@ def experiment_generator():
 @files(experiment_generator)
 def run_exp((data_filename, inits), wait_file, kernel_config_name):
     # put the filenames in the data
-    to_bucket(data_filename)
-    [to_bucket(init_f) for init_f in inits]
+    irm.experiments.to_bucket(data_filename, BUCKET_BASE)
+    [irm.experiments.to_bucket(init_f, BUCKET_BASE) for init_f in inits]
 
     kc = KERNEL_CONFIGS[kernel_config_name]
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(inference_run_ld, inits, 
+    jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
+                     [BUCKET_BASE]*CHAINS_TO_RUN,
                      _env='connectivitymotif', 
                      _type='f2')
 
@@ -252,7 +228,8 @@ def get_results(exp_wait, exp_results):
         
         chains.append({'scores' : chain_data[0], 
                        'state' : chain_data[1], 
-                       'times' : chain_data[2]})
+                       'times' : chain_data[2], 
+                       'latents' : chain_data[3]})
         
         
     pickle.dump({'chains' : chains, 
@@ -377,6 +354,24 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     f.savefig(plot_latent_filename)
     f = pylab.figure(figsize=(20, 4))
 
+@transform(get_results, suffix(".samples"), [".hypers.pdf"])
+def plot_hypers(exp_results, (plot_hypers_filename,)):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+
+    f = pylab.figure(figsize= (12, 8))
+
+    
+    chains = [c for c in chains if type(c['scores']) != int]
+
+    irm.experiments.plot_chains_hypers(f, chains, data)
+
+    f.savefig(plot_hypers_filename)
+
     
 @transform(get_results, suffix(".samples"), 
            [(".%d.latent.pdf" % d, )  for d in range(2)])
@@ -417,6 +412,7 @@ def plot_best_latent(exp_results,
     
 
 
-pipeline_run([data_mos6502_adjmat, 
-              create_inits, get_results, plot_best_latent, plot_scores_z])
+pipeline_run([data_mos6502_region, 
+              create_inits, get_results, plot_best_latent, plot_scores_z, 
+              plot_hypers])
                         

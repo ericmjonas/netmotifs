@@ -5,7 +5,6 @@ import copy
 import os, glob
 import time
 from matplotlib import pylab
-import pandas
 
 import matplotlib.gridspec as gridspec
 
@@ -33,18 +32,18 @@ EXPERIMENTS = [#('retina.0.0.bb', 'fixed_10_200', 'default_100'),
 
     #('retina.bb', 'fixed_100_200', 'default_100'), 
     #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
-    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_1000'), 
-    ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_1000'), 
+    # ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_1000'), 
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.0.ld.0.1', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.1.ld.1.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.0.ld.1.1', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
+    # ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
     # ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
     # ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
     # ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
@@ -96,7 +95,7 @@ default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
-slow_anneal[0][1]['anneal_sched']['iterations'] = 200
+slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 default_nonconj_crp = irm.runner.add_domain_hp_grid_kernel(default_nonconj)
 
 default_nonconj_crp_rhp = irm.runner.add_relation_hp_grid_kernel(default_nonconj_crp)
@@ -394,7 +393,8 @@ def get_results(exp_wait, exp_results):
         
         chains.append({'scores' : chain_data[0], 
                        'state' : chain_data[1], 
-                       'times' : chain_data[2]})
+                       'times' : chain_data[2], 
+                       'latents' : chain_data[3]})
         
         
     pickle.dump({'chains' : chains, 
@@ -528,9 +528,28 @@ def plot_best_latent(exp_results,
                                      pos_vec, reorder_synapses, 
                                      cluster_fname)
         
+@transform(get_results, suffix(".samples"), [".hypers.pdf"])
+def plot_hypers(exp_results, (plot_hypers_filename,)):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+
+    f = pylab.figure(figsize= (12, 8))
+
+    
+    chains = [c for c in chains if type(c['scores']) != int]
+
+    irm.experiments.plot_chains_hypers(f, chains, data)
+
+    f.savefig(plot_hypers_filename)
+
 
 pipeline_run([data_retina_adj, create_latents_bb, 
               plot_scores_z, 
               plot_best_latent, 
+              plot_hypers, 
               create_latents_ld_truth], multiprocess=2)
                         
