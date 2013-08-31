@@ -40,6 +40,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
             m = models.SigmoidDistance()
         elif rel_config['model'] == "LinearDistance":
             m = models.LinearDistance()
+        elif rel_config['model'] == "NormalDistanceFixedWidth":
+            m = models.NormalDistanceFixedWidth()
         else:
             raise NotImplementedError()
         rel = relation_class(domaindef, relations_config[rel_name]['data'], 
@@ -279,8 +281,12 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
+            elif relation.modeltypestr == "NormalDistanceFixedWidth":
+                params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+
             elif relation.modeltypestr == "BetaBernoulliNonConj":
-                params = {'width' : 0.1}
+
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
             elif relation.modeltypestr == "BetaBernoulli":

@@ -23,6 +23,9 @@ class Relation(object):
         elif isinstance(modeltype, models.LinearDistance):
             modeltypestr = "LinearDistance"
 
+        elif isinstance(modeltype, models.NormalDistanceFixedWidth):
+            modeltypestr = "NormalDistanceFixedWidth"
+
         else:
             raise NotImplementedError()
         self.modeltypestr = modeltypestr

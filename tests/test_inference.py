@@ -11,10 +11,11 @@ and relation classes.
 """
 
 ITERS_TO_RUN = 1
-MODELS =  ["BetaBernoulliNonConj", 'LogisticDistance', 
-           'LinearDistance', 'SigmoidDistance', 
-           'GammaPoisson',
-           'BetaBernoulli']
+MODELS =  [#"BetaBernoulliNonConj", 'LogisticDistance', 
+           #'LinearDistance', 'SigmoidDistance', 
+           #'GammaPoisson',
+           #'BetaBernoulli', 
+           'NormalDistanceFixedWidth']
 
 def test_t1_t1():
     np.random.seed(0)
@@ -129,12 +130,13 @@ def test_t1_t2_t3():
         yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
     
 def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO_RUN=ITERS_TO_RUN):
+    print "Running", model_name, "*"*40
     new_latent, new_data = irm.data.synth.prior_generate(latent, data)
     
     # estimate suffstats from the data
 
     run_truth = runner.Runner(new_latent, new_data, kernel_config)
-
+    print "latent=", new_latent
 
     irmio.estimate_suffstats(run_truth.model, run_truth.rng)
 
@@ -150,6 +152,7 @@ def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO
     for di in cleaned_up_latent['domains']:
         d_N = len(rand_init['domains'][di]['assignment'])
         rand_init['domains'][di]['assignment'] = irm.util.crp_draw(d_N, 1.0)
+
     for ri  in cleaned_up_latent['relations']:
         del rand_init['relations'][ri]['ss']
 

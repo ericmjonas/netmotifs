@@ -29,9 +29,29 @@ def default_grid_logistic_distance(scale=1.0):
                            'p_min' : p_min, 'p_max' : p_max})
     return res
 
-
 DEFAULT_RELATION_GRIDS['LogisticDistance'] = default_grid_logistic_distance()
 
+def default_grid_normal_distance_fixed_width():
+    p_mins = np.array([0.001, 0.01, 0.02])
+    mus = np.array([0.1, 1.0])
+    widths = np.array([0.1, 0.5, 1.0])
+    alphabetas = [0.1, 1.0, 2.0]
+    hps = []
+    for p_min in p_mins:
+        for mu in mus:
+            for width in widths:
+                for a in alphabetas:
+                    for b in alphabetas:
+                        hps.append({'mu_hp' : mu, 
+                                    'p_min' : p_min, 
+                                    'width' : width, 
+                                    'p_alpha' : a,
+                                    'p_beta' : b})
+    return hps
+
+DEFAULT_RELATION_GRIDS['NormalDistanceFixedWidth'] = default_grid_normal_distance_fixed_width()
+
+# FIXME linear distance
 
 
 def default_grid_crp():

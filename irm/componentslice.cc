@@ -196,5 +196,40 @@ void slice_sample_exec<GammaPoisson>
 
 }
 
+template<> void slice_sample_exec<NormalDistanceFixedWidth>
+(rng_t & rng, float width, 
+ NormalDistanceFixedWidth::suffstats_t * ss, 
+ NormalDistanceFixedWidth::hypers_t * hps, 
+ std::vector<NormalDistanceFixedWidth::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos,
+ float temp){
+
+    if (width == 0.0) {
+        width = hps->mu_hp/4.0; 
+    }
+
+    auto mu = slice_sample<float>(ss->mu, 
+                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      ss->mu = x; 
+                                      return NormalDistanceFixedWidth::score(ss, hps, data, 
+                                                                     dppos) /temp;
+                                  }, 
+                                  rng, width); 
+    
+    ss->mu = mu; 
+
+    // the width for this is always 0.1 because we're always sampling 
+    // on [0, 1]
+    auto p = slice_sample<float>(ss->p, 
+                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                          ss->p = x; 
+                                          return NormalDistanceFixedWidth::score(ss, hps, data, 
+                                                                         dppos)/temp;
+                                      }, 
+                                      rng, 0.1); 
+    
+    ss->p = p; 
+
+}
 
 }

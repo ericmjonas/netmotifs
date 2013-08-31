@@ -77,8 +77,16 @@ def single_plot(func):
     pylab.axis([0, MAXX, 0, 1])
     pylab.show()
 
+def bumpdistance(x, mu, p, width=1.0):
+    """
+    A little gaussian bump from 0 to ... something
+    """
+    
+    return 
+
+
 #parametric_plot(sigmoid)
 #prior_sample(sigmoid)
 
 
-parametric_plot(logistic)
+#parametric_plot(logistic)

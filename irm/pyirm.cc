@@ -50,6 +50,10 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
         IComponentContainer * cc = new ComponentContainer<LinearDistance>(data, data_dims_v); 
         return cc; 
 
+    } else if(modeltype == "NormalDistanceFixedWidth") { 
+        IComponentContainer * cc = new ComponentContainer<NormalDistanceFixedWidth>(data, data_dims_v); 
+        return cc; 
+
     } else { 
         throw std::runtime_error("unknown model type"); 
     }

@@ -34,15 +34,9 @@ EXPERIMENTS = [
                # ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
                # ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
                ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.bb.03', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.gp.01', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.gp.02', 'crp_100_20', 'anneal_slow_400'),  
                ('celegans.2r.ld.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.ld.01', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.ld.02', 'crp_100_20', 'anneal_slow_400'),  
+               ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
                # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
                # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
                # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
@@ -78,10 +72,10 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
                 
                 
 
-BB_HPS = [(0.1, 0.1), (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
-GP_HPS = [(1.0, 2.0), (2.0, 2.0), (3.0, 2.0)]
-LD_HPS = [(0.1, 0.1, 0.9, 0.01), (0.1, 0.1, 0.5, 0.001),
-          (0.01, 0.01, 0.9, 0.01), (0.01, 0.01, 0.5, 0.001)]
+BB_HPS = [(0.1, 0.1)]# , (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
+GP_HPS = [(1.0, 2.0)]# , (2.0, 2.0), (3.0, 2.0)]
+LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
+
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()

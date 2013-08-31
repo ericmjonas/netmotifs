@@ -94,6 +94,16 @@ void slice_sample_exec<GammaPoisson>
  float temp);
 
 
+template<>
+void slice_sample_exec<NormalDistanceFixedWidth>
+(rng_t & rng, float width, 
+ NormalDistanceFixedWidth::suffstats_t * ss, 
+ NormalDistanceFixedWidth::hypers_t * hps, 
+ std::vector<NormalDistanceFixedWidth::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos, 
+ float temp);
+
+
 }
 
 

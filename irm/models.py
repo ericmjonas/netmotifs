@@ -465,10 +465,67 @@ class GammaPoisson(object):
         
         """
 
+
+class NormalDistanceFixedWidth(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('link',  np.bool), 
+                ('distance', np.float32)]
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'p_alpha' :  np.random.gamma(2, 2), 
+                'p_beta' :  np.random.gamma(2, 2), 
+                'mu_hp' : np.random.gamma(1.2, 4), 
+                'p_min' : np.random.uniform(0.01, 0.1), 
+                'width' : np.random.gamma(1, 1)}
+
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        mu = np.random.exponential(hps['mu_hp'])
+        p = np.random.beta(hps['p_alpha'], hps['p_beta'])
+        
+        return {'p' : p, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        d = np.random.exponential(hps['mu_hp'])
+        prob =  np.exp(-0.5 * (d - ss['mu'])**2/hps['width']**2) * ss['p'] + hps['p_min']
+
+        link = np.random.rand() < prob
+        
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['distance'] = d
+        x[0]['link'] = link
+        return x[0]
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
+
+
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
          'SigmoidDistance' : SigmoidDistance, 
          'LogisticDistance' : LogisticDistance, 
          'LinearDistance' : LinearDistance, 
-         'GammaPoisson' : GammaPoisson
+         'GammaPoisson' : GammaPoisson, 
+         'NormalDistanceFixedWidth': NormalDistanceFixedWidth
 }
