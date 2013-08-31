@@ -80,8 +80,8 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
 
 BB_HPS = [(0.1, 0.1), (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
 GP_HPS = [(1.0, 2.0), (2.0, 2.0), (3.0, 2.0)]
-LD_HPS = [(1.0, 1.0, 0.9, 0.01), (1.0, 1.0, 0.5, 0.001),
-          (0.1, 0.1, 0.9, 0.01), (0.1, 0.1, 0.5, 0.001)]
+LD_HPS = [(0.1, 0.1, 0.9, 0.01), (0.1, 0.1, 0.5, 0.001),
+          (0.01, 0.01, 0.9, 0.01), (0.01, 0.01, 0.5, 0.001)]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
@@ -90,8 +90,8 @@ slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 200
 
 def generate_ld_hypers():
-    mu_min = 0.01
-    mu_max = 1.0
+    mu_min = 0.001
+    mu_max = 0.1
     space_vals =  np.logspace(np.log10(mu_min), np.log10(mu_max), 50)
     p_mins = np.array([0.001])
     p_maxs = np.array([0.90]) # , 0.80, 0.50, 0.20])
