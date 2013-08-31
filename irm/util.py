@@ -250,3 +250,20 @@ def linear_dist(x, p, mu):
     y[x > mu] = 0
     return y
 
+def get_boundaries(x):
+    """
+    take in a list of strings that are the same
+    [ A A A A A B B C C D E E F F F]
+
+    python style ranges
+
+    """
+    output = {}
+    for i, v in enumerate(x):
+        if v not in output:
+            output[v] = [i]
+            if i > 0:
+                output[x[i-1]].append(i)
+
+    output[x[-1]].append(len(x))
+    return output

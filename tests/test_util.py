@@ -46,3 +46,24 @@ def test_compute_purity_ratios():
     assert_array_almost_equal(fracs_order[1], [0.5, 0.5])
     assert_array_almost_equal(fracs_order[2], [1.0])
     
+
+def test_boundaries():
+    a = ['a', 'b', 'c']
+    b = util.get_boundaries(a)
+    assert_equal(b['a'], [0, 1])
+    assert_equal(b['b'], [1, 2])
+    assert_equal(b['c'], [2, 3])
+
+
+    a = ['a', 'a', 'b', 'c', 'c']
+    b = util.get_boundaries(a)
+    assert_equal(b['a'], [0, 2])
+    assert_equal(b['b'], [2, 3])
+    assert_equal(b['c'], [3, 5])
+
+    a = ['a', 'a', 'b', 'c', 'c', 'd']
+    b = util.get_boundaries(a)
+    assert_equal(b['a'], [0, 2])
+    assert_equal(b['b'], [2, 3])
+    assert_equal(b['c'], [3, 5])
+    assert_equal(b['d'], [5, 6])
