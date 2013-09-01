@@ -22,9 +22,10 @@ class Relation(object):
             modeltypestr = "SigmoidDistance"
         elif isinstance(modeltype, models.LinearDistance):
             modeltypestr = "LinearDistance"
-
         elif isinstance(modeltype, models.NormalDistanceFixedWidth):
             modeltypestr = "NormalDistanceFixedWidth"
+        elif isinstance(modeltype, models.SquareDistanceBump):
+            modeltypestr = "SquareDistanceBump"
 
         else:
             raise NotImplementedError()

@@ -53,6 +53,9 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
     } else if(modeltype == "NormalDistanceFixedWidth") { 
         IComponentContainer * cc = new ComponentContainer<NormalDistanceFixedWidth>(data, data_dims_v); 
         return cc; 
+    } else if(modeltype == "SquareDistanceBump") { 
+        IComponentContainer * cc = new ComponentContainer<SquareDistanceBump>(data, data_dims_v); 
+        return cc; 
 
     } else { 
         throw std::runtime_error("unknown model type"); 

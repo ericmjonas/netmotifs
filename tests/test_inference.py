@@ -15,7 +15,8 @@ MODELS =  [#"BetaBernoulliNonConj", 'LogisticDistance',
            #'LinearDistance', 'SigmoidDistance', 
            #'GammaPoisson',
            #'BetaBernoulli', 
-           'NormalDistanceFixedWidth']
+    #'NormalDistanceFixedWidth', 
+    'SquareDistanceBump']
 
 def test_t1_t1():
     np.random.seed(0)

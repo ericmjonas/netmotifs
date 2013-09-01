@@ -176,6 +176,20 @@ inline float normal_sample(float mean, float var, rng_t & rng) {
  return real(rng);
 }
 
+inline float log_sum_exp(float x, float y) { 
+    float a = 0; 
+    float b = 0; 
+    if (x > y) { 
+        a = x;
+        b = y; 
+    } else { 
+        a = y; 
+        b = x; 
+    }
+    return a + log(1.0 + exp(b - a)); 
+    
+
+}
 
 
 #ifdef USE_LOGEXP_APPROX
@@ -195,3 +209,4 @@ inline float normal_sample(float mean, float var, rng_t & rng) {
 
 
 #endif
+ 

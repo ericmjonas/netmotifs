@@ -51,6 +51,28 @@ def default_grid_normal_distance_fixed_width():
 
 DEFAULT_RELATION_GRIDS['NormalDistanceFixedWidth'] = default_grid_normal_distance_fixed_width()
 
+
+def default_grid_square_distance_bump(max_dist, param_weight=0.5, p_min=0.001):
+    """
+    Note this is the one that EXPLICITLY requries a scale parameter (max_distance)
+    to be set!
+    """
+
+    p_alphas = np.array([0.1, 1.0, 2.0, 5.0])
+    p_betas = np.array([0.1, 1.0, 2.0])
+    mu_hps = np.array([max_dist/10., max_dist/5.0, max_dist/3.0])
+    hps = []
+    for a in p_alphas:
+        for b in p_betas:
+            for mu_hp in mu_hps:
+                hps.append({'p_alpha' : a, 'p_beta': b, 
+                       'mu_hp' : mu_hp, 
+                       'p_min' : p_min, 
+                       'param_weight' : param_weight, 
+                       'param_max_distance' : max_dist})
+
+    return hps
+DEFAULT_RELATION_GRIDS['SquareDistanceBump'] = default_grid_square_distance_bump(4.0)
 # FIXME linear distance
 
 

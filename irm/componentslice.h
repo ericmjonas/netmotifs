@@ -104,7 +104,15 @@ void slice_sample_exec<NormalDistanceFixedWidth>
  float temp);
 
 
-}
+template<>
+void slice_sample_exec<SquareDistanceBump>
+(rng_t & rng, float width, 
+ SquareDistanceBump::suffstats_t * ss, 
+ SquareDistanceBump::hypers_t * hps, 
+ std::vector<SquareDistanceBump::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos,
+ float temp);
 
+}
 
 #endif

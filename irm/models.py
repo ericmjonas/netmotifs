@@ -519,7 +519,63 @@ class NormalDistanceFixedWidth(object):
         
         """
 
+class SquareDistanceBump(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('link',  np.bool), 
+                ('distance', np.float32)]
 
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'p_alpha' :  np.random.gamma(1, 1), 
+                'p_beta' :  np.random.gamma(1, 1), 
+                'mu_hp' : np.random.gamma(2., 1.)/8., 
+                'p_min' : np.random.uniform(0.01, 0.1), 
+                'param_weight' : 0.5, 
+                'param_max_distance' : 4.0}
+
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        if np.random.rand() < hps['param_weight']:
+            mu = hps['param_max_distance']
+        else:
+            mu = np.random.exponential(hps['mu_hp'])
+
+        p = np.random.beta(hps['p_alpha'], hps['p_beta'])
+        
+        return {'p' : p, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        d = hps['param_max_distance']
+        while d >= hps['param_max_distance']:
+            d = np.random.exponential(hps['mu_hp'])
+
+        if d < ss['mu']:
+            p = ss['p']
+        else:
+            p = hps['p_min']
+
+        link = np.random.rand() < p
+        
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['distance'] = d
+        x[0]['link'] = link
+        return x[0]
 
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
@@ -527,5 +583,6 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'LogisticDistance' : LogisticDistance, 
          'LinearDistance' : LinearDistance, 
          'GammaPoisson' : GammaPoisson, 
-         'NormalDistanceFixedWidth': NormalDistanceFixedWidth
+         'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 
+         'SquareDistanceBump' : SquareDistanceBump
 }
