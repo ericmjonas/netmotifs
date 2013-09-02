@@ -347,7 +347,6 @@ struct LogisticDistance {
     
     class suffstats_t { 
     public:
-        //std::unordered_set<uint32_t> datapoint_pos_; 
         float mu; 
         float lambda; 
     }; 
@@ -358,15 +357,11 @@ struct LogisticDistance {
         float lambda_hp; 
         float p_min; 
         float p_max; 
-        float force_mu; 
-        float force_lambda; 
-        bool force; 
         inline hypers_t() : 
             mu_hp(1.0), 
             lambda_hp(1.0), 
             p_min(0.1), 
-            p_max(0.9), 
-            force(false)
+            p_max(0.9)
         { 
 
 
@@ -397,7 +392,7 @@ struct LogisticDistance {
         } catch (...){
             
             std::cout << "mu_hp=" << mu_hp << " lambda_hp=" << lambda_hp
-                      << "force=" << hps->force << std::endl; 
+                      << std::endl; 
             std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
             throw std::runtime_error("Sample from prior error"); 
 
@@ -406,17 +401,9 @@ struct LogisticDistance {
     
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
                               rng_t & rng) { 
-        if(hps->force) { 
-            ss->mu = hps->force_mu; 
-            ss->lambda = hps->force_lambda; 
-
-        } else { 
-            std::pair<float, float> params = sample_from_prior(hps, rng); 
-            ss->mu = params.first; 
-            ss->lambda = params.second; 
-        }
-
-
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->lambda = params.second; 
     }
 
     template<typename RandomAccessIterator>
@@ -499,11 +486,7 @@ struct LogisticDistance {
         hp.lambda_hp = bp::extract<float>(hps["lambda_hp"]);
         hp.p_min = bp::extract<float>(hps["p_min"]);
         hp.p_max = bp::extract<float>(hps["p_max"]);
-        if(hps.has_key("force_mu")) {
-            hp.force_mu = bp::extract<float>(hps["force_mu"]);
-            hp.force_lambda = bp::extract<float>(hps["force_lambda"]);
-            hp.force = true;
-        }
+
         return hp; 
 
     }
@@ -514,10 +497,7 @@ struct LogisticDistance {
         hp["lambda_hp"] = hps.lambda_hp; 
         hp["p_min"] = hps.p_min; 
         hp["p_max"] = hps.p_max; 
-        if(hps.force) { 
-            hp["force_mu"] = hps.force_mu; 
-            hp["force_lambda"] = hps.force_lambda; 
-        }
+
         return hp; 
     }
 

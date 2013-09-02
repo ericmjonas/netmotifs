@@ -267,3 +267,11 @@ def get_boundaries(x):
 
     output[x[-1]].append(len(x))
     return output
+
+
+def norm_dist_bump(x, mu, width, p, p_min):
+    my_p = np.exp(-0.5*(x - mu)**2/width**2) * p + p_min; 
+    return my_p
+
+def logspace(x, y, bins):
+    return np.logspace(np.log10(x), np.log10(y), bins)
