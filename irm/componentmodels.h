@@ -618,8 +618,8 @@ struct SigmoidDistance {
         float mu_hp = hps->mu_hp; 
         float lambda_hp = hps->lambda_hp; 
         float score = 0.0; 
-        score += log_exp_dist(mu, mu_hp); 
-        score += log_exp_dist(lambda, lambda_hp); 
+        score += log_exp_dist(mu, 1./mu_hp); 
+        score += log_exp_dist(lambda, 1./lambda_hp); 
         return score; 
     }
     
@@ -802,7 +802,7 @@ struct LinearDistance {
         }
 
         float score = 0.0; 
-        score += log_exp_dist(mu, hps->mu_hp); 
+        score += log_exp_dist(mu, 1./hps->mu_hp); 
         score += log_beta_dist(p, hps->p_alpha, hps->p_beta); 
         return score; 
     }
@@ -1101,7 +1101,7 @@ struct NormalDistanceFixedWidth {
         }
 
         float score = 0.0; 
-        score += log_exp_dist(mu, hps->mu_hp); 
+        score += log_exp_dist(mu, 1./hps->mu_hp); 
         score += log_beta_dist(p, hps->p_alpha, hps->p_beta); 
         return score; 
     }
@@ -1293,7 +1293,7 @@ struct SquareDistanceBump {
             return -std::numeric_limits<float>::infinity();
         }
 
-        float score = log(1.0 - hps->param_weight)  + log_exp_dist(mu, hps->mu_hp); 
+        float score = log(1.0 - hps->param_weight)  + log_exp_dist(mu, 1./hps->mu_hp); 
         if(p == hps->param_max_distance) { 
             score  = log_sum_exp(score, log(hps->param_weight)  + log(hps->param_weight)); 
         }
