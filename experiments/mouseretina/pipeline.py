@@ -286,8 +286,8 @@ def create_latents_ld_truth((infile, ),
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : 0.1,
-           'lambda_hp' : 0.1,
+    HPS = {'mu_hp' : 10.0,
+           'lambda_hp' : 10.0,
            'p_min' : 0.02, 
            'p_max' : 0.98}
 
@@ -538,9 +538,9 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
     f.savefig(plot_hypers_filename)
 
 
-pipeline_run([data_retina_adj, create_latents_bb, 
-              plot_scores_z, 
-              plot_best_latent, 
-              plot_hypers, 
+pipeline_run([#data_retina_adj, create_latents_bb, 
+              #plot_scores_z, 
+              #plot_best_latent, 
+              #plot_hypers, 
               create_latents_ld_truth], multiprocess=2)
                         
