@@ -25,21 +25,12 @@ WORKING_DIR = "data"
 def td(fname): # "to directory"
     return os.path.join(WORKING_DIR, fname)
 
-EXPERIMENTS = [#('retina.0.0.bb', 'fixed_10_200', 'default_100'), 
-               #('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
-               #('retina.1.0.bb', 'fixed_10_200', 'default_100'), 
-               #('retina.0.1.bb', 'fixed_10_200', 'default_100'), 
-
-    #('retina.bb', 'fixed_100_200', 'default_100'), 
-    #('retina.0.0.ld.0.0', 'fixed_10_20', 'default_nc_10'),
-    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_1000'), 
+EXPERIMENTS = [
+    ('retina.1.0.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.1.0.ld.0.1', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.1.1.ld.1.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.1.0.ld.1.1', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+
     # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
     # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
     # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
@@ -295,8 +286,8 @@ def create_latents_ld_truth((infile, ),
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : 10.,
-           'lambda_hp' : 10,
+    HPS = {'mu_hp' : 0.1,
+           'lambda_hp' : 0.1,
            'p_min' : 0.02, 
            'p_max' : 0.98}
 

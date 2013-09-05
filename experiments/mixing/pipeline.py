@@ -18,11 +18,14 @@ import cloud
 BUCKET_BASE="srm/experiments/mixing"
 
 
-EXPERIMENTS = [('trivial', 'fixed_4_10', 'default20'), 
+EXPERIMENTS = [('trivial', 'fixed_4_10', 'default200'), 
+               ('trivial_mixed', 'fixed_4_10', 'default200'), 
+               ('trivial_bump', 'fixed_4_10', 'default200'), 
+               ('con_sparse', 'fixed_10_40', 'default200'), 
                # ('connmat0', 'fixed_10_40', 'default20'), 
-               ('connmat0', 'fixed_10_40', 'default200'), 
-               ('connmat0', 'fixed_10_40', 'nc_contmh_200'), 
-               ('connmat0', 'fixed_10_40', 'default_anneal'),
+               #('connmat0', 'fixed_10_40', 'default200'), 
+               #('connmat0', 'fixed_10_40', 'nc_contmh_200'), 
+               #('connmat0', 'fixed_10_40', 'default_anneal'),
                # ('connmat0', 'fixed_10_100', 'default200'), 
                #('connmat0', 'fixed_10_40', 'pt200'),
                # ('connmat0', 'fixed_10_40', 'default20_m100'), 
@@ -45,11 +48,13 @@ nonconj_m100[0][1]['M'] = 100
 default_anneal = irm.runner.default_kernel_anneal()
 
 
-KERNEL_CONFIGS = {'default20' : {'ITERS' : 20, 
+KERNEL_CONFIGS = {'default50' : {'ITERS' : 50, 
                                  'kernels' : default_nonconj},
                   'default20_m100' : {'ITERS' : 20, 
                                       'kernels' : nonconj_m100},
                   'default200' : {'ITERS' : 200, 
+                                  'kernels' : default_nonconj},
+                  'default1000' : {'ITERS' : 1000, 
                                   'kernels' : default_nonconj},
                   'nc_contmh_200' : {'ITERS' : 200, 
                                   'kernels' : irm.runner.kernel_nonconj_contmh_config()},
@@ -61,26 +66,43 @@ KERNEL_CONFIGS = {'default20' : {'ITERS' : 20,
                                       'kernels' : default_anneal}}
 
 
-def to_bucket(filename):
-    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
-
-def from_bucket(filename):
-    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
-
-
 def dataset_connectivity_matrix_params():
     datasets = {'connmat0' : {'seeds' : range(2), 
                               'side_n' : [5, 10], 
                               'class_n' : [5, 10], 
                               'nonzero_frac' : [0.1, 0.2, 0.5], 
                               'jitter' : [0.001, 0.01, 0.1], 
-                              'models' : ['ld', 'lind']}, 
+                              'models' : ['ld', 'lind'], 
+                              'truth' : ['distblock']}, 
+                'con_sparse' : {'seeds' : range(2), 
+                                'side_n' : [10], 
+                                'class_n' : [10], 
+                                'nonzero_frac' : [0.1, 0.2], 
+                                'jitter' : [0.001], 
+                                'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                                'truth' : ['distblock', 'mixedblock', 'bumpblock']}, 
                 'trivial' : {'seeds' : range(1), 
                              'side_n' : [4], 
                              'class_n' : [2], 
                              'nonzero_frac' : [1.0], 
                              'jitter' : [0.001], 
-                             'models' : ['ld', 'lind']}}
+                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                             'truth': ['distblock']},
+                'trivial_mixed' : {'seeds' : range(1), 
+                                   'side_n' : [4], 
+                                   'class_n' : [4], 
+                                   'nonzero_frac' : [1.0], 
+                                   'jitter' : [0.001], 
+                                   'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                                   'truth': ['mixedblock']},
+                'trivial_bump' : {'seeds' : range(1), 
+                                   'side_n' : [4], 
+                                   'class_n' : [4], 
+                                   'nonzero_frac' : [1.0], 
+                                   'jitter' : [0.001], 
+                                   'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                                   'truth': ['bumpblock']},
+    }
     
     for dataset_name, ds in datasets.iteritems():
         for side_n in ds['side_n']:
@@ -90,20 +112,15 @@ def dataset_connectivity_matrix_params():
 
                         for seed in ds['seeds']:
                             for model in ds['models']:
+                                for truth in ds['truth']:
 
-                                filename_base = "data.%s.%s.%d.%d.%3.3f.%3.3f.%s" % (dataset_name, model, side_n, class_n, nonzero_frac, jitter, seed)
+                                    filename_base = "data.%s.%s.%s.%d.%d.%3.3f.%3.3f.%s" % (dataset_name, model, truth, side_n, class_n, nonzero_frac, jitter, seed)
 
-                                yield None, [filename_base + ".data", 
-                                             filename_base + ".latent", 
-                                filename_base + ".meta"], model, seed, side_n, class_n, nonzero_frac, jitter
-                            
-@files(dataset_connectivity_matrix_params)
-def dataset_connectivity_matrix(infile, (data_filename, latent_filename, 
-                                         meta_filename), 
-                                model, seed, side_n, class_n, nonzero_frac, jitter):
+                                    yield None, [filename_base + ".data", 
+                                                 filename_base + ".latent", 
+                                                 filename_base + ".meta"], model, truth,  seed, side_n, class_n, nonzero_frac, jitter
 
-    np.random.seed(seed)
-            
+def generate_block_config(class_n, nonzero_frac):
     conn_config = {}
 
     for c1 in range(class_n):
@@ -114,13 +131,71 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
     if len(conn_config) == 0:
         conn_config[(0, 0)] = (np.random.uniform(1.0, 4.0), 
                                np.random.uniform(0.4, 0.9))
+    return conn_config
 
+def generate_mixed_block_config(class_n, nonzero_frac):
+    conn_config = {}
 
-    nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(side_n, 
-                                                                         conn_config,
-                                                                         JITTER=jitter)
+    BLOCK_SWITCH = 0.5
+    for c1 in range(class_n):
+        for c2 in range(class_n):
+            if np.random.rand() < nonzero_frac:
+                if np.random.rand() < BLOCK_SWITCH:
+                    conn_config[(c1, c2)] = ('p', np.random.uniform(0.1, 0.9))
+                else:
+                    conn_config[(c1, c2)] = ('d', 
+                                             np.random.uniform(1.0, 4.0), 
+                                             np.random.uniform(0.1, 0.9))
+                    
+                                             
+    if len(conn_config) == 0:
+        conn_config[(0, 0)] = ('d', np.random.uniform(1.0, 4.0), 
+                               np.random.uniform(0.4, 0.9))
+    return conn_config
     
-                
+def generate_bump_block_config(class_n, nonzero_frac):
+    conn_config = {}
+
+    for c1 in range(class_n):
+        for c2 in range(class_n):
+            if np.random.rand() < nonzero_frac:
+                conn_config[(c1, c2)] = (np.random.uniform(1.0, 4.0), 
+                                         np.random.uniform(0.5, 0.9), 
+                                         np.random.uniform(0.2, 0.3))
+    if len(conn_config) == 0:
+        conn_config[(0, 0)] = (np.random.uniform(1.0, 4.0), 
+                               np.random.uniform(0.4, 0.9), 
+                               np.random.uniform(0.2, 0.3))
+    return conn_config
+
+
+@files(dataset_connectivity_matrix_params)
+def dataset_connectivity_matrix(infile, (data_filename, latent_filename, 
+                                         meta_filename), 
+                                model, truth_gen, seed, side_n, class_n, nonzero_frac, jitter):
+
+    np.random.seed(seed)
+            
+    if truth_gen == 'distblock':
+        conn_config = generate_block_config(class_n, nonzero_frac)
+
+        nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(side_n, 
+                                                                             conn_config,
+                                                                             JITTER=jitter)
+    elif truth_gen == 'mixedblock':
+        conn_config = generate_mixed_block_config(class_n, nonzero_frac)
+
+        nodes_with_class, connectivity = irm.data.generate.c_mixed_dist_block(side_n, 
+                                                                             conn_config,
+                                                                             JITTER=jitter)
+    elif truth_gen == 'bumpblock':
+        conn_config = generate_bump_block_config(class_n, nonzero_frac)
+
+        nodes_with_class, connectivity = irm.data.generate.c_bump_dist_block(side_n, 
+                                                                             conn_config,
+                                                                             JITTER=jitter)
+    
+        
     conn_and_dist = np.zeros(connectivity.shape, 
                     dtype=[('link', np.uint8), 
                            ('distance', np.float32)])
@@ -155,6 +230,33 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                'p_alpha' : 1.0, 
                'p_beta': 1.0, 
                'p_min' : 0.01}
+
+    elif model == 'sd':
+        model_name= "SigmoidDistance"
+
+        HPS = {'lambda_hp' : 1.0, 
+               'mu_hp' : 1.0, 
+               'p_max': 0.9, 
+               'p_min' : 0.1}
+
+    elif model == 'ndfw':
+        model_name= "NormalDistanceFixedWidth"
+
+        HPS = {'p_alpha' : 1.0, 
+               'p_beta' : 1.0, 
+               'mu_hp' : 1.0, 
+               'p_min' : 0.01, 
+               'width' : 0.2}
+
+    elif model == 'sdb':
+        model_name= "SquareDistanceBump"
+
+        HPS = {'p_alpha' : 1.0, 
+               'p_beta' : 1.0, 
+               'mu_hp' : 1.0, 
+               'p_min' : 0.01, 
+               'param_weight' : 0.5, 
+               'param_max_distance' : 4.0}
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
     irm_latent['domains']['d1']['assignment'] = nodes_with_class['class']
@@ -250,29 +352,6 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
     create_init(latent_filename, out_filenames, 
                 init= init_config['config'])
 
-
-
-def inference_run_ld(latent_filename, 
-                     data_filename, 
-                     kernel_config,  ITERS, seed):
-
-    latent = from_bucket(latent_filename)
-    data = from_bucket(data_filename)
-
-    SAVE_EVERY = 100
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
-
-    scores = []
-    times = []
-    def logger(iter, model):
-        print "Iter", iter
-        scores.append(model.total_score())
-        times.append(time.time())
-    chain_runner.run_iters(ITERS, logger)
-        
-    return scores, chain_runner.get_state(), times
-
-
 def experiment_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
         for data_filename in get_dataset(data_name):
@@ -287,19 +366,20 @@ def experiment_generator():
 @files(experiment_generator)
 def run_exp((data_filename, inits), wait_file, kernel_config_name):
     # put the filenames in the data
-    to_bucket(data_filename)
-    [to_bucket(init_f) for init_f in inits]
+    irm.experiments.to_bucket(data_filename, BUCKET_BASE)
+    [irm.experiments.to_bucket(init_f, BUCKET_BASE) for init_f in inits]
 
     kc = KERNEL_CONFIGS[kernel_config_name]
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
     
-    jids = cloud.map(inference_run_ld, inits, 
+    jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
                      [kernel_config]*CHAINS_TO_RUN,
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
+                     [BUCKET_BASE]*CHAINS_TO_RUN, 
                      _env='connectivitymotif', 
                      _type='f2')
 
@@ -321,7 +401,8 @@ def get_results(exp_wait, exp_results):
         
         chains.append({'scores' : chain_data[0], 
                        'state' : chain_data[1], 
-                       'times' : chain_data[2]})
+                       'times' : chain_data[2], 
+                       'latents' : chain_data[3]})
         
         
     pickle.dump({'chains' : chains, 
@@ -335,12 +416,14 @@ def parse_filename(fn):
      s.pop(0)
      dataset_name = s[0]
      model = s[1]
-     side_n = int(s[2])
-     class_n = int(s[3])
-     nonzero_frac = float(s[4] + '.' + s[5])
-     jitter = float(s[6] + '.' + s[7])
+     truth = s[2]
+     side_n = int(s[3])
+     class_n = int(s[4])
+     nonzero_frac = float(s[5] + '.' + s[6])
+     jitter = float(s[7] + '.' + s[8])
      return {'dataset_name' : dataset_name, 
              'model' : model, 
+             'truth' : truth, 
              'side_n' : side_n, 
              'class_n' : class_n, 
              'nonzero_frac' : nonzero_frac, 
@@ -416,5 +499,5 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     
 
 pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
-              get_results, plot_latent], multiprocess=6)
+              get_results, plot_latent], multiprocess=3)
                         

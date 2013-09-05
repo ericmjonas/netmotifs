@@ -353,8 +353,10 @@ struct LogisticDistance {
 
     class hypers_t {
     public:
-        float mu_hp; 
-        float lambda_hp; 
+        // NOTE : BE CAREFUL there are multiple parameterizations of the 
+        // expoentnail distribution here. np expects 1/lamb, boost expects lamb
+        float mu_hp; // mu_hp : with our exponential prior, this is the mean. 
+        float lambda_hp; // for our lambda prior, this is the mean
         float p_min; 
         float p_max; 
         inline hypers_t() : 
@@ -442,8 +444,8 @@ struct LogisticDistance {
         float mu_hp = hps->mu_hp; 
         float lambda_hp = hps->lambda_hp; 
         float score = 0.0; 
-        score += log_exp_dist(mu, mu_hp); 
-        score += log_exp_dist(lambda, lambda_hp); 
+        score += log_exp_dist(mu, 1./mu_hp); 
+        score += log_exp_dist(lambda, 1./lambda_hp); 
         return score; 
     }
     

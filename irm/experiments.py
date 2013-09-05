@@ -237,6 +237,14 @@ def plot_chains_hypers(f, chains, data):
             for p in ['mu_hp', 'lambda_hp', 'p_min', 'p_max']:
                 per_r_hp[r].append(p)
                 hp_n +=1 
+        elif m == 'NormalDistanceFixedWidth':
+            for p in ['mu_hp', 'p_alpha', 'p_beta', 'p_min', 'width']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
+        elif m == 'SquareDistanceBump':
+            for p in ['mu_hp', 'p_alpha', 'p_beta', 'p_min']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
         else:
             raise RuntimeError("Unknown model")
     pos = 1
@@ -267,8 +275,8 @@ def plot_chains_hypers(f, chains, data):
                 max_val = np.max(vals)
                 range_mid = (min_val + max_val)/2. 
                 range_val = max_val - min_val
-                ax.set_ylim(range_mid - range_val, 
-                            range_mid + range_val)
+                #ax.set_ylim(range_mid - range_val, 
+                #            range_mid + range_val)
                 y_jitter = np.random.normal(0, 1, size=len(vals)) * (range_val * 0.05)
 
                 ax.scatter(ki, vals + y_jitter, edgecolor='none', 
@@ -276,7 +284,7 @@ def plot_chains_hypers(f, chains, data):
                 ax.set_ylabel("%s : %s" % (rel_name, hp_name), 
                              fontsize=6)
                 ax.grid(1)
-            
+                ax.ticklabel_format(style='plain', axis='y', scilimits=(-8, 8))
                 for tick in ax.xaxis.get_major_ticks():
                     tick.label.set_fontsize(6) 
 

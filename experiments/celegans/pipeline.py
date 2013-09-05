@@ -29,31 +29,12 @@ def td(fname): # "to directory"
 
 
 EXPERIMENTS = [
-               # ('celegans.2r.bb', 'crp_100_20', 'anneal_slow_400'),  
-               # ('celegans.2r.bb', 'crp_100_20', 'anneal_vslow_1000'),  
-               # ('celegans.2r.bb', 'crp_100_20', 'anneal_200'),  
-               # ('celegans.2r.bb', 'crp_100_20', 'default_nc_1000'),  
-               ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.gp.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.ld.00', 'crp_100_20', 'anneal_slow_400'),  
-               ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
-               # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp'),  
-               # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp'),  
-               # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp'),  
-               # ('celegans.2r.bb.00', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.bb.01', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.bb.02', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.gp.00', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.gp.01', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.gp.02', 'crp_100_20', 'nonconj_crp_rhp'),  
-               # ('celegans.2r.bb.00', 'crp_100_20', 'anneal_slow_crp_400'),  
-               # ('celegans.2r.bb.01', 'crp_100_20', 'anneal_slow_crp_400'),  
-               # ('celegans.2r.bb.02', 'crp_100_20', 'anneal_slow_crp_400'),  
-               # ('celegans.electrical.ld', 'fixed_100_100', 'default_nc_1000'), 
-               # ('celegans.electrical.bb', 'fixed_100_100', 'default_200'), 
-               
-               # ('celegans.chemical.ld', 'fixed_100_100', 'default_nc_1000'), 
-               # ('celegans.chemical.bb', 'fixed_100_100', 'default_200'), 
+               ('celegans.2r.bb.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.gp.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
+    #('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
 
            ]
 
@@ -75,13 +56,14 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
 BB_HPS = [(0.1, 0.1)]# , (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
 GP_HPS = [(1.0, 2.0)]# , (2.0, 2.0), (3.0, 2.0)]
 LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
-
+NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
+SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
-slow_anneal[0][1]['anneal_sched']['iterations'] = 200
+slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 
 def generate_ld_hypers():
     mu_min = 0.001
@@ -100,16 +82,49 @@ def generate_ld_hypers():
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = generate_ld_hypers()
 
 
-KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
-                                  'kernels' : default_nonconj},
-                  'default_1000' : {'ITERS' : 1000, 
-                                  'kernels' : default_conj},
-                  'default_100' : {'ITERS' : 100, 
-                                  'kernels' : default_conj},
-                  'default_nc_1000' : {'ITERS' : 1000, 
-                                  'kernels' : default_nonconj},
-                  'anneal_200' : {'ITERS' : 200, 
-                                  'kernels' : default_anneal},
+def generate_sdb_hypers():
+
+    p_alphas = irm.util.logspace(0.001, 1.0, 20)
+    p_betas = irm.util.logspace(0.5, 10.0, 20)
+    mu_hps = irm.util.logspace(0.01, 0.4, 10)
+    hps = []
+    for a in p_alphas:
+        for b in p_betas:
+            for mu_hp in mu_hps:
+                hps.append({'p_alpha' : a, 'p_beta': b, 
+                            'mu_hp' : mu_hp, 
+                            'p_min' : 0.001, 
+                            'param_weight' : 0.5, 
+                            'param_max_distance' : 4.0})
+                
+    return hps
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['SquareDistanceBump'] = generate_sdb_hypers()
+
+
+def generate_ndfw_hypers():
+    p_mins = np.array([0.001, 0.01, 0.02])
+    mus = np.array([0.1, 1.0])
+    widths = np.array([0.1, 0.5, 1.0])
+    alphabetas = [0.1, 1.0, 2.0]
+    hps = []
+    for p_min in p_mins:
+        for mu in mus:
+            for width in widths:
+                for a in alphabetas:
+                    for b in alphabetas:
+                        hps.append({'mu_hp' : mu, 
+                                    'p_min' : p_min, 
+                                    'width' : width, 
+                                    'p_alpha' : a,
+                                    'p_beta' : b})
+    return hps
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['NormalDistanceFixedWidth'] = generate_ndfw_hypers()
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['BetaBernoulli'] =  [{'alpha' : a, 'beta' : b} for a, b in irm.util.cart_prod([irm.util.logspace(0.001, 1.0, 20), irm.util.logspace(0.1, 10, 20)])]
+
+KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
 
@@ -167,6 +182,14 @@ def create_latents_2r_param():
     for ld_hpi in range(len(LD_HPS)):
         base = td('celegans.2r.ld.%02d' % ld_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistance', ld_hpi
+
+    for sdb_hpi in range(len(SDB_HPS)):
+        base = td('celegans.2r.sdb.%02d' % sdb_hpi)
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'SquareDistanceBump', sdb_hpi
+
+    for ndfw_hpi in range(len(NDFW_HPS)):
+        base = td('celegans.2r.ndfw.%02d' % ndfw_hpi)
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'NormalDistanceFixedWidth', ndfw_hpi
         
 @files(create_latents_2r_param)
 def create_latents_2r_paramed(infile, 
@@ -192,8 +215,8 @@ def create_latents_2r_paramed(infile,
 
         elec_conn = conn_matrix['electrical'] > 0 
 
-        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
-                                                            extra_conn=[elec_conn])
+        irm_latent, irm_data = irm.irmio.default_graph_init(elec_conn, model_name, 
+                                                            extra_conn=[chem_conn])
 
         HPS = {'alpha' : BB_HPS[hp_i][0], 
                'beta' : BB_HPS[hp_i][1]}
@@ -223,6 +246,60 @@ def create_latents_2r_paramed(infile,
                'lambda_hp' : LD_HPS[hp_i][1], 
                'p_max' : LD_HPS[hp_i][2], 
                'p_min' : LD_HPS[hp_i][3]}
+    elif model_name == "NormalDistanceFixedWidth":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] > 0 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical'] > 0 
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'mu_hp' : NDFW_HPS[hp_i][0], 
+               'p_min' : NDFW_HPS[hp_i][1], 
+               'width' : NDFW_HPS[hp_i][2], 
+               'p_alpha' : NDFW_HPS[hp_i][3], 
+               'p_beta' : NDFW_HPS[hp_i][4]}
+
+    elif model_name == "SquareDistanceBump":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] > 0 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical'] > 0 
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'p_alpha' : SDB_HPS[hp_i][0], 
+               'p_beta' : SDB_HPS[hp_i][1], 
+               'mu_hp' : SDB_HPS[hp_i][2], 
+               'p_min' : SDB_HPS[hp_i][3], 
+               'param_weight' : SDB_HPS[hp_i][4], 
+               'param_max_distance' : SDB_HPS[hp_i][5]}
 
     elif model_name == "GammaPoisson":
         chem_conn = conn_matrix['chemical'].astype(np.uint32)
@@ -458,7 +535,7 @@ def plot_best_cluster(exp_results,
         #                             model=data['relations']['R1']['model'], 
         #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
-        fig = plot_clusters_pretty_figure(a, neuron_data, metadata_df, no)
+        fig = plot_clusters_pretty_figure(a, neurons, no)
         fig.savefig(cluster_fname)
 
 # @transform(get_results, suffix(".samples"), [".clusters.html"])
@@ -778,7 +855,7 @@ def plot_best_latent(exp_results,
 
         if model == "GammaPoisson":
             data_mat = data['relations']['R1']['data']
-        elif model == "LogisticDistance":
+        elif model == "LogisticDistance" or model == "SquareDistanceBump" or model == "NormalDistanceFixedWidth":
             data_mat = data['relations']['R1']['data']['link'].astype(int)
             data_mat += data['relations']['R2']['data']['link'].astype(int)*2
         a = sample_latent['domains']['d1']['assignment']
@@ -789,6 +866,7 @@ def plot_best_latent(exp_results,
 
 pipeline_run([create_inits, get_results, plot_scores_z, 
               plot_best_latent, 
+              plot_best_cluster, 
               cluster_interpretation_plot, 
               plot_hypers
           ], multiprocess=3)
