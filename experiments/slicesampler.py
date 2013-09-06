@@ -83,16 +83,15 @@ def shrink((L, R), f, x_0, y, w, useaccept = False):
 
 def slice_sample(f, x_0, w, m=100):
     
-    y_max = f(x_0)
-    y = np.random.uniform(0, y_max)
+    y = f(x_0) - np.random.exponential(1)
+
     L, R = create_interval(f, x_0, y, w, m)
     
     return shrink((L, R), f, x_0, y, w)
 
 def slice_sample_double(f, x_0, w, p = 20):
     
-    y_max = f(x_0)
-    y = np.random.uniform(0, y_max)
+    y = f(x_0) - np.random.exponential(1)
     L, R = create_interval_double(f, x_0, y, w, p)
     
     return shrink((L, R), f, x_0, y, w, useaccept=True)
@@ -104,7 +103,7 @@ def log_norm_dens(x, mu, var):
 
 def dens(x):
     D = 5
-    return np.exp(np.logaddexp(log_norm_dens(x, -D, 1.0),  log_norm_dens(x, D, 1.0)))
+    return np.logaddexp(log_norm_dens(x, -D, 1.0),  log_norm_dens(x, D, 1.0))
 
     
 ITERS = 10000
@@ -112,12 +111,12 @@ ITERS = 10000
 vals = np.zeros(ITERS)
 x = 0
 for i in range(ITERS):
-    x = slice_sample_double(dens, x, 100.)
+    x = slice_sample(dens, x, 100.)
     vals[i] = x
     print i
 xn = np.linspace(-20, 20, 1000)
 
-pylab.plot(xn, dens(xn))
+pylab.plot(xn, np.exp(dens(xn)))
 pylab.hist(vals, normed=True, bins=100)
 
 pylab.show()

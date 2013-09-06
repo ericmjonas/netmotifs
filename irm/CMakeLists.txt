@@ -37,6 +37,7 @@ add_library(irm
    componentmodels.cc
    componentslice.cc
    componentmh.cc
+   slicesample.cc
 
 )
 

@@ -1,6 +1,7 @@
 #ifndef __IRM_KERNELS_H__
 #define __IRM_KERNELS_H__
 #include <functional>
+#include "slicesample.h"
 
 namespace irm { 
 
@@ -66,62 +67,6 @@ T slice_sample(T x,
               << " Pstar=" << Pstar 
               << " x=" << x << std::endl; 
     return x; 
-
-
-
-}
-
-template<typename T>
-T slice_sample_doubling(T x, 
-               std::function<float(T)> P, rng_t &  rng, 
-               float w) 
-{
-    /* 
-       use radford neal's "doubling" method to account for too-small
-       slice width (hey, it happens)
-       
-       FIXME: what happens when we reject a point; do we re-run entire algorithm? 
-
-       NOT IMPLEMENTED YET
-     // */ 
-
-    // // Create initial interval 
-    // float U = uniform_01(rng); 
-    // T L, R; 
-    // L = x - w * U; 
-    // R = L + w; 
-
-    // int K = 8; 
-    // float f_l = P(L); 
-    // float f_r = P(R); 
-    // while((K > 0) && (y < f_l || y < f_r)) { 
-    //     float V = uniform_01(rng); 
-    //     if (V < 0.5) { 
-    //         L = L - (R - L); 
-    //         f_l = P(L); 
-    //     } else { 
-    //         R = R + (R-L); 
-    //         f_r = P(R); 
-    //     }
-    // }
-        
-
-    // while(loopcnt < LOOPMAX) { 
-    //     T xprime = uniform(x_l, x_r, rng); 
-
-    //     if(P(xprime) > uprime) { 
-    //         return xprime; 
-    //     }
-    //     if(xprime > x) { 
-    //         x_r = xprime; 
-    //     } else { 
-    //         x_l = xprime; 
-    //     }
-        
-    //     loopcnt++; 
-    // }
-
-    // return x; 
 
 
 

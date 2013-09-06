@@ -30,6 +30,10 @@ EXPERIMENTS = [
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.0.0.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.0.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.0.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.0.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
 
     # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
     # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
@@ -82,31 +86,29 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
 }
 
 
-default_nonconj = irm.runner.default_kernel_nonconj_config()
-default_conj = irm.runner.default_kernel_config()
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 300
-default_nonconj_crp = irm.runner.add_domain_hp_grid_kernel(default_nonconj)
 
-default_nonconj_crp_rhp = irm.runner.add_relation_hp_grid_kernel(default_nonconj_crp)
+def generate_ld_hypers():
+    space_vals =  irm.util.logspace(1.0, 30.0, 20)
+    p_mins = np.array([0.001, 0.005, 0.01, 0.02])
+    p_maxs = np.array([0.90, 0.80, 0.50, 0.20])
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for p_max in p_maxs:
+                res.append({'lambda_hp' : s, 'mu_hp' : s, 
+                           'p_min' : p_min, 'p_max' : p_max})
+    return res
 
 
-KERNEL_CONFIGS = {'default_nc_100' : {'ITERS' : 100, 
-                                  'kernels' : default_nonconj},
-                  'default_nc_10' : {'ITERS' : 10, 
-                                  'kernels' : default_nonconj},
-                  'default_10' : {'ITERS' : 10, 
-                                  'kernels' : default_conj},
-                  'default_100' : {'ITERS' : 100, 
-                                  'kernels' : default_conj},
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = generate_ld_hypers()
+
+KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
 
-                  'default_nc_1000' : {'ITERS' : 1000, 
-                                       'kernels' : default_nonconj},
-                  'default_nc_crp_rhp_1000' : {'ITERS' : 1000, 
-                                               'kernels' : default_nonconj_crp_rhp},
                   }
 
 
@@ -538,9 +540,9 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
     f.savefig(plot_hypers_filename)
 
 
-pipeline_run([#data_retina_adj, create_latents_bb, 
-              #plot_scores_z, 
-              #plot_best_latent, 
-              #plot_hypers, 
+pipeline_run([data_retina_adj, create_latents_bb, 
+              plot_scores_z, 
+              plot_best_latent, 
+              plot_hypers, 
               create_latents_ld_truth], multiprocess=2)
                         

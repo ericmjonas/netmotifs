@@ -25,7 +25,7 @@ def test_slice_normal():
     results = np.zeros(ITERS)
     
     for i in range(ITERS):
-        x = irm.slice_sample(x, dens, rng, 0.5)
+        x = irm.slice_sample(x, dens, rng, 50.0)
         results[i] = x
     MIN = -5
     MAX = 5
@@ -42,9 +42,9 @@ def test_slice_normal():
 
     kl=  util.kl(hist, p)
     assert kl < 0.1
-    #pylab.scatter(x[:-1]+ bin_width/2, hist)
-    #pylab.plot(x[:-1], p)
-    #pylab.show()
+    # pylab.scatter(x[:-1]+ bin_width/2, hist)
+    # pylab.plot(x[:-1], p)
+    # pylab.show()
 
 
 def test_slice_exp():

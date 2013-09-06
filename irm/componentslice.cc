@@ -50,12 +50,11 @@ void slice_sample_exec<BetaBernoulliNonConj>
         width = 0.1; 
     }
 
-    auto p = slice_sample<float>(ss->p, 
+    auto p = slice_sample2_double(
                                  [&ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->p = x; 
                                      return BetaBernoulliNonConj::score(ss, hps, data, dppos)/temp;
-                          }, 
-                          rng, width); 
+                                 }, ss->p, width, rng); 
     
     ss->p = p; 
 
@@ -78,23 +77,22 @@ void slice_sample_exec<LogisticDistance>
 
 
     }
-    auto mu = slice_sample<float>(ss->mu, 
+    auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return LogisticDistance::score(ss, hps, data, 
                                                                      dppos) /temp;
-                                  }, 
-                                  rng, width); 
+                                  }, ss->mu, width, rng); 
     
     ss->mu = mu; 
 
-    auto lambda = slice_sample<float>(ss->lambda, 
+    auto lambda = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->lambda = x; 
                                           return LogisticDistance::score(ss, hps, data, 
                                                                          dppos)/temp;
-                                      }, 
-                                      rng, width); 
+                                      }, ss->lambda, 
+                                      width, rng); 
     
     ss->lambda = lambda; 
 
@@ -112,25 +110,23 @@ void slice_sample_exec<SigmoidDistance>
         width = hps->mu_hp/4.0; 
     }
 
-    auto mu = slice_sample<float>(ss->mu, 
+    auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
                                                                     dppos)/temp;
-                          }, 
-                          rng, width); 
+                                  }, ss->mu, width, rng); 
     
     ss->mu = mu; 
 
 
-    auto lambda = slice_sample<float>(ss->lambda, 
+    auto lambda = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
                                                                     dppos)/temp;
-                          }, 
-                          rng, width); 
-    
+                                      }, ss->lambda, width, rng); 
+
     ss->lambda = lambda; 
 
 }
@@ -148,25 +144,24 @@ template<> void slice_sample_exec<LinearDistance>
         width = hps->mu_hp/4.0; 
     }
 
-    auto mu = slice_sample<float>(ss->mu, 
+    auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return LinearDistance::score(ss, hps, data, 
                                                                      dppos) /temp;
-                                  }, 
-                                  rng, width); 
+                                  }, ss->mu, width, rng); 
     
     ss->mu = mu; 
 
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
-    auto p = slice_sample<float>(ss->p, 
+    auto p = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return LinearDistance::score(ss, hps, data, 
                                                                          dppos)/temp;
-                                      }, 
-                                      rng, 0.1); 
+                                      }, ss->p, 0.5, rng); 
+
     
     ss->p = p; 
 
@@ -205,28 +200,26 @@ template<> void slice_sample_exec<NormalDistanceFixedWidth>
  float temp){
 
     if (width == 0.0) {
-        width = hps->mu_hp/4.0; 
+        width = hps->mu_hp*2.0; 
     }
 
-    auto mu = slice_sample<float>(ss->mu, 
+    auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return NormalDistanceFixedWidth::score(ss, hps, data, 
                                                                      dppos) /temp;
-                                  }, 
-                                  rng, width); 
+                                  }, ss->mu, width, rng);
     
     ss->mu = mu; 
 
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
-    auto p = slice_sample<float>(ss->p, 
+    auto p = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return NormalDistanceFixedWidth::score(ss, hps, data, 
                                                                          dppos)/temp;
-                                      }, 
-                                      rng, 0.1); 
+                                      }, ss->p, 0.5, rng); 
     
     ss->p = p; 
 
@@ -241,28 +234,27 @@ template<> void slice_sample_exec<SquareDistanceBump>
  float temp){
 
     if (width == 0.0) {
-        width = hps->mu_hp/4.0; 
+        width = hps->mu_hp* 2.0; 
     }
 
-    auto mu = slice_sample<float>(ss->mu, 
+    auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return SquareDistanceBump::score(ss, hps, data, 
                                                                      dppos) /temp;
-                                  }, 
-                                  rng, width); 
+                                  }, ss->mu,  width, rng); 
     
     ss->mu = mu; 
 
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
-    auto p = slice_sample<float>(ss->p, 
+    auto p = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return SquareDistanceBump::score(ss, hps, data, 
                                                                          dppos)/temp;
-                                      }, 
-                                      rng, 0.1); 
+                                      }, ss->p, 0.5, rng); 
+
     
     ss->p = p; 
 

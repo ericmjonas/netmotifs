@@ -62,10 +62,9 @@ float slice_sampler_wrapper(float x, bp::object P,
        Only works for floats, oh well
     */ 
 
-    return irm::slice_sample<float>(x,
-                                    [&P](float t) -> float
-        { return bp::extract<float>(P(t));}, 
-                                    rng, w);
+    return irm::slice_sample2_double([&P](float t) -> float
+                              { return bp::extract<float>(P(t));}, 
+                              x, w, rng); 
 
 
 }

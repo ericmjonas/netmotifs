@@ -33,7 +33,7 @@ EXPERIMENTS = [
     ('celegans.2r.gp.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
-    #('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
 
            ]
@@ -64,11 +64,12 @@ default_anneal = irm.runner.default_kernel_anneal()
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 300
+slow_anneal[0][1]['subkernels'][-2][1]['grid'] = np.linspace(1.0, 50.0, 50.0)
 
 def generate_ld_hypers():
-    mu_min = 0.001
-    mu_max = 0.1
-    space_vals =  np.logspace(np.log10(mu_min), np.log10(mu_max), 50)
+    mu_min = 0.01
+    mu_max = 0.3
+    space_vals =  irm.util.logspace(mu_min, mu_max, 50)
     p_mins = np.array([0.001])
     p_maxs = np.array([0.90]) # , 0.80, 0.50, 0.20])
     res = []
