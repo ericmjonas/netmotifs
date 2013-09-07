@@ -4,7 +4,7 @@ namespace irm {
 
 const int SLICE_M = 100; 
 const int SLICE_P = 20; 
-
+const int SLICE_MAX_SHRINK = 100; 
 
 std::pair<float, float> 
 create_interval(std::function<float(float)> f, float x_0, float y, float w, 
@@ -103,7 +103,8 @@ float shrink(std::pair<float, float> LR,
 {
     float Lbar = LR.first; 
     float Rbar = LR.second; 
-    while(1) { 
+    int shrink = SLICE_MAX_SHRINK; 
+    while(shrink > 0) { 
         float U = uniform_01(rng); 
         float x_1 = Lbar + U * (Rbar - Lbar); 
         if (use_accept) { 
@@ -122,8 +123,11 @@ float shrink(std::pair<float, float> LR,
         } else { 
             Rbar = x_1; 
         }
+
+        shrink--; 
         
     }
+    std::cerr << "Shrink iters exceeded SLICE_MAX_SHRINK" << std::endl; 
 }
 
 /* second, more-correct implementaiton, now with doubling
