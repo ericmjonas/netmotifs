@@ -77,7 +77,7 @@ DEFAULT_RELATION_GRIDS['SquareDistanceBump'] = default_grid_square_distance_bump
 
 
 def default_grid_crp():
-    return np.logspace(np.log10(0.1), np.log10(50), 40)
+    return np.logspace(np.log10(1.0), np.log10(100), 40)
 
 def default_grid_relation_hps():
     return DEFAULT_RELATION_GRIDS
