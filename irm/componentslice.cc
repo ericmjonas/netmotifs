@@ -69,7 +69,7 @@ void slice_sample_exec<LogisticDistance>
  const std::vector<dppos_t> & dppos,
  float temp){
     if (width == 0.0) {
-        width = hps->mu_hp/4.0; 
+        width = hps->mu_hp*2.0; 
     } else {
         std::cout << "Slice width manually set to " << width 
                   << " (automatic would have been " 
