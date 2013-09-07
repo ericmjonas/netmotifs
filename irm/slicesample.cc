@@ -127,6 +127,7 @@ float shrink(std::pair<float, float> LR,
         shrink--; 
         
     }
+    return x_0; // no change
     std::cerr << "Shrink iters exceeded SLICE_MAX_SHRINK" << std::endl; 
 }
 
