@@ -1294,7 +1294,7 @@ struct SquareDistanceBump {
         }
 
         float score = log(1.0 - hps->param_weight)  + log_exp_dist(mu, 1./hps->mu_hp); 
-        if(p == hps->param_max_distance) { 
+        if(mu == hps->param_max_distance) { 
             score  = log_sum_exp(score, log(hps->param_weight)  + log(hps->param_weight)); 
         }
         
