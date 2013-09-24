@@ -169,7 +169,7 @@ def plot_somapos((type_file, pos_file, xlsxdata_file), (pos_outfile,)):
 EXAMPLES = [10, 50, 100, 150, 200, 250, 300, 350, 400]
 @files(['soma.positions.pickle', 'synapses.pickle'], 
        ['example.%d.pdf' % e for e in EXAMPLES])
-def plot_example_cells((type_file, pos_file, synapse_file), output_files):
+def plot_example_cells((pos_file, synapse_file), output_files):
     soma_pos = pickle.load(open(pos_file, 'r'))
     synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
 
@@ -200,9 +200,14 @@ def plot_example_cells((type_file, pos_file, synapse_file), output_files):
         ax_zx.scatter(tgt[2], tgt[0], c='r', s=20)
 
         tgt_df = synapses[(synapses['from_id'] == CELL_ID) | (synapses['to_id'] == CELL_ID)]
-
-        ax_yx.scatter(tgt_df['y'], tgt_df['x'], s=1, c='b', edgecolor='none')
-        ax_zx.scatter(tgt_df['z'], tgt_df['x'], s=1, c='b', edgecolor='none')
+        for area_range, size, color in [((0.0, 0.1), 1, 'b'), 
+                                        ((0.1, 1.0), 5, 'g'), 
+                                        ((1.0, 5.0), 15, 'r')]:
+            plot_df = tgt_df[(tgt_df['area'] > area_range[0]) & (tgt_df['area'] < area_range[1])]
+            ax_yx.scatter(plot_df['y'], plot_df['x'], s=size, c=color, 
+                          edgecolor='none', alpha=0.5)
+            ax_zx.scatter(plot_df['z'], plot_df['x'], s=size, c=color, 
+                          edgecolor='none', alpha=0.5)
 
         f.savefig(output_file)
 

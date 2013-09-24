@@ -272,7 +272,8 @@ def plot_purity_hists(fig, assign_vect, true_assign_vect,
 
 def plot_purity_hists_h(fig, assign_vect, true_assign_vect, 
                         thold=0.9, clust_labels = None, plot_zero=True, 
-                        extra_rows = 0, extra_row_func = None):
+                        extra_rows = 0, extra_row_func = None, 
+                        class_colors = tuple()):
     """
 
     plot_zero : True, we plot every single true latent class. False, we compress
@@ -337,8 +338,12 @@ def plot_purity_hists_h(fig, assign_vect, true_assign_vect,
         else:
             ratios = ratios[ri]
             nonzero_counts.append(np.sum(ratios > 0))
+
+        if len(class_colors) == 0:
+            ax.barh(xpos, ratios)
+        else:
+            ax.barh(xpos, ratios, color=class_colors)
             
-        ax.barh(xpos, ratios)
         ax.set_ylim(0, TRUE_CLASS_N)
         ax.set_xlim(0, 1.0)
         ax.set_xticks([0, 1.0])

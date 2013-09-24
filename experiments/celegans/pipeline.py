@@ -32,7 +32,6 @@ EXPERIMENTS = [
                ('celegans.2r.bb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.gp.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
-    ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
 
@@ -68,7 +67,7 @@ slow_anneal[0][1]['subkernels'][-2][1]['grid'] = np.linspace(1.0, 50.0, 50.0)
 
 def generate_ld_hypers():
     mu_min = 0.01
-    mu_max = 0.3
+    mu_max = 0.9
     space_vals =  irm.util.logspace(mu_min, mu_max, 50)
     p_mins = np.array([0.001])
     p_maxs = np.array([0.90]) # , 0.80, 0.50, 0.20])
@@ -377,6 +376,8 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
                      range(CHAINS_TO_RUN), 
                      [BUCKET_BASE]*CHAINS_TO_RUN, 
                      _env='connectivitymotif', 
+                     _label="%s-%s-%s" % (data_filename, inits[0], 
+                                          kernel_config_name), 
                      _type='f2')
 
     pickle.dump({'jids' : jids, 

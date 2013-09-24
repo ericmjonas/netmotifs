@@ -30,26 +30,9 @@ EXPERIMENTS = [
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.0.0.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.0.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.0.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.0.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-
-    # ('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    # ('retina.1.0.ld.0.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    # ('retina.1.1.ld.1.0', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    # ('retina.1.0.ld.1.1', 'fixed_20_100', 'default_nc_crp_rhp_1000'), 
-    # ('retina.1.0.lind.0', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.0.lind.1', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.0.lind.2', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.0.lind.3', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.1.lind.0', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.1.lind.1', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.1.lind.2', 'fixed_20_100', 'default_nc_1000'), 
-    # ('retina.1.1.lind.3', 'fixed_20_100', 'default_nc_1000'), 
     #('Retinaun.ld', 'fixed_100_200', 'default_nc_100')
     #('retina.bb', 'fixed_100_200', 'default_10000'), 
-    #('retina.0.0.ld.truth', 'truth_100', 'default_nc_100'), 
+    ('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
 
     #('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), # just for slice sampler testing
                
@@ -60,15 +43,6 @@ THOLDS = [0.01, 0.1, 0.5, 1.0]
 MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
 PMAXS = [0.95, 0.9, 0.7]
 
-
-# for x in [1]:
-#     for i in range(len(THOLDS)):
-#         for k in range(len(MULAMBS)):
-#             for l in range(len(PMAXS)):
-#                 EXPERIMENTS.append(('retina.%d.%d.ld.%d.%d' % (x, i, k, l), 
-#                                     'fixed_20_100',
-#                                     'default_nc_100'))
-            
             
 INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
@@ -87,13 +61,13 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
 
 
 slow_anneal = irm.runner.default_kernel_anneal()
-slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 
 def generate_ld_hypers():
-    space_vals =  irm.util.logspace(1.0, 30.0, 20)
-    p_mins = np.array([0.001, 0.005, 0.01, 0.02])
-    p_maxs = np.array([0.90, 0.80, 0.50, 0.20])
+    space_vals =  irm.util.logspace(1.0, 80.0, 40)
+    p_mins = np.array([0.001, 0.005, 0.01])
+    p_maxs = np.array([0.99, 0.95, 0.90, 0.80])
     res = []
     for s in space_vals:
         for p_min in p_mins:
@@ -123,7 +97,7 @@ def create_tholds():
     """
     infiles = ['xlsxdata.pickle', 
                'soma.positions.pickle']
-    for use_x in [0, 1]:
+    for use_x in [1]:
         for tholdi, thold in enumerate(THOLDS):
             outfile = td("retina.%d.%d.data.pickle" % (use_x, tholdi))
             yield infiles, [outfile], thold, use_x
@@ -312,6 +286,43 @@ def create_latents_ld_truth((infile, ),
     pickle.dump({'infile' : infile, 
                  }, open(meta_filename, 'w'))
 
+
+@transform(create_latents_ld_truth, suffix(".truth.data"), 
+           [".truth.latent.pdf", ".truth.params.pdf"])
+def plot_latents_ld_truth((data_filename, latent_filename, meta_filename), 
+                          (output_file, plot_params_filename)):
+
+    data = pickle.load(open(data_filename, 'r'))
+    latent = pickle.load(open(latent_filename, 'r'))
+    dist_matrix = data['relations']['R1']['data']
+
+    util.plot_latent(latent, dist_matrix, output_file, PLOT_MAX_DIST=120., 
+                     MAX_CLASSES=20)
+    m = data['relations']['R1']['model']
+    ss = latent['relations']['R1']['ss']
+    f = pylab.figure()
+    ax = f.add_subplot(3, 1, 1)
+    ax_xhist = f.add_subplot(3, 1, 2)
+    ax_yhist = f.add_subplot(3, 1, 3)
+
+    if m == "LogisticDistance":
+        mus_lambs = np.array([(x['mu'], x['lambda']) for x in ss.values()])
+    
+        ax.scatter(mus_lambs[:, 0], mus_lambs[:, 1], edgecolor='none', 
+                   s=2, alpha=0.5)
+        ax.set_xlabel('mu')
+        ax.set_ylabel('labda')
+        ax.set_xlim(0, 150)
+        ax.set_ylim(0, 150)
+        ax_xhist.hist(mus_lambs[:, 0], bins=40)
+        ax_xhist.axvline(latent['relations']['R1']['hps']['mu_hp'])
+        ax_yhist.hist(mus_lambs[:, 1], bins=40)
+        ax_yhist.axvline(latent['relations']['R1']['hps']['lambda_hp'])
+
+    f.suptitle("chain %d for %s" % (0, plot_params_filename))
+    
+    f.savefig(plot_params_filename)
+
 def get_dataset(data_name):
     return glob.glob(td("%s.data" %  data_name))
 
@@ -365,6 +376,8 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      [BUCKET_BASE]*CHAINS_TO_RUN, 
+                     _label="%s-%s-%s" % (data_filename, inits[0], 
+                                          kernel_config_name), 
                      _env='connectivitymotif', 
                      _type='f2')
 
@@ -468,10 +481,9 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
                                  plot_truth_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.clusters.pdf" % d, )  for d in range(3)])
-def plot_best_latent(exp_results, 
+           [(".%d.clusters.pdf" % d, ".%d.latent.pdf" % d )  for d in range(3)])
+def plot_best_cluster_latent(exp_results, 
                      out_filenames):
-    from matplotlib.backends.backend_pdf import PdfPages
 
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
@@ -494,6 +506,23 @@ def plot_best_latent(exp_results,
     cell_types = d['types'][:len(conn)]
 
     type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+    type_color_map = {'gc' : 'r', 
+                      'ac' : 'b', 
+                      'bc' : 'g', 
+                      'other' : 'k'}
+
+    TYPE_N = np.max(cell_types) + 1
+
+    type_colors = []
+    for i in range(TYPE_N):
+        if (i < 70):
+            d = type_metadata_df.loc[i+1]['desig']
+        else:
+            d = "  "
+        type_colors.append(type_color_map.get(d[:2], 'k'))
+
+    print type_colors 
+    
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -509,7 +538,7 @@ def plot_best_latent(exp_results,
 
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
 
-    for chain_pos, (cluster_fname, ) in enumerate(out_filenames):
+    for chain_pos, (cluster_fname, latent_fname) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
@@ -519,7 +548,10 @@ def plot_best_latent(exp_results,
 
         util.plot_cluster_properties(a, cell_types, 
                                      pos_vec, reorder_synapses, 
-                                     cluster_fname)
+                                     cluster_fname, class_colors=type_colors)
+
+        util.plot_latent(sample_latent, dist_matrix, latent_fname, 
+                         PLOT_MAX_DIST=120.0, MAX_CLASSES=20)
         
 @transform(get_results, suffix(".samples"), [".hypers.pdf"])
 def plot_hypers(exp_results, (plot_hypers_filename,)):
@@ -539,10 +571,54 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
 
     f.savefig(plot_hypers_filename)
 
+@transform(get_results, suffix(".samples"), [".params.pdf"])
+def plot_params(exp_results, (plot_params_filename,)):
+    """ 
+    plot parmaeters
+    """
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+    best_chain_i = chains_sorted_order[0]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
+    
+    m = data['relations']['R1']['model']
+    ss = sample_latent['relations']['R1']['ss']
+    f = pylab.figure()
+    ax = f.add_subplot(3, 1, 1)
+    ax_xhist = f.add_subplot(3, 1, 2)
+    ax_yhist = f.add_subplot(3, 1, 3)
+    if m == "LogisticDistance":
+        mus_lambs = np.array([(x['mu'], x['lambda']) for x in ss.values()])
+        ax.scatter(mus_lambs[:, 0], mus_lambs[:, 1], edgecolor='none', 
+                   s=2, alpha=0.5)
+        ax.set_xlabel('mu')
+        ax.set_ylabel('labda')
+        ax.set_xlim(0, 150)
+        ax.set_ylim(0, 150)
+
+        ax_xhist.hist(mus_lambs[:, 0], bins=20)
+        ax_xhist.axvline(sample_latent['relations']['R1']['hps']['mu_hp'])
+        ax_yhist.hist(mus_lambs[:, 1], bins=40)
+        ax_yhist.axvline(sample_latent['relations']['R1']['hps']['lambda_hp'])
+
+    f.suptitle("chain %d for %s" % (0, plot_params_filename))
+    
+    f.savefig(plot_params_filename)
+
 
 pipeline_run([data_retina_adj, create_latents_bb, 
               plot_scores_z, 
-              plot_best_latent, 
+              plot_best_cluster_latent, 
               plot_hypers, 
+              plot_latents_ld_truth, 
+              plot_params, 
               create_latents_ld_truth], multiprocess=2)
                         

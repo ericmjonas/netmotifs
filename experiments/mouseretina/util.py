@@ -12,7 +12,9 @@ import irm.data
 from irm.experiments import plot_latent
 
 def plot_cluster_properties(assignments, true_cell_types, 
-                            pos_vec, synapses, output_filename):
+                            pos_vec, synapses, output_filename,
+                            cluster_thold= 0.98, 
+                            class_colors=None):
 
     """
     Plot histogram of cell depth, 
@@ -55,7 +57,8 @@ def plot_cluster_properties(assignments, true_cell_types,
 
 
     irm.plot.plot_purity_hists_h(f, assignments, true_cell_types, extra_rows=2, 
-                                 extra_row_func=extra_plot_func)
+                                 extra_row_func=extra_plot_func, 
+                                 thold = cluster_thold, class_colors = class_colors)
     #f.tight_layout()
     f.suptitle(output_filename)
     f.savefig(output_filename)
