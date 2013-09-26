@@ -25,6 +25,8 @@ def create_init(latent_filename, data_filename, out_filenames,
     CONVENTION: when we create N inits, the first is actually 
     initialized from the "ground truth" of the intial init (whatever
     that happened to be)
+
+    # FIXME : add ability to init multiple domains
     """
     irm_latent = pickle.load(open(latent_filename, 'r'))
     irm_data = pickle.load(open(data_filename, 'r'))
