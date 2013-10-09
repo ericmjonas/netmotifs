@@ -1495,7 +1495,6 @@ struct LinearDistancePoisson {
             float rate = linear_rate(data[dpi].distance, ss->mu, 
                                   ss->rate, hps->rate_min); 
 
-            float lscore; 
             score += log_poisson_dist(data[dpi].link, rate); 
         }
         return score; 
