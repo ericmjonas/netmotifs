@@ -44,6 +44,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
             m = models.NormalDistanceFixedWidth()
         elif rel_config['model'] == "SquareDistanceBump": 
             m = models.SquareDistanceBump()
+        elif rel_config['model'] == "LinearDistancePoisson": 
+            m = models.LinearDistancePoisson()
         else:
             raise NotImplementedError()
         rel = relation_class(domaindef, relations_config[rel_name]['data'], 
@@ -293,6 +295,10 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
 
             elif relation.modeltypestr == "BetaBernoulliNonConj":
 
+                relation.apply_comp_kernel("slice_sample", rng, params)
+            elif relation.modeltypestr == "LinearDistancePoisson":
+                params = {'width' : 0.0} # relation.get_hps()['mu_hp'] / 2.0
+                # 'rate_width' : relation.get_hps()['rate_hp'] / 4.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
             elif relation.modeltypestr == "BetaBernoulli":

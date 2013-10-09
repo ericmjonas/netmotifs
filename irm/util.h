@@ -150,6 +150,15 @@ inline float log_exp_dist(float x, float lambda) {
 
 }
 
+inline float log_poisson_dist(int k, float lambda) {
+    if(lambda <0.0) { 
+            return -std::numeric_limits<float>::infinity();
+
+    }
+    return k * logf(lambda) - lgamma(k+1) + -lambda; 
+
+}
+
 inline float logbeta(float alpha, float beta) { 
     return fasterlgamma(alpha)  + fasterlgamma(beta) - fasterlgamma(alpha + beta); 
 }

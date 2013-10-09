@@ -81,3 +81,17 @@ def default_grid_crp():
 
 def default_grid_relation_hps():
     return DEFAULT_RELATION_GRIDS
+
+def default_grid_linear_distance_poisson(dist_scale = 1.0, rate_scale = 1.0, 
+                                         rate_min = 0.01):
+    mu = util.logspace(0.1, 1.0, 10) * dist_scale
+    rate = util.logspace(0.1, 1.0, 10) * rate_scale
+    hps = []
+    for m in mu:
+        for r in rate:
+            hps.append({'mu_hp' : m, 
+                        'rate_hp' : r, 
+                        'rate_min' : rate_min})
+    return hps
+
+DEFAULT_RELATION_GRIDS['LinearDistancePoisson'] = default_grid_linear_distance_poisson()

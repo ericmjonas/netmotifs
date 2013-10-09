@@ -577,6 +577,60 @@ class SquareDistanceBump(object):
         x[0]['link'] = link
         return x[0]
 
+class LinearDistancePoisson(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('link',  np.int32), 
+                ('distance', np.float32)]
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'rate_hp' :  np.random.gamma(1, 1), 
+                'mu_hp' : np.random.gamma(1.2, 4), 
+                'rate_min' : np.random.uniform(0.01, 0.1)}
+
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        mu = np.random.exponential(hps['mu_hp'])
+        rate = np.random.exponential(hps['rate_hp'])
+        
+        return {'rate' : rate, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM mu and not from 
+        suffstats. 
+        """
+        d = np.random.exponential(hps['mu_hp'])
+        rate = - d * ss['rate'] / ss['mu']+ ss['rate']
+        if d > ss['mu']:
+            rate = hps['rate_min']
+
+        count = np.random.poisson(rate)
+        
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['distance'] = d
+        x[0]['link'] = count
+        return x[0]
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
+
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
          'SigmoidDistance' : SigmoidDistance, 
@@ -584,5 +638,7 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'LinearDistance' : LinearDistance, 
          'GammaPoisson' : GammaPoisson, 
          'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 
-         'SquareDistanceBump' : SquareDistanceBump
+         'SquareDistanceBump' : SquareDistanceBump, 
+         'LinearDistancePoisson' : LinearDistancePoisson
 }
+

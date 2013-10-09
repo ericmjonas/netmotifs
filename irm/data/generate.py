@@ -1,5 +1,7 @@
 import numpy as np
 from .. import util 
+from .. import observations
+
 import synth
 import tesselate
 def dist(a, b):
@@ -32,20 +34,20 @@ def create_nodes_grid(SIDE_N, CLASS_N, JITTER):
     return nodes
 
 def c_class_neighbors(SIDE_N, class_connectivity, 
-                      JITTER = 0.0, rand_conn_prob = 0.01):
+                      JITTER = 0.0, default_param=0.01, obsmodel=None):
 
     """
     for each of c classes, we create a grid of SIDE_N x SIDE_N
     and then use the class_connectivity dictionary to set up 
     threshold connectivity
 
-    class_connectivity = {(c1, c2) : (threshold, prob), 
+    class_connectivity = {(c1, c2) : (threshold, param), 
                           }
     PROX: proximitiy of neighbors
     
     Planar
 
-    returns nodes, connectivity
+    returns nodes, connectivity -- note that connectivity is really observations
 
     """ 
     
@@ -55,17 +57,17 @@ def c_class_neighbors(SIDE_N, class_connectivity,
 
     def node_pred(c1, pos1, c2, pos2):
 
-        for (c1_t, c2_t), (thold, prob) in class_connectivity.iteritems():
+        for (c1_t, c2_t), (thold, params) in class_connectivity.iteritems():
             if (c1 == c1_t) and (c2 == c2_t):
                 d = dist(pos1, pos2)
                 if d < thold:
-                    return prob
+                    return params
             
-        return rand_conn_prob
+        return default_param 
 
-    connectivity = synth.connect(nodes, node_pred)
+    observations = synth.connect(nodes, node_pred, obsmodel)
 
-    return nodes, connectivity
+    return nodes, observations
 
 def c_mixed_dist_block(SIDE_N, class_connectivity, 
                       JITTER = 0.0, rand_conn_prob = 0.01):

@@ -86,7 +86,7 @@ def dataset_connectivity_matrix_params():
                              'class_n' : [2], 
                              'nonzero_frac' : [1.0], 
                              'jitter' : [0.001], 
-                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb', 'lindp'], 
                              'truth': ['distblock']},
                 'trivial_mixed' : {'seeds' : range(1), 
                                    'side_n' : [4], 
@@ -133,6 +133,19 @@ def generate_block_config(class_n, nonzero_frac):
                                np.random.uniform(0.4, 0.9))
     return conn_config
 
+def generate_block_config_poisson(class_n, nonzero_frac):
+    conn_config = {}
+
+    for c1 in range(class_n):
+        for c2 in range(class_n):
+            if np.random.rand() < nonzero_frac:
+                conn_config[(c1, c2)] = (np.random.uniform(1.0, 4.0),  # threshold
+                                         np.random.exponential(20))
+    if len(conn_config) == 0:
+        conn_config[(0, 0)] = (np.random.uniform(1.0, 4.0), 
+                               np.random.exponential(20))
+    return conn_config
+
 def generate_mixed_block_config(class_n, nonzero_frac):
     conn_config = {}
 
@@ -174,31 +187,46 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                                          meta_filename), 
                                 model, truth_gen, seed, side_n, class_n, nonzero_frac, jitter):
 
+    import irm.data.generate as generate
+
     np.random.seed(seed)
-            
     if truth_gen == 'distblock':
         conn_config = generate_block_config(class_n, nonzero_frac)
+        obsmodel = irm.observations.Bernoulli()
 
-        nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(side_n, 
-                                                                             conn_config,
-                                                                             JITTER=jitter)
+        nodes_with_class, connectivity = generate.c_class_neighbors(side_n, 
+                                                                    conn_config,
+                                                                    JITTER=jitter, 
+                                                                    obsmodel=obsmodel)
     elif truth_gen == 'mixedblock':
         conn_config = generate_mixed_block_config(class_n, nonzero_frac)
+        obsmodel = irm.observations.Bernoulli()
 
-        nodes_with_class, connectivity = irm.data.generate.c_mixed_dist_block(side_n, 
-                                                                             conn_config,
-                                                                             JITTER=jitter)
+        nodes_with_class, connectivity = generate.c_mixed_dist_block(side_n, 
+                                                                    conn_config,
+                                                                     JITTER=jitter, 
+                                                                     obsmodel=obsmodel)
     elif truth_gen == 'bumpblock':
         conn_config = generate_bump_block_config(class_n, nonzero_frac)
+        obsmodel = irm.observations.Bernoulli()
 
         nodes_with_class, connectivity = irm.data.generate.c_bump_dist_block(side_n, 
                                                                              conn_config,
-                                                                             JITTER=jitter)
+                                                                             JITTER=jitter, 
+                                                                             obsmodel=obsmodel)
+    elif truth_gen == 'distblock_count':
+        conn_config = generate_block_config_poisson(class_n, nonzero_frac)
+        obsmodel = irm.observations.Poisson()
+
+        nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(side_n, 
+                                                                             conn_config,
+                                                                             JITTER=jitter, 
+                                                                             obsmodel=obsmodel)
     
         
     conn_and_dist = np.zeros(connectivity.shape, 
-                    dtype=[('link', np.uint8), 
-                           ('distance', np.float32)])
+                             dtype=[('link', obsmodel.dtype), 
+                                    ('distance', np.float32)])
 
     for ni, (ci, posi) in enumerate(nodes_with_class):
         for nj, (cj, posj) in enumerate(nodes_with_class):
@@ -257,6 +285,12 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                'p_min' : 0.01, 
                'param_weight' : 0.5, 
                'param_max_distance' : 4.0}
+    elif model == 'lindp':
+        model_name= "LinearDistancePoisson"
+
+        HPS = {'mu_hp' : 1.0, 
+               'rate_hp' : 1.0, 
+               'p_min' : 0.01}
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
     irm_latent['domains']['d1']['assignment'] = nodes_with_class['class']

@@ -13,10 +13,12 @@ and relation classes.
 ITERS_TO_RUN = 1
 MODELS =  [#"BetaBernoulliNonConj", 'LogisticDistance', 
            #'LinearDistance', 'SigmoidDistance', 
-           #'GammaPoisson',
-           #'BetaBernoulli', 
+    #'GammaPoisson',
+    #'BetaBernoulli', 
     #'NormalDistanceFixedWidth', 
-    'SquareDistanceBump']
+    #'SquareDistanceBump'
+    'LinearDistancePoisson'
+]
 
 def test_t1_t1():
     np.random.seed(0)

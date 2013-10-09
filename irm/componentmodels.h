@@ -1375,6 +1375,176 @@ struct SquareDistanceBump {
 
 }; 
 
+struct LinearDistancePoisson { 
+    class value_t {
+    public:
+        int32_t link; 
+        float distance; 
+    } __attribute__((packed)); 
+    
+    class suffstats_t { 
+    public:
+        //std::unordered_set<uint32_t> datapoint_pos_; 
+        float mu; 
+        float rate; 
+    }; 
+
+    class hypers_t {
+    public:
+        float mu_hp; 
+        float rate_hp; 
+        float rate_min; 
+        inline hypers_t() : 
+            mu_hp(1.0), 
+            rate_hp(1.0), 
+            rate_min(0.01)
+        { 
+
+
+        }
+    }; 
+
+    static float linear_rate(float x, float mu, float rate, float rate_min) { 
+        if (x > mu) { 
+            return rate_min; 
+        } 
+        return -rate / mu * x + rate; 
+    }
+
+    static std::pair<float, float> 
+    sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float mu_hp = hps->mu_hp; 
+        float rate_hp = hps->rate_hp;
+
+        float r1 = uniform_01(rng); 
+        float r2 = uniform_01(rng); 
+        
+        try { 
+            boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
+            float mu = quantile(mu_dist, r1); 
+
+            
+            boost::math::exponential_distribution<> rate_dist(1.0/rate_hp); 
+            float rate = quantile(rate_dist, r2); 
+            
+            return std::make_pair(mu, rate); 
+
+        } catch (...){
+            
+            std::cout << "mu_hp=" << mu_hp 
+                      << " rate_hp=" << rate_hp 
+                      << std::endl; 
+            std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
+            throw std::runtime_error("Sample from prior error"); 
+
+        }
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->rate = params.second; 
+    
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.insert(dp_pos); 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.erase(dp_pos); 
+    }
+
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+
+        float rate = linear_rate(val.distance, ss->mu, ss->rate, 
+                                 hps->rate_min); 
+
+        return log_poisson_dist(val.link, rate); 
+    }
+    
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        float mu = ss->mu; 
+        float rate = ss->rate; 
+        if( (rate < 0.0) || mu < 0.0) { 
+            return -std::numeric_limits<float>::infinity();
+        }
+
+        float score = 0.0; 
+        score += log_exp_dist(mu, 1./hps->mu_hp); 
+        score += log_exp_dist(rate, 1.0/hps->rate_hp); 
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+    {
+        float score = 0.0; 
+
+        for(auto dpi : dppos) { 
+            float rate = linear_rate(data[dpi].distance, ss->mu, 
+                                  ss->rate, hps->rate_min); 
+
+            float lscore; 
+            score += log_poisson_dist(data[dpi].link, rate); 
+        }
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos)
+    { 
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        return prior_score + likelihood_score; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
+        hp.rate_hp = bp::extract<float>(hps["rate_hp"]);
+        hp.rate_min = bp::extract<float>(hps["rate_min"]);
+
+        return hp; 
+
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu_hp"] = hps.mu_hp; 
+        hp["rate_hp"] = hps.rate_hp; 
+        hp["rate_min"] = hps.rate_min; 
+
+        return hp; 
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = ss->mu; 
+        d["rate"] = ss->rate; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = bp::extract<float>(v["mu"]); 
+        ss->rate = bp::extract<float>(v["rate"]); 
+            
+    }
+
+}; 
+
 
 }
 

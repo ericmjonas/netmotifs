@@ -4,6 +4,7 @@ import cPickle as pickle
 from copy import deepcopy
 from .. import util
 from .. import models
+from .. import observations
 NODE_POS_DTYPE = [('class',  np.uint32), 
                   ('pos' ,  np.float32, (3, ))]
 
@@ -97,22 +98,24 @@ def generate():
                  'connectivity' : connectivity}, 
                 open('data.pickle', 'w'))
 
-def connect(nodes, pred):
+def connect(nodes, pred, obsmodel=None):
     """
     nodes: vector of class, 3pos nodes
     pred: a function of (c1, pos1, c2, pos2) that returns prob of this connection
     
     """
     NODEN = len(nodes)
-
-    connectivity = np.zeros((NODEN, NODEN), dtype=np.bool)
+    if obsmodel == None:
+        obsmodel = observations.Bernoulli()
+    
+    connectivity = np.zeros((NODEN, NODEN), dtype=obsmodel.dtype)
     for ni in range(NODEN):
         for nj in range(NODEN):
-            p = pred(nodes[ni]['class'], 
-                     nodes[ni]['pos'], 
-                     nodes[nj]['class'], 
-                     nodes[nj]['pos'])
-            connectivity[ni, nj] = np.random.rand() < p
+            params = pred(nodes[ni]['class'], 
+                          nodes[ni]['pos'], 
+                          nodes[nj]['class'], 
+                          nodes[nj]['pos'])
+            connectivity[ni, nj] = obsmodel.sample(params)
         
     return  connectivity
     
