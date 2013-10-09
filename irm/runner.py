@@ -189,7 +189,7 @@ if __name__ == "__main__":
     
     run = Runner(latent, data, config)
     def logger(iter, model):
-        print iter
+        print iter, model.get_score()
 
     run.run_iters(iters, logger)
 
