@@ -41,7 +41,7 @@ def load_apps_df(infile, outfile):
 def load_jobs(infile, outfile):
     #jobs1 has an encoding error because everything remotely associated with tsv is a cl
 
-    jobs_df = pandas.io.parsers.read_csv(infile, sep='\t', index_col=0, usecols=[0, 8], 
+    jobs_df = pandas.io.parsers.read_csv(infile, sep='\t', index_col=0, 
                                           converters={'Zip5' : zip_conv })
     pickle.dump({'jobs' : jobs_df}, 
                 open(outfile, 'w'))

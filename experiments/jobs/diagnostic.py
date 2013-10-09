@@ -37,5 +37,6 @@ def plot_all_zipcodes(infile, outfile):
     ax.scatter(zc['longitude'], zc['latitude'], color='k', edgecolor='none', s=1)
     f.savefig(outfile)
 
-pipeline_run([plot_all_zipcodes, plot_apps_agg])
+if __name__ == "__main__":
+    pipeline_run([plot_all_zipcodes, plot_apps_agg])
 

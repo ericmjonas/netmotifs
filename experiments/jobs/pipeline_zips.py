@@ -16,7 +16,7 @@ np.random.seed(0)
 
 @files(['apps.pickle', 'users.pickle', 'jobs.%d.pickle' % preprocess.WINDOW_N,
         'zipcodes.pickle'], 
-       'data.pickle')
+       'data.zips.pickle')
 def create_data((apps_filename, users_filename, jobs_filename, 
                  zipcodes_filename), output_filename):
     apps = pickle.load(open(apps_filename, 'r'))['apps']
@@ -24,28 +24,19 @@ def create_data((apps_filename, users_filename, jobs_filename,
     jobs = pickle.load(open(jobs_filename, 'r'))['jobs']
 
     zip_codes = pickle.load(open(zipcodes_filename, 'r'))['all']
+    jobs = jobs[jobs['Zip5'].isin(zip_codes.index.values)]
 
-    apps_2 = apps[apps['WindowID'] == preprocess.WINDOW_N]
 
-    vc_users = apps_2['UserID'].value_counts()
+    apps = apps # [apps['WindowID'] == preprocess.WINDOW_N]
 
-    USER_N = 1000
 
-    APPLY_THOLD_MIN = 10
-    # randomly select users who applied for at least APPLY_THOLD_MIN jobs
-    user_subset = vc_users[vc_users > APPLY_THOLD_MIN]
-    user_subset = user_subset.ix[np.random.choice(user_subset.index.values, USER_N)]
-    user_subset = users.ix[user_subset.index.values]
-    #user_subset = user_subset[user_subset['DegreeType'] == "Bachelor's"]
+    ZC_N = 500
+    top_zips = jobs['Zip5'].value_counts()[:ZC_N]
 
-    JOB_N = 1000
-    # of the jobs that they all applied for, take the JOB_N most popular
-
-    job_subset = apps_2[apps_2['UserID'].isin(user_subset.index.values)]
-    js_c = job_subset['JobID'].value_counts()
-    job_ids = js_c[:JOB_N].index.values
-    
-    job_subset = jobs.ix[job_ids]
+    zip_order = np.random.permutation(top_zips.index.values)
+    zip_lut = {k : v for v, k in enumerate(zip_order)}
+    user_subset = users[users['ZipCode'].isin(top_zips.index.values)] 
+    job_subset = jobs[jobs['Zip5'].isin(top_zips.index.values)]
 
     job_subset = job_subset.join(zip_codes, on='Zip5')
     job_subset = job_subset.dropna(subset=['latitude', 'longitude'])
@@ -54,57 +45,71 @@ def create_data((apps_filename, users_filename, jobs_filename,
     user_subset = user_subset.dropna(subset=['latitude', 'longitude'])
     
     pickle.dump({'jobs' : job_subset, 
-                 'users' : user_subset}, 
+                 'users' : user_subset, 
+                 'top_zips' : top_zips, 
+                 'zip_order' : zip_order
+             }, 
                 open(output_filename, 'w'))
 
 @follows(create_data)
-@files(['data.pickle', 'apps.pickle'], 'dataset.pickle')
-def dataset_create((data_filename, apps_filename), dataset_filename):
+@files(['data.zips.pickle', 'apps.pickle', 'zipcodes.pickle'], 'dataset.zips.pickle')
+def dataset_create((data_filename, apps_filename, zipcodes_filename), 
+                   dataset_filename):
     data_subset = pickle.load(open(data_filename, 'r'))
     jobs = data_subset['jobs']
     users = data_subset['users']
-    
-    apps = pickle.load(open(apps_filename, 'r'))['apps']
-    apps_2 = apps[apps['WindowID'] == preprocess.WINDOW_N]
 
-    apps_subset = apps_2[apps_2['UserID'].isin(users.index.values)]
+    zip_codes = pickle.load(open(zipcodes_filename, 'r'))['all']
+    
+    apps_df = pickle.load(open(apps_filename, 'r'))['apps']
+
+    apps_subset = apps_df[apps_df['UserID'].isin(users.index.values)]
     apps_subset = apps_subset[apps_subset['JobID'].isin(jobs.index.values)]
 
-    USERS_N = len(users)
-    JOBS_N = len(jobs)
 
-    
+    a = apps_subset.join(users['ZipCode'], on='UserID', rsuffix='_u')
+    b = a.join(jobs['Zip5'], on="JobID")
+    c = b.rename(columns={'ZipCode' : "user_zip", 'Zip5' : "job_zip"})
+    apps_subset=c
+
+    zip_order = data_subset['zip_order']
+    zip_lut = {k : v for v, k in enumerate(zip_order)}
+
+    ZIPS_N = len(zip_lut)
     # create the distance matrix
-    conn = np.zeros((USERS_N, JOBS_N), 
+    conn = np.zeros((ZIPS_N, ZIPS_N), 
                     dtype=[('link', np.uint8), 
                            ('distance', np.float32)])
-    u_id_lookup = {id : pos for pos, id in enumerate(users.index.values)}
-    j_id_lookup = {id : pos for pos, id in enumerate(jobs.index.values)}
 
-    # first compute distance matrix
-    for ui, u_row in users.iterrows():
-        u_x = u_row['longitude']
-        u_y = u_row['latitude']
-        for ji, j_row in jobs.iterrows():
-            j_x = j_row['longitude']
-            j_y = j_row['latitude']
+    for a_, row in apps_subset.iterrows():
+        u_i = zip_lut[row['user_zip']]
+        j_i = zip_lut[row['job_zip']]
+        conn[u_i, j_i]['link'] = 1
+
+    # now the distances
+    for z1_i, z1 in enumerate(zip_order):
+        z1_row = zip_codes.loc[int(z1)] 
+        x1 = z1_row['longitude']
+        y1 = z1_row['latitude']
+
+        for z2_i, z2 in enumerate(zip_order):
+            z2_row = zip_codes.loc[int(z2)] 
+            x2 = z2_row['longitude']
+            y2 = z2_row['latitude']
             
-            d = np.sqrt((j_x - u_x)**2 + (j_y - u_y)**2)
-            conn[u_id_lookup[ui], j_id_lookup[ji]]['distance'] = d
-    for ai, a_row in apps_subset.iterrows():
-        ui = u_id_lookup[a_row['UserID']]
-        ji = j_id_lookup[a_row['JobID']]
-        conn[ui, ji]['link'] = True
+            d = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+            conn[z1_i, z2_i]['distance'] = d
+        
     pickle.dump({'conn' : conn, 
-                 'u_id_lookup' : u_id_lookup, 
-                 'j_id_lookup' : j_id_lookup, 
                  'apps_subset' : apps_subset, 
                  'users' : users, 
-                 'jobs' : jobs}, 
+                 'jobs' : jobs, 
+                 'zip_order' : zip_order}, 
                 open(dataset_filename, 'w'))
 
 @follows(dataset_create)
-@files('dataset.pickle', 'output.pdf')
+@files('dataset.zips.pickle', 'output.zips.pdf')
 def dataset_debug(infile, outfile):
     data = pickle.load(open(infile, 'r'))
     f = pylab.figure()
@@ -169,9 +174,9 @@ EXPERIMENTS = [#('jobs.bb', 'fixed_10_100', 'nc_10'),
                #('jobs.ld', 'fixed_100_200', 'nc_100'),
                #('jobs.bb', 'fixed_100_200', 'nc_1000'), 
                #('jobs.ld', 'fixed_100_200', 'nc_1000'),
-    ('jobs.bb', 'fixed_100_200', 'anneal_slow_400'), 
-    ('jobs.ld', 'fixed_100_200', 'anneal_slow_400'), 
-    ('jobs.lind', 'fixed_100_200', 'anneal_slow_400'), 
+    ('zips.bb', 'fixed_100_200', 'anneal_slow_400'), 
+    ('zips.ld', 'fixed_100_200', 'anneal_slow_400'), 
+    ('zips.lind', 'fixed_100_200', 'anneal_slow_400'), 
 ]
     
 
@@ -195,6 +200,8 @@ KERNEL_CONFIGS = {
                                        'kernels' : slow_anneal},
                   }
 
+pickle.dump(slow_anneal, open("kernel.config", 'w'))
+
 def create_jobs_latent(connectivity, model_name):
     USER_N, JOB_N = connectivity.shape
 
@@ -214,7 +221,7 @@ def create_jobs_latent(connectivity, model_name):
     return latent, data
 
 @follows(dataset_create)
-@files('dataset.pickle', ['jobs.bb.data', 'jobs.bb.latent', 'jobs.bb.meta'])
+@files('dataset.zips.pickle', ['zips.bb.data', 'zips.bb.latent', 'zips.bb.meta'])
 def create_latents_bb(infile, (data_filename, latent_filename, meta_filename)):
     d = pickle.load(open(infile, 'r'))
     conn_matrix = d['conn']
@@ -233,7 +240,7 @@ def create_latents_bb(infile, (data_filename, latent_filename, meta_filename)):
                 open(meta_filename, 'w'))
 
 @follows(dataset_create)
-@files('dataset.pickle', ['jobs.ld.data', 'jobs.ld.latent', 'jobs.ld.meta'])
+@files('dataset.zips.pickle', ['zips.ld.data', 'zips.ld.latent', 'zips.ld.meta'])
 def create_latents_ld(infile, (data_filename, latent_filename, meta_filename)):
     d = pickle.load(open(infile, 'r'))
     conn_matrix = d['conn']
@@ -254,7 +261,7 @@ def create_latents_ld(infile, (data_filename, latent_filename, meta_filename)):
                 open(meta_filename, 'w'))
 
 @follows(dataset_create)
-@files('dataset.pickle', ['jobs.lind.data', 'jobs.lind.latent', 'jobs.lind.meta'])
+@files('dataset.zips.pickle', ['zips.lind.data', 'zips.lind.latent', 'zips.lind.meta'])
 def create_latents_lind(infile, (data_filename, latent_filename, meta_filename)):
     d = pickle.load(open(infile, 'r'))
     conn_matrix = d['conn']
@@ -409,8 +416,8 @@ def get_results(exp_wait, exp_results):
                  'exp' : d}, 
                 open(exp_results, 'w'))
 
-@transform(get_results, suffix(".samples"), [".scoresz.pdf", ".truth.pdf"])
-def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
+@transform(get_results, suffix(".samples"), [".scoresz.pdf"])
+def plot_scores_z(exp_results, (plot_latent_filename,)):
     sample_d = pickle.load(open(exp_results))
     chains = sample_d['chains']
     
@@ -435,6 +442,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     for di, d in enumerate(chains):
         subsamp = 4
         s = np.array(d['scores'])[::subsamp]
+        print "Scores=", s
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
 
@@ -620,6 +628,9 @@ def plot_t1t2_params(fig, conn_and_dist, a1, a2, ss, hps, MAX_DIST=10,
 
 
 if __name__ == "__main__":
-    pipeline_run([create_data, dataset_create, dataset_debug, create_latents_bb, 
+    pipeline_run([create_data, dataset_create, 
+                  #dataset_debug, 
+                  create_latents_bb, 
                   create_inits, run_exp, get_results, plot_scores_z, 
-                  plot_best_latent])
+                  plot_best_latent
+              ])
