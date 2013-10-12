@@ -19,6 +19,7 @@ BUCKET_BASE="srm/experiments/mixing"
 
 
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default200'), 
+               ('trivial_count', 'fixed_4_10', 'default200'), 
                ('trivial_mixed', 'fixed_4_10', 'default200'), 
                ('trivial_bump', 'fixed_4_10', 'default200'), 
                ('con_sparse', 'fixed_10_40', 'default200'), 
@@ -64,7 +65,7 @@ KERNEL_CONFIGS = {'default50' : {'ITERS' : 50,
                                             'subkernels' : default_nonconj})]}, 
                   'default_anneal' : {'ITERS' : 200, 
                                       'kernels' : default_anneal}}
-
+pickle.dump(default_nonconj, open('kernel.config', 'w'))
 
 def dataset_connectivity_matrix_params():
     datasets = {'connmat0' : {'seeds' : range(2), 
@@ -86,8 +87,15 @@ def dataset_connectivity_matrix_params():
                              'class_n' : [2], 
                              'nonzero_frac' : [1.0], 
                              'jitter' : [0.001], 
-                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb', 'lindp'], 
+                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
                              'truth': ['distblock']},
+                'trivial_count' : {'seeds' : range(2), 
+                                   'side_n' : [4], 
+                                   'class_n' : [4], 
+                                   'nonzero_frac' : [1.0], 
+                                   'jitter' : [0.001], 
+                                   'models' : ['expdp'], 
+                             'truth': ['distblock_count']},
                 'trivial_mixed' : {'seeds' : range(1), 
                                    'side_n' : [4], 
                                    'class_n' : [4], 
@@ -224,10 +232,11 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                                                                              obsmodel=obsmodel)
     
         
+    print "The obsmodel dtype is", obsmodel.dtype
     conn_and_dist = np.zeros(connectivity.shape, 
                              dtype=[('link', obsmodel.dtype), 
                                     ('distance', np.float32)])
-
+    print "conn_and_dist.dtype", conn_and_dist.dtype
     for ni, (ci, posi) in enumerate(nodes_with_class):
         for nj, (cj, posj) in enumerate(nodes_with_class):
             conn_and_dist[ni, nj]['link'] = connectivity[ni, nj]
@@ -285,12 +294,11 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                'p_min' : 0.01, 
                'param_weight' : 0.5, 
                'param_max_distance' : 4.0}
-    elif model == 'lindp':
-        model_name= "LinearDistancePoisson"
+    elif model == 'expdp':
+        model_name= "ExponentialDistancePoisson"
 
         HPS = {'mu_hp' : 1.0, 
-               'rate_hp' : 1.0, 
-               'p_min' : 0.01}
+               'rate_scale_hp' : 1.0}
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
     irm_latent['domains']['d1']['assignment'] = nodes_with_class['class']
@@ -515,6 +523,7 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     for di, d in enumerate(chains):
         subsamp = 4
         s = np.array(d['scores'])[::subsamp]
+        print "SCORES ARE", s
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         if di == 0:
             ax_score.plot(t, s, alpha=0.7, c='r', linewidth=3)

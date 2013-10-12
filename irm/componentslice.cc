@@ -260,27 +260,27 @@ template<> void slice_sample_exec<SquareDistanceBump>
 
 }
 
-template<> void slice_sample_exec<LinearDistancePoisson>
+template<> void slice_sample_exec<ExponentialDistancePoisson>
 (rng_t & rng, float width, 
- LinearDistancePoisson::suffstats_t * ss, 
- LinearDistancePoisson::hypers_t * hps, 
- std::vector<LinearDistancePoisson::value_t>::iterator data,
+ ExponentialDistancePoisson::suffstats_t * ss, 
+ ExponentialDistancePoisson::hypers_t * hps, 
+ std::vector<ExponentialDistancePoisson::value_t>::iterator data,
  const std::vector<dppos_t> & dppos,
  float temp){
 
     float mu_width = width; 
-    float rate_width = width; 
+    float rate_scale_width = width; 
     if (width == 0.0) {
         mu_width = hps->mu_hp/4.0; 
     }
     if (width == 0.0) {
-        rate_width = hps->mu_hp/4.0; 
+        rate_scale_width = hps->rate_scale_hp/4.0; 
     }
 
     auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
-                                      return LinearDistancePoisson::score(ss, hps, data, 
+                                      return ExponentialDistancePoisson::score(ss, hps, data, 
                                                                      dppos) /temp;
                                   }, ss->mu, mu_width, rng); 
     
@@ -288,15 +288,15 @@ template<> void slice_sample_exec<LinearDistancePoisson>
 
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
-    auto rate = slice_sample2_double(
+    auto rate_scale = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
-                                          ss->rate = x; 
-                                          return LinearDistancePoisson::score(ss, hps, data, 
+                                          ss->rate_scale = x; 
+                                          return ExponentialDistancePoisson::score(ss, hps, data, 
                                                                          dppos)/temp;
-                                      }, ss->rate, rate_width, rng); 
+                                      }, ss->rate_scale, rate_scale_width, rng); 
 
     
-    ss->rate = rate; 
+    ss->rate_scale = rate_scale; 
 
 }
 

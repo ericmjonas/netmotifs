@@ -44,8 +44,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
             m = models.NormalDistanceFixedWidth()
         elif rel_config['model'] == "SquareDistanceBump": 
             m = models.SquareDistanceBump()
-        elif rel_config['model'] == "LinearDistancePoisson": 
-            m = models.LinearDistancePoisson()
+        elif rel_config['model'] == "ExponentialDistancePoisson": 
+            m = models.ExponentialDistancePoisson()
         else:
             raise NotImplementedError()
         rel = relation_class(domaindef, relations_config[rel_name]['data'], 

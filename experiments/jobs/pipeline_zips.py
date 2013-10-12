@@ -78,13 +78,13 @@ def dataset_create((data_filename, apps_filename, zipcodes_filename),
     ZIPS_N = len(zip_lut)
     # create the distance matrix
     conn = np.zeros((ZIPS_N, ZIPS_N), 
-                    dtype=[('link', np.uint8), 
+                    dtype=[('link', np.int32), 
                            ('distance', np.float32)])
 
     for a_, row in apps_subset.iterrows():
         u_i = zip_lut[row['user_zip']]
         j_i = zip_lut[row['job_zip']]
-        conn[u_i, j_i]['link'] = 1
+        conn[u_i, j_i]['link'] += 1
 
     # now the distances
     for z1_i, z1 in enumerate(zip_order):
@@ -173,10 +173,11 @@ EXPERIMENTS = [#('jobs.bb', 'fixed_10_100', 'nc_10'),
                #('jobs.bb', 'fixed_100_200', 'nc_100'), 
                #('jobs.ld', 'fixed_100_200', 'nc_100'),
                #('jobs.bb', 'fixed_100_200', 'nc_1000'), 
-               #('jobs.ld', 'fixed_100_200', 'nc_1000'),
-    ('zips.bb', 'fixed_100_200', 'anneal_slow_400'), 
-    ('zips.ld', 'fixed_100_200', 'anneal_slow_400'), 
-    ('zips.lind', 'fixed_100_200', 'anneal_slow_400'), 
+    #('jobs.ld', 'fixed_100_200', 'nc_1000'),
+    #('zips.bb', 'fixed_100_200', 'anneal_slow_400'), 
+    #('zips.ld', 'fixed_100_200', 'anneal_slow_400'), 
+    #('zips.lind', 'fixed_100_200', 'anneal_slow_400'), 
+    ('zips.lindp', 'fixed_100_200', 'anneal_slow_400'), 
 ]
     
 
@@ -220,59 +221,58 @@ def create_jobs_latent(connectivity, model_name):
                                     'data' : connectivity}}}
     return latent, data
 
-@follows(dataset_create)
-@files('dataset.zips.pickle', ['zips.bb.data', 'zips.bb.latent', 'zips.bb.meta'])
-def create_latents_bb(infile, (data_filename, latent_filename, meta_filename)):
-    d = pickle.load(open(infile, 'r'))
-    conn_matrix = d['conn']
+# @follows(dataset_create)
+# @files('dataset.zips.pickle', ['zips.bb.data', 'zips.bb.latent', 'zips.bb.meta'])
+# def create_latents_bb(infile, (data_filename, latent_filename, meta_filename)):
+#     d = pickle.load(open(infile, 'r'))
+#     conn_matrix = d['conn']
     
-    irm_latent, irm_data = create_jobs_latent(conn_matrix['link'], 
-                                              "BetaBernoulli")
+#     irm_latent, irm_data = create_jobs_latent(conn_matrix['link'], 
+#                                               "BetaBernoulli")
     
-    HPS = {'alpha' : 0.1,
-           'beta' : 1.0}
+#     HPS = {'alpha' : 0.1,
+#            'beta' : 1.0}
 
-    irm_latent['relations']['R1']['hps'] = HPS
+#     irm_latent['relations']['R1']['hps'] = HPS
 
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile}, 
-                open(meta_filename, 'w'))
+#     pickle.dump(irm_latent, open(latent_filename, 'w'))
+#     pickle.dump(irm_data, open(data_filename, 'w'))
+#     pickle.dump({'infile' : infile}, 
+#                 open(meta_filename, 'w'))
+
+# @follows(dataset_create)
+# @files('dataset.zips.pickle', ['zips.ld.data', 'zips.ld.latent', 'zips.ld.meta'])
+# def create_latents_ld(infile, (data_filename, latent_filename, meta_filename)):
+#     d = pickle.load(open(infile, 'r'))
+#     conn_matrix = d['conn']
+    
+#     irm_latent, irm_data = create_jobs_latent(conn_matrix, 
+#                                               "LogisticDistance")
+    
+#     HPS = {'mu_hp' : 20.0,
+#            'lambda_hp' : 20.0,
+#            'p_min' : 0.001, 
+#            'p_max' : 0.9}
+
+#     irm_latent['relations']['R1']['hps'] = HPS
+
+#     pickle.dump(irm_latent, open(latent_filename, 'w'))
+#     pickle.dump(irm_data, open(data_filename, 'w'))
+#     pickle.dump({'infile' : infile}, 
+#                 open(meta_filename, 'w'))
 
 @follows(dataset_create)
-@files('dataset.zips.pickle', ['zips.ld.data', 'zips.ld.latent', 'zips.ld.meta'])
-def create_latents_ld(infile, (data_filename, latent_filename, meta_filename)):
+@files('dataset.zips.pickle', ['zips.lindp.data', 'zips.lindp.latent', 'zips.lindp.meta'])
+def create_latents_lindp(infile, (data_filename, latent_filename, meta_filename)):
     d = pickle.load(open(infile, 'r'))
     conn_matrix = d['conn']
     
     irm_latent, irm_data = create_jobs_latent(conn_matrix, 
-                                              "LogisticDistance")
-    
-    HPS = {'mu_hp' : 20.0,
-           'lambda_hp' : 20.0,
-           'p_min' : 0.001, 
-           'p_max' : 0.9}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile}, 
-                open(meta_filename, 'w'))
-
-@follows(dataset_create)
-@files('dataset.zips.pickle', ['zips.lind.data', 'zips.lind.latent', 'zips.lind.meta'])
-def create_latents_lind(infile, (data_filename, latent_filename, meta_filename)):
-    d = pickle.load(open(infile, 'r'))
-    conn_matrix = d['conn']
-    
-    irm_latent, irm_data = create_jobs_latent(conn_matrix, 
-                                              "LinearDistance")
+                                              "LinearDistancePoisson")
     
     HPS = {'mu_hp' : 10,
-           'p_alpha' : 1.0, 
-           'p_beta' : 5.0, 
-           'p_min' : 0.001}
+           'rate_hp' : 10, 
+           'rate_min' : 0.01}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
@@ -296,6 +296,7 @@ def create_init(latent_filename, data_filename, out_filenames,
     rng = irm.RNG()
 
     irm_model = irm.irmio.create_model_from_data(irm_data, rng=rng)
+    print "here" 
     for c, out_f in enumerate(out_filenames):
         print "generating init", out_f
         np.random.seed(c)
@@ -326,9 +327,9 @@ def create_init(latent_filename, data_filename, out_filenames,
         # generate new suffstats, recompute suffstats in light of new assignment
 
         irm.irmio.set_model_latent(irm_model, latent, rng)
-
+        print "about to esitmate ss"
         irm.irmio.estimate_suffstats(irm_model, rng, ITERS=2)
-
+        print "ss estimated" 
 
         pickle.dump(irm.irmio.get_latent(irm_model), open(out_f, 'w'))
             
@@ -345,9 +346,7 @@ def init_generator():
 
 
 
-@follows(create_latents_bb)
-@follows(create_latents_ld)
-@follows(create_latents_lind)
+@follows(create_latents_lindp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -630,7 +629,7 @@ def plot_t1t2_params(fig, conn_and_dist, a1, a2, ss, hps, MAX_DIST=10,
 if __name__ == "__main__":
     pipeline_run([create_data, dataset_create, 
                   #dataset_debug, 
-                  create_latents_bb, 
+                  create_latents_lindp, 
                   create_inits, run_exp, get_results, plot_scores_z, 
                   plot_best_latent
               ])

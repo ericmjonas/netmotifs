@@ -115,11 +115,11 @@ void slice_sample_exec<SquareDistanceBump>
 
 
 template<>
-void slice_sample_exec<LinearDistancePoisson>
+void slice_sample_exec<ExponentialDistancePoisson>
 (rng_t & rng, float width, 
- LinearDistancePoisson::suffstats_t * ss, 
- LinearDistancePoisson::hypers_t * hps, 
- std::vector<LinearDistancePoisson::value_t>::iterator data, 
+ ExponentialDistancePoisson::suffstats_t * ss, 
+ ExponentialDistancePoisson::hypers_t * hps, 
+ std::vector<ExponentialDistancePoisson::value_t>::iterator data, 
  const std::vector<dppos_t> & dppos,
  float temp);
 

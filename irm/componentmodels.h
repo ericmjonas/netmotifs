@@ -1375,7 +1375,14 @@ struct SquareDistanceBump {
 
 }; 
 
-struct LinearDistancePoisson { 
+struct ExponentialDistancePoisson { 
+    /*
+      Link function is exp(dist, 1./mu)*rate
+
+      prior on rate is exp with really hith mean
+      prior mu is again, long exp
+
+     */
     class value_t {
     public:
         int32_t link; 
@@ -1386,35 +1393,33 @@ struct LinearDistancePoisson {
     public:
         //std::unordered_set<uint32_t> datapoint_pos_; 
         float mu; 
-        float rate; 
+        float rate_scale; 
     }; 
 
     class hypers_t {
     public:
         float mu_hp; 
-        float rate_hp; 
-        float rate_min; 
+        float rate_scale_hp; 
         inline hypers_t() : 
             mu_hp(1.0), 
-            rate_hp(1.0), 
-            rate_min(0.01)
+            rate_scale_hp(1.0) 
         { 
 
 
         }
     }; 
 
-    static float linear_rate(float x, float mu, float rate, float rate_min) { 
-        if (x > mu) { 
-            return rate_min; 
-        } 
-        return -rate / mu * x + rate; 
+    static float exp_rate(float x, float mu, float rate_scale) { 
+        float lamb = 1.0f/mu; 
+        float r = lamb * expf(-lamb * x); 
+        float r_scaled = r * rate_scale; 
+        return r_scaled; 
     }
 
     static std::pair<float, float> 
     sample_from_prior(hypers_t * hps, rng_t & rng) {
         float mu_hp = hps->mu_hp; 
-        float rate_hp = hps->rate_hp;
+        float rate_scale_hp = hps->rate_scale_hp;
 
         float r1 = uniform_01(rng); 
         float r2 = uniform_01(rng); 
@@ -1424,15 +1429,15 @@ struct LinearDistancePoisson {
             float mu = quantile(mu_dist, r1); 
 
             
-            boost::math::exponential_distribution<> rate_dist(1.0/rate_hp); 
-            float rate = quantile(rate_dist, r2); 
+            boost::math::exponential_distribution<> rate_scale_dist(1.0/rate_scale_hp); 
+            float rate_scale = quantile(rate_scale_dist, r2); 
             
-            return std::make_pair(mu, rate); 
+            return std::make_pair(mu, rate_scale); 
 
         } catch (...){
             
             std::cout << "mu_hp=" << mu_hp 
-                      << " rate_hp=" << rate_hp 
+                      << " rate_hp=" << rate_scale_hp 
                       << std::endl; 
             std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
             throw std::runtime_error("Sample from prior error"); 
@@ -1444,21 +1449,18 @@ struct LinearDistancePoisson {
                               rng_t & rng) { 
         std::pair<float, float> params = sample_from_prior(hps, rng); 
         ss->mu = params.first; 
-        ss->rate = params.second; 
+        ss->rate_scale = params.second; 
     
     }
 
     template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        //ss->datapoint_pos_.insert(dp_pos); 
-
     }
 
     template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos, RandomAccessIterator data) {
-        //ss->datapoint_pos_.erase(dp_pos); 
     }
 
 
@@ -1466,22 +1468,21 @@ struct LinearDistancePoisson {
     static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
                            dppos_t dp_pos, RandomAccessIterator data) {
 
-        float rate = linear_rate(val.distance, ss->mu, ss->rate, 
-                                 hps->rate_min); 
+        float rate = exp_rate(val.distance, ss->mu, ss->rate_scale); 
 
         return log_poisson_dist(val.link, rate); 
     }
     
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float mu = ss->mu; 
-        float rate = ss->rate; 
-        if( (rate < 0.0) || mu < 0.0) { 
+        float rate_scale = ss->rate_scale; 
+        if( (rate_scale < 0.0) || mu < 0.0) { 
             return -std::numeric_limits<float>::infinity();
         }
 
         float score = 0.0; 
         score += log_exp_dist(mu, 1./hps->mu_hp); 
-        score += log_exp_dist(rate, 1.0/hps->rate_hp); 
+        score += log_exp_dist(rate_scale, 1.0/hps->rate_scale_hp); 
         return score; 
     }
     
@@ -1492,8 +1493,8 @@ struct LinearDistancePoisson {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float rate = linear_rate(data[dpi].distance, ss->mu, 
-                                  ss->rate, hps->rate_min); 
+            float rate = exp_rate(data[dpi].distance, ss->mu, 
+                                          ss->rate_scale); 
 
             score += log_poisson_dist(data[dpi].link, rate); 
         }
@@ -1513,8 +1514,7 @@ struct LinearDistancePoisson {
     static hypers_t bp_dict_to_hps(bp::dict & hps) { 
         hypers_t hp; 
         hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
-        hp.rate_hp = bp::extract<float>(hps["rate_hp"]);
-        hp.rate_min = bp::extract<float>(hps["rate_min"]);
+        hp.rate_scale_hp = bp::extract<float>(hps["rate_scale"]);
 
         return hp; 
 
@@ -1523,8 +1523,7 @@ struct LinearDistancePoisson {
     static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
         bp::dict hp; 
         hp["mu_hp"] = hps.mu_hp; 
-        hp["rate_hp"] = hps.rate_hp; 
-        hp["rate_min"] = hps.rate_min; 
+        hp["rate_scale_hp"] = hps.rate_scale_hp; 
 
         return hp; 
     }
@@ -1532,13 +1531,13 @@ struct LinearDistancePoisson {
     static bp::dict ss_to_dict(suffstats_t * ss) { 
         bp::dict d; 
         d["mu"] = ss->mu; 
-        d["rate"] = ss->rate; 
+        d["rate_scale"] = ss->rate_scale; 
         return d; 
     }
 
     static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
         ss->mu = bp::extract<float>(v["mu"]); 
-        ss->rate = bp::extract<float>(v["rate"]); 
+        ss->rate_scale = bp::extract<float>(v["rate_scale"]); 
             
     }
 

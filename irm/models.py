@@ -577,7 +577,7 @@ class SquareDistanceBump(object):
         x[0]['link'] = link
         return x[0]
 
-class LinearDistancePoisson(object):
+class ExponentialDistancePoisson(object):
     """
     Just a placeholder
     """
@@ -592,9 +592,8 @@ class LinearDistancePoisson(object):
         """
         draw a sample of the HPs from some prior
         """
-        return {'rate_hp' :  np.random.gamma(1, 1), 
-                'mu_hp' : np.random.gamma(1.2, 4), 
-                'rate_min' : np.random.uniform(0.01, 0.1)}
+        return {'rate_scale_hp' :  np.random.gamma(1, 1), 
+                'mu_hp' : np.random.gamma(1.2, 4)}
 
 
     def sample_param(self, hps):
@@ -602,9 +601,9 @@ class LinearDistancePoisson(object):
         draw a sample 
         """
         mu = np.random.exponential(hps['mu_hp'])
-        rate = np.random.exponential(hps['rate_hp'])
+        rate_scale = np.random.exponential(hps['rate_scale_hp'])
         
-        return {'rate' : rate, 
+        return {'rate_scale' : rate_scale, 
                 'mu' : mu}
 
     def sample_data(self, ss, hps):
@@ -613,9 +612,9 @@ class LinearDistancePoisson(object):
         suffstats. 
         """
         d = np.random.exponential(hps['mu_hp'])
-        rate = - d * ss['rate'] / ss['mu']+ ss['rate']
-        if d > ss['mu']:
-            rate = hps['rate_min']
+        def exp_dist(x, lamb):
+            return lamb * np.exp(-lamb  * x)
+        rate = ss['rate_scale'] * exp_dist(d, 1./ss['mu_hp'])
 
         count = np.random.poisson(rate)
         
@@ -639,6 +638,6 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'GammaPoisson' : GammaPoisson, 
          'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 
          'SquareDistanceBump' : SquareDistanceBump, 
-         'LinearDistancePoisson' : LinearDistancePoisson
+         'ExponentialDistancePoisson' : ExponentialDistancePoisson
 }
 
