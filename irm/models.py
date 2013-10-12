@@ -602,7 +602,7 @@ class ExponentialDistancePoisson(object):
         """
         mu = np.random.exponential(hps['mu_hp'])
         rate_scale = np.random.exponential(hps['rate_scale_hp'])
-        
+        print "PARAMETERS SAMPLED FROM HPS:", mu, rate_scale
         return {'rate_scale' : rate_scale, 
                 'mu' : mu}
 
@@ -614,7 +614,7 @@ class ExponentialDistancePoisson(object):
         d = np.random.exponential(hps['mu_hp'])
         def exp_dist(x, lamb):
             return lamb * np.exp(-lamb  * x)
-        rate = ss['rate_scale'] * exp_dist(d, 1./ss['mu_hp'])
+        rate = ss['rate_scale'] * exp_dist(d, 1./ss['mu'])
 
         count = np.random.poisson(rate)
         

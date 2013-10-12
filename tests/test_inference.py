@@ -17,7 +17,7 @@ MODELS =  [#"BetaBernoulliNonConj", 'LogisticDistance',
     #'BetaBernoulli', 
     #'NormalDistanceFixedWidth', 
     #'SquareDistanceBump'
-    'LinearDistancePoisson'
+    'ExponentialDistancePoisson'
 ]
 
 def test_t1_t1():
@@ -135,7 +135,6 @@ def test_t1_t2_t3():
 def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO_RUN=ITERS_TO_RUN):
     print "Running", model_name, "*"*40
     new_latent, new_data = irm.data.synth.prior_generate(latent, data)
-    
     # estimate suffstats from the data
 
     run_truth = runner.Runner(new_latent, new_data, kernel_config)

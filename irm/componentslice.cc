@@ -276,18 +276,21 @@ template<> void slice_sample_exec<ExponentialDistancePoisson>
     if (width == 0.0) {
         rate_scale_width = hps->rate_scale_hp/4.0; 
     }
-
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
-                                      ss->mu = x; 
-                                      return ExponentialDistancePoisson::score(ss, hps, data, 
-                                                                     dppos) /temp;
-                                  }, ss->mu, mu_width, rng); 
+                            [ss, &hps, data, &dppos, temp](float x) -> float{
+                                ss->mu = x; 
+                                if(x > 1e50) { 
+                                    throw std::runtime_error("mu the hell do you think you are?"); 
+                                }
+
+                                return ExponentialDistancePoisson::score(ss, hps, data, 
+                                                                         dppos) /temp;
+                            }, ss->mu, mu_width, rng); 
     
     ss->mu = mu; 
-
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
+
     auto rate_scale = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->rate_scale = x; 

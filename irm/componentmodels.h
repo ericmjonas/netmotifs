@@ -1413,6 +1413,9 @@ struct ExponentialDistancePoisson {
         float lamb = 1.0f/mu; 
         float r = lamb * expf(-lamb * x); 
         float r_scaled = r * rate_scale; 
+        const float RATE_MIN = 0.000001; 
+        if(r_scaled < RATE_MIN) 
+            return RATE_MIN; 
         return r_scaled; 
     }
 
@@ -1495,8 +1498,8 @@ struct ExponentialDistancePoisson {
         for(auto dpi : dppos) { 
             float rate = exp_rate(data[dpi].distance, ss->mu, 
                                           ss->rate_scale); 
-
-            score += log_poisson_dist(data[dpi].link, rate); 
+            float lscore = log_poisson_dist(data[dpi].link, rate); 
+            score += lscore; 
         }
         return score; 
     }
@@ -1514,7 +1517,7 @@ struct ExponentialDistancePoisson {
     static hypers_t bp_dict_to_hps(bp::dict & hps) { 
         hypers_t hp; 
         hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
-        hp.rate_scale_hp = bp::extract<float>(hps["rate_scale"]);
+        hp.rate_scale_hp = bp::extract<float>(hps["rate_scale_hp"]);
 
         return hp; 
 
