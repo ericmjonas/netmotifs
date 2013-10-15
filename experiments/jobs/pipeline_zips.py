@@ -25,6 +25,8 @@ def create_data((apps_filename, users_filename, jobs_filename,
 
     zip_codes = pickle.load(open(zipcodes_filename, 'r'))['all']
     jobs = jobs[jobs['Zip5'].isin(zip_codes.index.values)]
+    jobs = jobs.join(zip_codes, on='Zip5')
+    jobs = jobs.dropna(subset=['latitude', 'longitude'])
 
 
     apps = apps # [apps['WindowID'] == preprocess.WINDOW_N]
@@ -38,7 +40,7 @@ def create_data((apps_filename, users_filename, jobs_filename,
     user_subset = users[users['ZipCode'].isin(top_zips.index.values)] 
     job_subset = jobs[jobs['Zip5'].isin(top_zips.index.values)]
 
-    job_subset = job_subset.join(zip_codes, on='Zip5')
+    #job_subset = job_subset.join(zip_codes, on='Zip5')
     job_subset = job_subset.dropna(subset=['latitude', 'longitude'])
 
     user_subset = user_subset.join(zip_codes, on='ZipCode')
@@ -98,7 +100,10 @@ def dataset_create((data_filename, apps_filename, zipcodes_filename),
             y2 = z2_row['latitude']
             
             d = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-
+            if(np.isnan(d)):
+                print x1, y1, z1_row
+                print x2, y2, z2_row
+            assert not np.isnan(d) 
             conn[z1_i, z2_i]['distance'] = d
         
     pickle.dump({'conn' : conn, 
@@ -177,7 +182,7 @@ EXPERIMENTS = [#('jobs.bb', 'fixed_10_100', 'nc_10'),
     #('zips.bb', 'fixed_100_200', 'anneal_slow_400'), 
     #('zips.ld', 'fixed_100_200', 'anneal_slow_400'), 
     #('zips.lind', 'fixed_100_200', 'anneal_slow_400'), 
-    ('zips.lindp', 'fixed_100_200', 'anneal_slow_400'), 
+    ('zips.edp', 'fixed_100_200', 'anneal_slow_400'), 
 ]
     
 
@@ -262,17 +267,16 @@ def create_jobs_latent(connectivity, model_name):
 #                 open(meta_filename, 'w'))
 
 @follows(dataset_create)
-@files('dataset.zips.pickle', ['zips.lindp.data', 'zips.lindp.latent', 'zips.lindp.meta'])
-def create_latents_lindp(infile, (data_filename, latent_filename, meta_filename)):
+@files('dataset.zips.pickle', ['zips.edp.data', 'zips.edp.latent', 'zips.edp.meta'])
+def create_latents_edp(infile, (data_filename, latent_filename, meta_filename)):
     d = pickle.load(open(infile, 'r'))
     conn_matrix = d['conn']
     
     irm_latent, irm_data = create_jobs_latent(conn_matrix, 
-                                              "LinearDistancePoisson")
+                                              "ExponentialDistancePoisson")
     
     HPS = {'mu_hp' : 10,
-           'rate_hp' : 10, 
-           'rate_min' : 0.01}
+           'rate_scale_hp' : 1.0}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
@@ -346,7 +350,7 @@ def init_generator():
 
 
 
-@follows(create_latents_lindp)
+@follows(create_latents_edp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -498,7 +502,7 @@ def plot_best_latent(exp_results,
         cm = cm[ui, :]
         cm = cm[:, ji]
         
-        ax.imshow(cm, interpolation='nearest', cmap=pylab.cm.Greys)
+        ax.imshow(cm > 0, interpolation='nearest', cmap=pylab.cm.Greys)
         for i in u_pos:
             ax.axhline(i)
 
@@ -629,7 +633,7 @@ def plot_t1t2_params(fig, conn_and_dist, a1, a2, ss, hps, MAX_DIST=10,
 if __name__ == "__main__":
     pipeline_run([create_data, dataset_create, 
                   #dataset_debug, 
-                  create_latents_lindp, 
+                  create_latents_edp, 
                   create_inits, run_exp, get_results, plot_scores_z, 
                   plot_best_latent
               ])
