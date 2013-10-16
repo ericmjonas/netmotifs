@@ -86,11 +86,18 @@ bp::list get_all_groups_helper(Relation * rel, int d)
     return out;
 }
 
+void set_seed(rng_t & rng, int seed) { 
+    rng.seed(seed); 
+}
+
+
 BOOST_PYTHON_MODULE(pyirm)
 {
   using namespace boost::python;
  
   class_<rng_t>("RNG"); 
+  def("set_seed", &set_seed); 
+
 
   class_<IComponentContainer, boost::noncopyable>("ComponentContainer", no_init)
       .def("dpcount", &IComponentContainer::dpcount)

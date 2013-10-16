@@ -131,12 +131,14 @@ def do_inference(irm_model, rng, kernel_config, iteration,
     return res
 
 class Runner(object):
-    def __init__(self, latent, data, kernel_config, seed=0):
+    def __init__(self, latent, data, kernel_config, seed=None):
 
         # FIXME add seed
 
         # create the model
         self.rng = pyirm.RNG()
+        if seed != None:
+            pyirm.set_seed(self.rng, seed)
         
         self.model = irmio.create_model_from_data(data, rng=self.rng)
         irmio.set_model_latent(self.model, latent, self.rng)

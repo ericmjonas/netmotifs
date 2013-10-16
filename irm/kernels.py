@@ -184,3 +184,68 @@ def relation_hp_grid(model, rng, grids):
             return relation.total_score()
 
         gridgibbshps.grid_gibbs(set_func, get_score, grids[model_name])
+
+def sequential_init(model, rng, M):
+    """
+    This is a sequential gibbs-style initialization. We require a model
+    to be fully specified before we do this. Note that we obliterate
+    all existing structural state -- components, suffstats, etc. 
+
+    To handle the multidomain case, we randomly switch between domains
+    as we do the sequential build-up. 
+
+    Note we do neal-algo-8-style creation of ephemeral groups here
+
+    """
+    for domain in model.domains:
+        irm.irmio.empty_domain(domain_obj)
+    d_o_map = {}
+    # develop ordering 
+    for domain_name, domain_obj in model.domains.iteritems():
+        unassigned_objs = np.random.permutation(domain_obj.entity_count()).tolist()
+        d_o_map[domain_name] = unassigned_obj
+    
+    # now create a single group for everyone
+    for domain_name, domain_obj in model.domains.iteritems():
+        g = domain_obj.create_group()
+        domain_obj.add_entity_to_group(g, d_o_map[domain_name].pop())
+
+    # now each domain has exactly one currently-assigned group
+    
+    # flatten the ordering, shuffle
+    all_ent = []
+    for dn, do in d_o_map.iteritems():
+        all_ent += [(dn, di) for di in do]
+    np.random.shuffle(all_ent)
+    
+    for domain_name, entity_pos in all_ent:
+        domain_obj = model.domains[domain_name]
+        extra_groups = [domain_obj.create_group() for _ in range(M)]
+
+        groups = domain.get_groups()
+        scores = np.zeros(len(groups))
+        
+        for gi, group_id in enumerate(groups):
+            scores[gi] = domain_obj.post_pred(group_id, entity_pos)
+            # correct the score for the empty groups
+            if group_id in extra_groups:
+                scores[gi] -= np.log(M)
+        #print entity_pos, scores
+        sample_i = util.sample_from_scores(scores)
+        new_group = groups[sample_i]
+
+        domain_inf.add_entity_to_group(new_group, entity_pos)
+        for eg in extra_groups:
+            if domain_inf.group_size(eg) == 0:
+                domain_inf.delete_group(eg)
+    
+    # now the model init should ... be good
+
+    
+
+        
+
+    
+
+    
+

@@ -294,7 +294,7 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
             elif relation.modeltypestr == "BetaBernoulliNonConj":
-
+                params = {'width' : 0.5}
                 relation.apply_comp_kernel("slice_sample", rng, params)
             elif relation.modeltypestr == "ExponentialDistancePoisson":
                 params = {'width' : 0.0} # relation.get_hps()['mu_hp'] / 2.0
