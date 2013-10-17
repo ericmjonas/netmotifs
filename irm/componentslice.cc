@@ -236,7 +236,7 @@ template<> void slice_sample_exec<SquareDistanceBump>
     if (width == 0.0) {
         width = hps->mu_hp* 2.0; 
     }
-
+    std::cout << "slicing mu, init=" << ss->mu << std::endl; 
     auto mu = slice_sample2_double(
                                   [ss, &hps, data, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
@@ -245,6 +245,8 @@ template<> void slice_sample_exec<SquareDistanceBump>
                                   }, ss->mu,  width, rng); 
     
     ss->mu = mu; 
+
+    std::cout << "slicing p, init=" << ss->p << std::endl; 
 
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]

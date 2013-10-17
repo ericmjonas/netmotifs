@@ -6,4 +6,17 @@ Plot curves
 Plot hypers
 
 
+Plotting the lovely zipcode data
+
+use https://github.com/mbostock/us-atlas
+Ugh this appears to lead me down an xcode/brew/etc. nightmare
+
+Got zipcode shape data from 
+http://geocommons.com/overlays/54893
+
+http://stackoverflow.com/questions/18295626/error-mapping-us-zip-codes-with-topojson
+
+which evidently requires topojson
+
+http://www.christianpeccei.com/zipmap/
 

@@ -36,7 +36,7 @@ EXPERIMENTS = [
 INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 100}}, 
-                'fixed_100_200' : {'N' : 10, 
+                'fixed_100_200' : {'N' : 100, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 200}}}
                 
@@ -157,6 +157,7 @@ def experiment_generator():
 @files(experiment_generator)
 def run_exp((data_filename, inits), wait_file, kernel_config_name):
     # put the filenames in the data
+    print "uploading", data_filename
     irm.experiments.to_bucket(data_filename, BUCKET_BASE)
     [irm.experiments.to_bucket(init_f, BUCKET_BASE) for init_f in inits]
 
@@ -303,4 +304,4 @@ if __name__ == "__main__":
                   run_exp, 
                   create_inits, 
                   get_results, plot_scores_z, 
-                  plot_best_latent])
+                  plot_best_latent], multiprocess=2)

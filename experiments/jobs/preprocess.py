@@ -3,6 +3,7 @@ import pandas
 import os
 import cPickle as pickle
 import numpy as np
+import shapefile
 
 
 RAW_DATA_DIR = "../../../data/jobs"
@@ -59,6 +60,25 @@ def load_zipcodes(infile, outfile):
                  'continental' : zip_codes_continental}, 
                 open(outfile, 'w'))
 
+@files(os.path.join(RAW_DATA_DIR, "zips"), "zipcodeshapes.pickle")
+def zipcodeshapes(indir, outfile):
+    sf = shapefile.Reader(indir + "/zip_codes_for_the_usa")
+
+    shapes = sf.shapes()
+
+    records = sf.records()
+
+    data = []
+    for shape, record in zip(shapes, records):
+        zip_str = record[1]
+        data.append({'zipcode' : zip_str, 
+                     'points' : shape.points})
+
+    df = pandas.DataFrame(data)
+    df = df.set_index(df['zipcode'])
+    pickle.dump(df, open(outfile, 'w'))
+
+
 if __name__ == "__main__":
     pipeline_run([load_user_df, load_apps_df, load_jobs, 
-                  load_zipcodes])
+                  load_zipcodes, zipcodeshapes])
