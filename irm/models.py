@@ -201,8 +201,8 @@ class BetaBernoulliNonConj(object):
         """
         draw a sample of the HPs from some prior
         """
-        return {'alpha' :  np.random.gamma(1, 2), 
-                'beta' : np.random.gamma(1, 2)}
+        return {'alpha' :  np.random.gamma(2, 2), 
+                'beta' : np.random.gamma(2, 2)}
 
     def sample_param(self, hps):
         """
@@ -387,10 +387,10 @@ class LinearDistance(object):
     
     def sample_hps(self):
         """
-        draw a sample of the HPs from some prior
+        Draw a sample of the HPs from some prior
         """
-        return {'p_alpha' :  np.random.gamma(1, 1), 
-                'p_beta' :  np.random.gamma(1, 1), 
+        return {'p_alpha' :  np.random.gamma(2, 2), 
+                'p_beta' :  np.random.gamma(2, 2), 
                 'mu_hp' : np.random.gamma(1.2, 4), 
                 'p_min' : np.random.uniform(0.01, 0.1)}
 
@@ -401,7 +401,8 @@ class LinearDistance(object):
         """
         mu = np.random.exponential(hps['mu_hp'])
         p = np.random.beta(hps['p_alpha'], hps['p_beta'])
-        
+        p = np.min([0.999999, p])
+        print 'Sample param, p=', p, 'mu=', mu
         return {'p' : p, 
                 'mu' : mu}
 
@@ -485,7 +486,7 @@ class NormalDistanceFixedWidth(object):
                 'p_beta' :  np.random.gamma(2, 2), 
                 'mu_hp' : np.random.gamma(1.2, 4), 
                 'p_min' : np.random.uniform(0.01, 0.1), 
-                'width' : np.random.gamma(1, 1)}
+                'width' : np.random.gamma(2, 1)}
 
 
     def sample_param(self, hps):

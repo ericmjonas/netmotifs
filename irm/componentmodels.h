@@ -797,7 +797,7 @@ struct LinearDistance {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float mu = ss->mu; 
         float p = ss->p; 
-        if((p >= 1.0) || (p < 0.0) || mu < 0.0) { 
+        if((p > 0.99999999) || (p <= 0.0000001) || mu < 0.0) { 
             return -std::numeric_limits<float>::infinity();
         }
 
@@ -836,6 +836,7 @@ struct LinearDistance {
     { 
         float prior_score = score_prior(ss, hps); 
         float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+
         return prior_score + likelihood_score; 
     }
 

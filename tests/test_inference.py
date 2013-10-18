@@ -36,6 +36,7 @@ def test_t1_t1():
            }}
 
     for model_name in MODELS:
+        np.random.seed(0)
         
         data = {'domains' : {'d1' : {'N' : N}}, 
                 'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
@@ -58,6 +59,7 @@ def test_t1_t1_t1_t1():
            }}
 
     for model_name in MODELS:
+        np.random.seed(0)
         
         data = {'domains' : {'d1' : {'N' : N}}, 
                 'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
@@ -89,6 +91,7 @@ def test_t1_t2():
                {'assignment' : np.random.permutation(np.arange(T2_N) % T2_GRP_N)}}}
 
     for model_name in MODELS:
+        np.random.seed(0)
         
         data = {'domains' : {'d1' : {'N' : T1_N}, 
                              'd2' : {'N' : T2_N}}, 
@@ -123,7 +126,8 @@ def test_t1_t2_t3():
                
 
     for model_name in MODELS:
-        
+        np.random.seed(0)
+
         data = {'domains' : {'d1' : {'N' : T1_N}, 
                              'd2' : {'N' : T2_N}, 
                              'd3' : {'N' : T3_N}}, 
@@ -135,7 +139,8 @@ def test_t1_t2_t3():
         yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
     
 def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO_RUN=ITERS_TO_RUN):
-    print "Running", model_name, "*"*40
+    print "Running", model_name, "*"*40, np.random.randint(0, 10000)
+
     np.random.seed(seed)
     new_latent, new_data = irm.data.synth.prior_generate(latent, data)
     # estimate suffstats from the data
@@ -156,7 +161,7 @@ def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO
     
     for di in cleaned_up_latent['domains']:
         d_N = len(rand_init['domains'][di]['assignment'])
-        rand_init['domains'][di]['assignment'] = irm.util.crp_draw(d_N, 1.0)
+        rand_init['domains'][di]['assignment'] = irm.util.crp_draw(d_N, 4.0)
 
     for ri  in cleaned_up_latent['relations']:
         del rand_init['relations'][ri]['ss']
@@ -169,11 +174,12 @@ def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO
     assert_greater(ground_truth_score, rand_init_score )
     
     iter_count = 0
-    ITER_OVER = 1000
+    ITER_OVER = 100000
     while (run_actual.get_score() - ground_truth_score) < -50: # well this is sort of bullshit
         run_actual.run_iters(ITERS_TO_RUN)
         iter_count += ITERS_TO_RUN
-        print run_actual.get_score(), ground_truth_score
+        print iter_count, model_name, run_actual.get_score(), ground_truth_score
+        
         assert_less(iter_count, ITERS_TO_RUN*ITER_OVER, "Too many iterations to get good score")
 
     
