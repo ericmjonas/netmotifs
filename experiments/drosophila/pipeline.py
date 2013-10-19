@@ -29,8 +29,10 @@ def td(fname): # "to directory"
 EXPERIMENTS = [
     ('drosophila.gp', 'fixed_10_100', 'nc_10'), 
     ('drosophila.bb', 'fixed_10_100', 'nc_10'), 
-    ('drosophila.gp', 'fixed_100_200', 'anneal_slow_400'), 
-    ('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.ld', 'fixed_10_100', 'nc_10'), 
+    #('drosophila.gp', 'fixed_100_200', 'anneal_slow_400'), 
+    #('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
+    #('drosophila.ld', 'fixed_100_200', 'anneal_slow_400'), 
 ]
 
 INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
@@ -52,6 +54,7 @@ KERNEL_CONFIGS = {
 
                   }
 
+pickle.dump(default_nonconj, open("kernel.config", 'w'))
 
 
 @files('synapses.pickle', 'countmatrix.pickle')
@@ -73,6 +76,42 @@ def create_count_matrix(infile, outfile):
 
     pickle.dump({'cell_ids' : cell_ids, 
                  'conn' : conn}, 
+                open(outfile, 'w'))
+
+@files(['synapses.pickle', 'celldata.pickle'], 'distmatrix.pickle')
+def create_dist_matrix((synapse_infile, celldata_infile), outfile):
+    
+    data = pickle.load(open(synapse_infile, 'r'))
+    celldata_df = pickle.load(open(celldata_infile, 'r'))['celldata']
+
+    synapse_df = data['synapses']
+    cell_ids = data['cell_ids']
+
+    # create the matrix
+    name_to_pos = {k:v for v, k in enumerate(cell_ids)}
+    CELL_N = len(cell_ids)
+    # distance between all cells presynaptically
+    dist_pre = np.zeros((CELL_N, CELL_N), dtype=np.float32)
+    # distance between all cells postsynaptically
+    dist_post = np.zeros((CELL_N, CELL_N), dtype=np.float32)
+    for pre_i, pre  in enumerate(cell_ids):
+        for post_i, post in enumerate(cell_ids):
+            pre_cell = celldata_df.ix[pre]
+            post_cell = celldata_df.ix[post]
+
+            for p, m in [('pre', dist_pre), ('post', dist_post)]:
+                s = 0
+                for coord in ['x', 'y', 'z']:
+                    field = "%s.%s" % (p, coord)
+                    s += (pre_cell[field] - post_cell[field])**2
+                d = np.sqrt(s)
+                m[pre_i, post_i] = d
+    
+
+
+    pickle.dump({'cell_ids' : cell_ids, 
+                 'dist_pre' : dist_pre,
+                 'dist_post' : dist_post}, 
                 open(outfile, 'w'))
 
 def get_dataset(data_name):
@@ -132,6 +171,41 @@ def create_latents_bb(infile,
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
+@files([create_count_matrix, create_dist_matrix], 
+       [td("drosophila" + x) for x in [".ld.data", ".ld.latent", ".ld.meta"]])
+def create_latents_ld((count_infile, dist_infile),
+                      (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(count_infile, 'r'))
+    link = d['conn']
+    link = link > 0 
+    link = link.astype(np.uint8)
+    
+    dist = pickle.load(open(dist_infile, 'r'))['dist_post']
+    conn_data = np.zeros(link.shape, dtype=[('link', np.uint8), 
+                                            ('distance', np.float32)])
+    conn_data['link'] = link
+    conn_data['distance'] = dist
+
+    model_name= "LogisticDistance"
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_data, model_name)
+
+    HPS = {'mu_hp' : 5.0, 
+           'lambda_hp' : 5.0, 
+           'p_min' : 0.01, 
+           'p_max' : 0.95}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'count_infile' : count_infile, 
+                 'dist_infile' : dist_infile},
+                open(meta_filename, 'w'))
+    
+
+@follows(create_latents_ld)
 @follows(create_latents_gp)
 @follows(create_latents_bb)
 @files(init_generator)
@@ -214,7 +288,10 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     data_basename, _ = os.path.splitext(data_filename)
     meta = pickle.load(open(data_basename + ".meta"))
 
-    meta_infile = meta['infile']
+    if 'count_infile' in meta:
+        meta_infile = meta['count_infile']
+    else:
+        meta_infile = meta['infile']
 
 
     chains = [c for c in chains if type(c['scores']) != int]
@@ -300,8 +377,10 @@ def plot_best_latent(exp_results,
         pickle.dump(sample_latent, open(latent_pickle, 'w'))
 
 if __name__ == "__main__":
-    pipeline_run([create_count_matrix, create_latents_gp,
+    pipeline_run([create_count_matrix, create_dist_matrix, 
+                  create_latents_gp, create_latents_ld, create_latents_bb,
                   run_exp, 
                   create_inits, 
                   get_results, plot_scores_z, 
-                  plot_best_latent], multiprocess=2)
+                  plot_best_latent
+              ], multiprocess=2)

@@ -19,11 +19,13 @@ BUCKET_BASE="srm/experiments/mixing"
 
 
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default200'), 
+               ('trivial', 'fixed_4_10', 'default200seq'), 
                ('trivial_count', 'fixed_4_10', 'default200'), 
                ('trivial_count', 'fixed_4_10', 'default200seq'), 
                ('trivial_mixed', 'fixed_4_10', 'default200'), 
                ('trivial_bump', 'fixed_4_10', 'default200'), 
                ('con_sparse', 'fixed_10_40', 'default200'), 
+               ('con_sparse', 'fixed_10_40', 'default200seq'), 
                # ('connmat0', 'fixed_10_40', 'default20'), 
                #('connmat0', 'fixed_10_40', 'default200'), 
                #('connmat0', 'fixed_10_40', 'nc_contmh_200'), 
