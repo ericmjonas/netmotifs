@@ -1,5 +1,7 @@
 import numpy as np
 import gridgibbshps
+import irmio
+import util
 
 def tempered_transitions(model, rng, temps,
                          latent_get, latent_set,
@@ -185,7 +187,7 @@ def relation_hp_grid(model, rng, grids):
 
         gridgibbshps.grid_gibbs(set_func, get_score, grids[model_name])
 
-def sequential_init(model, rng, M):
+def sequential_init(model, rng, M=10):
     """
     This is a sequential gibbs-style initialization. We require a model
     to be fully specified before we do this. Note that we obliterate
@@ -197,17 +199,17 @@ def sequential_init(model, rng, M):
     Note we do neal-algo-8-style creation of ephemeral groups here
 
     """
-    for domain in model.domains:
-        irm.irmio.empty_domain(domain_obj)
+    for domain_name, domain_obj in model.domains.iteritems():
+        irmio.empty_domain(domain_obj)
     d_o_map = {}
     # develop ordering 
     for domain_name, domain_obj in model.domains.iteritems():
         unassigned_objs = np.random.permutation(domain_obj.entity_count()).tolist()
-        d_o_map[domain_name] = unassigned_obj
+        d_o_map[domain_name] = unassigned_objs
     
     # now create a single group for everyone
     for domain_name, domain_obj in model.domains.iteritems():
-        g = domain_obj.create_group()
+        g = domain_obj.create_group(rng)
         domain_obj.add_entity_to_group(g, d_o_map[domain_name].pop())
 
     # now each domain has exactly one currently-assigned group
@@ -220,9 +222,10 @@ def sequential_init(model, rng, M):
     
     for domain_name, entity_pos in all_ent:
         domain_obj = model.domains[domain_name]
-        extra_groups = [domain_obj.create_group() for _ in range(M)]
+        print "group count", len(domain_obj.get_groups())
+        extra_groups = [domain_obj.create_group(rng) for _ in range(M)]
 
-        groups = domain.get_groups()
+        groups = domain_obj.get_groups()
         scores = np.zeros(len(groups))
         
         for gi, group_id in enumerate(groups):
@@ -234,12 +237,22 @@ def sequential_init(model, rng, M):
         sample_i = util.sample_from_scores(scores)
         new_group = groups[sample_i]
 
-        domain_inf.add_entity_to_group(new_group, entity_pos)
+        domain_obj.add_entity_to_group(new_group, entity_pos)
         for eg in extra_groups:
-            if domain_inf.group_size(eg) == 0:
-                domain_inf.delete_group(eg)
+            if domain_obj.group_size(eg) == 0:
+                domain_obj.delete_group(eg)
     
     # now the model init should ... be good
+    # debug
+    for domain_name, domain_obj in model.domains.iteritems():
+        print domain_name, "groups:", 
+        i = 0
+        for g in domain_obj.get_groups():
+            j = domain_obj.group_size(g)
+            print j, 
+            i += j
+        print
+        print "total entities", i
 
     
 

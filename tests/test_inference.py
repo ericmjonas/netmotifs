@@ -22,13 +22,19 @@ MODELS =  ["BetaBernoulliNonConj",
            'ExponentialDistancePoisson'
 ]
 
-def test_t1_t1():
+KERNELS = {'default_nonconj' : irm.runner.default_kernel_nonconj_config(), 
+           #'default_anneal':  irm.runner.default_kernel_anneal()
+}
+
+INITS = [None, 'sequential']
+
+def test_t1_t1_a(): # the _a is just for filtering
     np.random.seed(0)
 
     GROUP_N = 5
     ENTITIES_PER_GROUP = 10
     N = GROUP_N * ENTITIES_PER_GROUP
-    kernel_config = irm.runner.default_kernel_nonconj_config()
+
 
     latent = {'domains' : 
               {'d1' : 
@@ -36,12 +42,14 @@ def test_t1_t1():
            }}
 
     for model_name in MODELS:
-        np.random.seed(0)
-        
-        data = {'domains' : {'d1' : {'N' : N}}, 
-                'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
-                                       'model' : model_name}}}
-        yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
+        for kernel_name, kernel_config in KERNELS.iteritems():
+            for init in INITS:
+                np.random.seed(0)
+
+                data = {'domains' : {'d1' : {'N' : N}}, 
+                        'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                               'model' : model_name}}}
+                yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config, init 
 
 
 def test_t1_t1_t1_t1():
@@ -51,23 +59,23 @@ def test_t1_t1_t1_t1():
     ENTITIES_PER_GROUP = 10
     N = GROUP_N * ENTITIES_PER_GROUP
 
-    kernel_config = irm.runner.default_kernel_nonconj_config()
-
     latent = {'domains' : 
               {'d1' : 
             {'assignment' : np.random.permutation(np.arange(N) % GROUP_N)}, 
            }}
 
     for model_name in MODELS:
-        np.random.seed(0)
-        
-        data = {'domains' : {'d1' : {'N' : N}}, 
-                'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
-                                       'model' : model_name}, 
-                               'R2' : {'relation' : ('d1', 'd1'), 
-                                       'model' : model_name}}}
-                               
-        yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
+        for kernel_name, kernel_config in KERNELS.iteritems():
+            for init in INITS:
+                np.random.seed(0)
+
+                data = {'domains' : {'d1' : {'N' : N}}, 
+                        'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                               'model' : model_name}, 
+                                       'R2' : {'relation' : ('d1', 'd1'), 
+                                               'model' : model_name}}}
+
+                yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config, init
     
 def test_t1_t2():
     np.random.seed(0)
@@ -91,13 +99,15 @@ def test_t1_t2():
                {'assignment' : np.random.permutation(np.arange(T2_N) % T2_GRP_N)}}}
 
     for model_name in MODELS:
-        np.random.seed(0)
-        
-        data = {'domains' : {'d1' : {'N' : T1_N}, 
-                             'd2' : {'N' : T2_N}}, 
-                'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
-                                       'model' : model_name}}}
-        yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
+        for kernel_name, kernel_config in KERNELS.iteritems():
+            for init in INITS:
+                np.random.seed(0)
+
+                data = {'domains' : {'d1' : {'N' : T1_N}, 
+                                     'd2' : {'N' : T2_N}}, 
+                        'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
+                                               'model' : model_name}}}
+                yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config, init
 
 def test_t1_t2_t3():
     np.random.seed(1)
@@ -126,19 +136,21 @@ def test_t1_t2_t3():
                
 
     for model_name in MODELS:
-        np.random.seed(0)
+        for kernel_name, kernel_config in KERNELS.iteritems():
+            for init in INITS:
+                np.random.seed(0)
 
-        data = {'domains' : {'d1' : {'N' : T1_N}, 
-                             'd2' : {'N' : T2_N}, 
-                             'd3' : {'N' : T3_N}}, 
-                'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
-                                       'model' : model_name}, 
-                               'R2' : {'relation' : ('d2', 'd3'),
-                                       'model' : model_name}}}
-                               
-        yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config
+                data = {'domains' : {'d1' : {'N' : T1_N}, 
+                                     'd2' : {'N' : T2_N}, 
+                                     'd3' : {'N' : T3_N}}, 
+                        'relations' : {'R1' : {'relation' : ('d1', 'd2'), 
+                                               'model' : model_name}, 
+                                       'R2' : {'relation' : ('d2', 'd3'),
+                                               'model' : model_name}}}
+
+                yield check_score_progress, model_name, latent, data, np.random.randint(0, 10000), kernel_config, init
     
-def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO_RUN=ITERS_TO_RUN):
+def check_score_progress(model_name, latent, data, seed, kernel_config, init_type = None, ITERS_TO_RUN=ITERS_TO_RUN):
     print "Running", model_name, "*"*40, np.random.randint(0, 10000)
 
     np.random.seed(seed)
@@ -173,8 +185,11 @@ def check_score_progress(model_name, latent, data, seed, kernel_config, ITERS_TO
     print "ground_truth_score=", ground_truth_score
     assert_greater(ground_truth_score, rand_init_score )
     
+    if init_type != None:
+        run_actual.init(init_type) 
+
     iter_count = 0
-    ITER_OVER = 100000
+    ITER_OVER = 10000
     while (run_actual.get_score() - ground_truth_score) < -50: # well this is sort of bullshit
         run_actual.run_iters(ITERS_TO_RUN)
         iter_count += ITERS_TO_RUN

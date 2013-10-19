@@ -20,6 +20,7 @@ BUCKET_BASE="srm/experiments/mixing"
 
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default200'), 
                ('trivial_count', 'fixed_4_10', 'default200'), 
+               ('trivial_count', 'fixed_4_10', 'default200seq'), 
                ('trivial_mixed', 'fixed_4_10', 'default200'), 
                ('trivial_bump', 'fixed_4_10', 'default200'), 
                ('con_sparse', 'fixed_10_40', 'default200'), 
@@ -55,6 +56,9 @@ KERNEL_CONFIGS = {'default50' : {'ITERS' : 50,
                                       'kernels' : nonconj_m100},
                   'default200' : {'ITERS' : 200, 
                                   'kernels' : default_nonconj},
+                  'default200seq' : {'ITERS' : 200, 
+                                     'init' : 'sequential', 
+                                     'kernels' : default_nonconj},
                   'default1000' : {'ITERS' : 1000, 
                                   'kernels' : default_nonconj},
                   'nc_contmh_200' : {'ITERS' : 200, 
@@ -415,6 +419,7 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
+    init_type = kc.get('init', None)
     
     jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
@@ -422,6 +427,7 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      [BUCKET_BASE]*CHAINS_TO_RUN, 
+                     [init_type]*CHAINS_TO_RUN, 
                      _env='connectivitymotif', 
                      _type='f2')
 

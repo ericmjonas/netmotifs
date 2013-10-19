@@ -188,8 +188,9 @@ def from_bucket(filename, BUCKET_BASE):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 def inference_run(latent_filename, 
-                     data_filename, 
-                     kernel_config,  ITERS, seed, BUCKET_BASE, latent_samp_freq=20):
+                  data_filename, 
+                  kernel_config,  ITERS, seed, BUCKET_BASE, init_type=None, 
+                  latent_samp_freq=20):
     """
     For running on the cloud
     """
@@ -198,6 +199,9 @@ def inference_run(latent_filename,
     data = from_bucket(data_filename, BUCKET_BASE)
 
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
+
+    if init_type != None:
+        chain_runner.init(init_type)
 
     scores = []
     times = []

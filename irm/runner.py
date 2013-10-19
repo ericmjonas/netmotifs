@@ -155,6 +155,11 @@ class Runner(object):
             for t in kernel_config[0][1]['temps']:
                 self.chain_states.append(irmio.get_latent(self.model))
 
+    def init(self, init_type):
+        if init_type == "sequential": # Fixme we really should propagate params through here someday
+            print "RUNNING SEQUENTIAL INIT" 
+            kernels.sequential_init(self.model, self.rng)
+
     def get_score(self):
         return self.model.total_score()
         
