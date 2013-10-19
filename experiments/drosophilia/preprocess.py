@@ -2,7 +2,7 @@ import pandas
 import cPickle as pickle
 from ruffus import *
 import numpy as np
-
+import re
 
 
 @files("../../../data/drosophila/nature12450-s3.xls", "data.all.pickle")
@@ -41,6 +41,22 @@ def extract_useful_cells(infile, outfile):
                  'cell_ids' : list(s)}, 
                 open(outfile, 'w'))
 
+@files(extract_useful_cells, "celldata.pickle")
+def per_cell_data(indata, outfile):
+    synapses = pickle.load(open(indata, 'r'))['synapses']
+    
+
+    post_mean = synapses.groupby('post.id').mean()
+    pre_mean =  synapses.groupby('pre.id').mean()
+
+    df = pandas.concat([pre_mean[['pre.x', 'pre.y', 'pre.z']], post_mean[['post.x', 'post.y', 'post.z']]], axis=1)
+
+    celltype_re = re.compile("(.+) (\d+)")
+    df['type'] = [celltype_re.match(n).groups()[0] for n in df.index.values]
+
+    pickle.dump({'celldata' : df}, 
+                open(outfile, 'w'))
+
 
 if __name__ == "__main__":
-    pipeline_run([extract_useful_cells])
+    pipeline_run([extract_useful_cells, per_cell_data])

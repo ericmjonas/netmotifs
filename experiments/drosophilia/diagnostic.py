@@ -12,8 +12,12 @@ from preprocess import *
 def adj_mat_plot(infile, adj_plot):
 
     d = pickle.load(open(infile, 'r'))
-    cell_ids = d['cell_ids']
+    cell_ids = np.array(d['cell_ids'])
+    cell_id_pos = np.argsort(cell_ids)
     conn = d['conn']
+    conn = conn[cell_id_pos]
+    conn = conn[:, cell_id_pos]
+
     f = pylab.figure()
 
     ax_conn = f.add_subplot(1, 1, 1)
@@ -29,13 +33,41 @@ def adj_mat_plot(infile, adj_plot):
 
     pos = np.array(pos)
     ax_conn.scatter(pos[:, 0], pos[:, 1], 
-                    s = sizes, edgecolor='none', alpha=0.5)
+                    s = np.array(sizes)/1.5, edgecolor='none', alpha=0.5)
     ax_conn.set_xlim(0, len(conn))
     ax_conn.set_ylim(0, len(conn))
     ax_conn.set_xlabel("presynaptic")
     ax_conn.set_ylabel("postsynaptic")
-
+    ax_conn.set_title("Drosophila optic medulla")
     f.savefig(adj_plot)
 
+@files("celldata.pickle", 
+       "cell_locations.pdf")
+def celldata_plot(infile, cell_locations):
+
+    d = pickle.load(open(infile, 'r'))
+    celldata = d['celldata']
+
+    f = pylab.figure(figsize=(12, 6))
+
+    cmin = {'x' : 2000, 
+            'y': 4000, 
+            'z' : 0}
+    cmax = {'x' : 10000, 
+            'y' : 10000, 
+            'z' : 2000}
+
+    plot_pos = 0
+    for syn in ['pre', 'post']:
+        for c1, c2 in [('x', 'y'), ('y', 'z'), ('z', 'x')]:
+            plot_pos += 1
+            ax = f.add_subplot(2, 3, plot_pos)
+            ax.scatter(celldata[syn + '.' + c1], 
+                       celldata[syn + '.' + c2], edgecolor='none', alpha=0.5)
+            ax.set_xlim(cmin[c1], cmax[c1])
+            ax.set_ylim(cmin[c2], cmax[c2])
+            
+    f.savefig(cell_locations)
+
 if __name__ == "__main__":
-    pipeline_run([adj_mat_plot])
+    pipeline_run([adj_mat_plot, celldata_plot])
