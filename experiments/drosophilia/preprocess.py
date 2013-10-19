@@ -5,6 +5,10 @@ import numpy as np
 import re
 
 
+SECTION_THICKNESS = 0.042 # microns, mean, from Supplementary materials 
+PIXEL_WIDTH = 37.0 / 4096 # microns, in X-Y, arrived at by taking imaging area size
+                          # divided by pixel size
+
 @files("../../../data/drosophila/nature12450-s3.xls", "data.all.pickle")
 def load_excel_file(excel_file, pickle_file):
 
@@ -14,6 +18,14 @@ def load_excel_file(excel_file, pickle_file):
     df = df.drop(range(25, 33)) # get rid of comments
     df.columns = ['postcite', 'pre.id', 'pre.x', 'pre.y', 'pre.z', 'pre.comment', 
                   'post.id', 'post.x', 'post.y', 'post.z', 'post.comment', 'comments']
+
+    df['pre.x'] = df['pre.x'] * PIXEL_WIDTH
+    df['pre.y'] = df['pre.y'] * PIXEL_WIDTH
+    df['pre.z'] = df['pre.z'] * SECTION_THICKNESS
+
+    df['post.x'] = df['post.x'] * PIXEL_WIDTH
+    df['post.y'] = df['post.y'] * PIXEL_WIDTH
+    df['post.z'] = df['post.z'] * SECTION_THICKNESS
 
     pickle.dump(df, open(pickle_file, 'w'))
 

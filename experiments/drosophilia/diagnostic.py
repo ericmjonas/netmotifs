@@ -50,12 +50,12 @@ def celldata_plot(infile, cell_locations):
 
     f = pylab.figure(figsize=(12, 6))
 
-    cmin = {'x' : 2000, 
-            'y': 4000, 
+    cmin = {'x' : 0, 
+            'y': 0, 
             'z' : 0}
-    cmax = {'x' : 10000, 
-            'y' : 10000, 
-            'z' : 2000}
+    cmax = {'x' : 100, 
+            'y' : 100, 
+            'z' : 100}
 
     plot_pos = 0
     for syn in ['pre', 'post']:
