@@ -151,13 +151,25 @@ Beta Bernoulli
 Gamma-Poisson
 
 \subsection{Inference}
+
+We use Markov-chain Monte Carlo techniques to sample from the posterior 
+distribution of our model conditioned on the data. Inference is
+performed over cluster assignments, the per-component latent parameters, 
+and the per-relation, datatype-specific parameters. 
+
+
 \subsubsection{Structural Inference}
+Algorithm 8 from radford neal \cite{nealalgo8}
 
 \subsubsection{Per-component parameters in nonconjugate case}
 Slice sample on latent parameters
 
+
 \subsubsection{Hyperparameter Inferece}
 Gridded gibbs sampling for hyperparameter inference
+
+\subsubsection{Annealing}
+For many examples of the data here we perform annealing. 
 
 
 

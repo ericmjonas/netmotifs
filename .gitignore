@@ -5,7 +5,8 @@ irm/buildvm
 *.o
 *.pickle
 *.png
-*.pdf
+experiments/*/*.pdf
+experiments/*/*/*.pdf
 *.init
 *.config
 *.latent
