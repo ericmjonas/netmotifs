@@ -1,0 +1,81 @@
+\documentclass{article}
+\usepackage[english,american]{babel}
+\usepackage[disable]{todonotes}
+\usepackage{subfiles}
+\usepackage{grffile}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{subcaption}
+\usepackage{multicol}
+
+\title{Neural Circuit Discovery}
+\author{Eric Jonas \\ Konrad Kording}
+
+\begin{document}
+\maketitle
+
+\listoftodos
+
+\begin{abstract}
+  The brain is made out of multiple types of neurons, and a neuron’s
+  type affects both its behavior and which other neurons it connects
+  to. Emerging techniques (connectomics) allow measuring the
+  connectivity matrix between many neurons. Estimating types from
+  connectomics is difficult as distance is usually more important than
+  type. Here we describe a nonparametric Bayesian technique that
+  overcomes this problem and discovers neuron types based on
+  connections only. We show that the approach recovers known neuron
+  types in the retina, reveals interesting structure in the nervous
+  system of c. elegans, and automatically discovers the structure of
+  microprocessors. Extracting meaningful structure from connectivity
+  data promises to enable new experiments and to constrain theories of
+  brain function.
+
+\end{abstract}
+
+\section{Introduction}
+``type'' is a recurreing theme in biology
+Cell type in bio literature, stem cells, something something
+
+It is only through understanding the types of the system that we can understand
+its function. 
+
+\section{Methods}
+Stochastic blockmodels long known
+
+We take an infinite extension of the SBM (the IRM ) \todo{cite both}
+and modify it to learn the structure of the underlying code. 
+
+
+Spatial component by performing a GLM-style link function. 
+
+Describe the model
+
+We develop a series of Markov-chain monte carlo scheems to solve for
+the posterior, presenting the MAP estimate. To avoid local minima we
+slowly anneal, over 1000 iterations \todo{Fix numbers}.
+
+Hyperparameter inference. 
+
+We show that we recover ground truth. 
+
+
+\section{Results}
+
+\subsubsection{Mouse Retina}
+The recent release of connectome-scale data for the mouse retina. 
+
+Look we recover known classes! 
+
+\subsection{Drosophila}
+
+\subsection{C. elegans}
+
+
+\section{Discussion}
+
+
+\end{document}

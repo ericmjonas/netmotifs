@@ -38,17 +38,27 @@ def extract_useful_cells(infile, outfile):
 
     id_vc = df['pre.id'].value_counts()
     idx = np.array(np.array(map(type, id_vc.index.values)) == unicode)
-    cells_of_interest = id_vc[idx].index.values
-    print len(cells_of_interest)
+    pre_cells_of_interest = set(id_vc[idx].index.values)
 
-    s_post = set(df['post.id'])
-    s = s_post.intersection(cells_of_interest)
+    id_vc = df['post.id'].value_counts()
+    idx = np.array(np.array(map(type, id_vc.index.values)) == unicode)
+    post_cells_of_interest = set(id_vc[idx].index.values)
+
+    # average the synapse locations, because diagnostics suggests it doesn't matter
+    # much
+    for c in ['x', 'y', 'z']:
+        df[c] = (df['pre.' + c] + df['post.' + c]) / 2.0
+        del df['pre.' + c]
+        del df['post.' + c]
+
+    # now we only want synapses containing these cells
+    
+
+    s = pre_cells_of_interest.union(post_cells_of_interest)
     print "There are", len(s), "overlapping cells with unicode names" 
 
-    sub_df = df[df['pre.id'].isin(s)]
-    sub_df = sub_df[sub_df['post.id'].isin(s)]
-
-
+    sub_df = df[df['pre.id'].isin(s) & df['post.id'].isin(s)]
+    
     pickle.dump({'synapses' : sub_df, 
                  'cell_ids' : list(s)}, 
                 open(outfile, 'w'))
@@ -61,8 +71,8 @@ def per_cell_data(indata, outfile):
     post_mean = synapses.groupby('post.id').mean()
     pre_mean =  synapses.groupby('pre.id').mean()
 
-    df = pandas.concat([pre_mean[['pre.x', 'pre.y', 'pre.z']], post_mean[['post.x', 'post.y', 'post.z']]], axis=1)
-
+    df = pandas.concat([pre_mean[['x', 'y', 'z']], post_mean[['x', 'y', 'z']]], axis=1)
+    df.columns = ['pre.x', 'pre.y', 'pre.z', 'post.x', 'post.y', 'post.z']
     celltype_re = re.compile("(.+) (\d+)")
     df['type'] = [celltype_re.match(n).groups()[0] for n in df.index.values]
 

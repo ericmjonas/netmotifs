@@ -30,9 +30,15 @@ EXPERIMENTS = [
     ('drosophila.gp', 'fixed_10_100', 'nc_10'), 
     ('drosophila.bb', 'fixed_10_100', 'nc_10'), 
     ('drosophila.ld', 'fixed_10_100', 'nc_10'), 
-    #('drosophila.gp', 'fixed_100_200', 'anneal_slow_400'), 
-    #('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
-    #('drosophila.ld', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.edp', 'fixed_10_100', 'nc_10'), 
+    ('drosophila.gp', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.ld', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.edp', 'fixed_100_200', 'anneal_slow_400'), 
+    ('drosophila.gp', 'fixed_100_200', 'anneal_glacial_1000'), 
+    ('drosophila.bb', 'fixed_100_200', 'anneal_glacial_1000'), 
+    ('drosophila.ld', 'fixed_100_200', 'anneal_glacial_1000'), 
+    ('drosophila.edp', 'fixed_100_200', 'anneal_glacial_1000'), 
 ]
 
 INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
@@ -44,11 +50,15 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
                 
 
 slow_anneal = irm.runner.default_kernel_anneal()
+glacial_anneal = irm.runner.default_kernel_anneal(64.0, 800)
+
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
+                  'anneal_glacial_1000' : {'ITERS' : 1000, 
+                                           'kernels' : glacial_anneal},
                   'nc_10' : {'ITERS' : 10, 
                              'kernels' : default_nonconj},
 
@@ -78,20 +88,37 @@ def create_count_matrix(infile, outfile):
                  'conn' : conn}, 
                 open(outfile, 'w'))
 
-@files(['synapses.pickle', 'celldata.pickle'], 'distmatrix.pickle')
-def create_dist_matrix((synapse_infile, celldata_infile), outfile):
-    
+@files(['synapses.pickle', 'celldata.pickle'], 'distcountmatrix.pickle')
+def create_dist_count_matrix((synapse_infile, celldata_infile), outfile):
+    """
+    The LOCATION of a cell is the mean of its syanptic inputs
+    Note this also removes NaNs from the post
+    """
     data = pickle.load(open(synapse_infile, 'r'))
     celldata_df = pickle.load(open(celldata_infile, 'r'))['celldata']
-
+    
     synapse_df = data['synapses']
-    cell_ids = data['cell_ids']
+    cell_ids = np.array(data['cell_ids'])
+
+
+    celldata_df = celldata_df[np.isfinite(celldata_df['post.x'])] # identify missing entities
+
+    cell_ids = celldata_df.index.values
+
+    valid_synapse_df = synapse_df[synapse_df['post.id'].isin(cell_ids) & synapse_df['pre.id'].isin(cell_ids)]
+    
+
 
     # create the matrix
     name_to_pos = {k:v for v, k in enumerate(cell_ids)}
     CELL_N = len(cell_ids)
-    # distance between all cells presynaptically
-    dist_pre = np.zeros((CELL_N, CELL_N), dtype=np.float32)
+
+    link = np.zeros((CELL_N, CELL_N), dtype=np.int32)
+    for rowi, row in valid_synapse_df.iterrows():
+        pre_idx = name_to_pos[row['pre.id']]
+        post_idx = name_to_pos[row['post.id']]
+        link[pre_idx, post_idx] +=1
+
     # distance between all cells postsynaptically
     dist_post = np.zeros((CELL_N, CELL_N), dtype=np.float32)
     for pre_i, pre  in enumerate(cell_ids):
@@ -99,7 +126,7 @@ def create_dist_matrix((synapse_infile, celldata_infile), outfile):
             pre_cell = celldata_df.ix[pre]
             post_cell = celldata_df.ix[post]
 
-            for p, m in [('pre', dist_pre), ('post', dist_post)]:
+            for p, m in [('post', dist_post)]:
                 s = 0
                 for coord in ['x', 'y', 'z']:
                     field = "%s.%s" % (p, coord)
@@ -107,11 +134,14 @@ def create_dist_matrix((synapse_infile, celldata_infile), outfile):
                 d = np.sqrt(s)
                 m[pre_i, post_i] = d
     
-
+                        
+    conn_data = np.zeros(link.shape, dtype=[('link', np.int32), 
+                                            ('distance', np.float32)])
+    conn_data['link'] = link
+    conn_data['distance'] = dist_post
 
     pickle.dump({'cell_ids' : cell_ids, 
-                 'dist_pre' : dist_pre,
-                 'dist_post' : dist_post}, 
+                 'conn' : conn_data}, 
                 open(outfile, 'w'))
 
 def get_dataset(data_name):
@@ -171,21 +201,18 @@ def create_latents_bb(infile,
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
-@files([create_count_matrix, create_dist_matrix], 
+@files(create_dist_count_matrix, 
        [td("drosophila" + x) for x in [".ld.data", ".ld.latent", ".ld.meta"]])
-def create_latents_ld((count_infile, dist_infile),
+def create_latents_ld(infile,
                       (data_filename, latent_filename, meta_filename)):
 
-    d = pickle.load(open(count_infile, 'r'))
-    link = d['conn']
-    link = link > 0 
-    link = link.astype(np.uint8)
-    
-    dist = pickle.load(open(dist_infile, 'r'))['dist_post']
-    conn_data = np.zeros(link.shape, dtype=[('link', np.uint8), 
+    d = pickle.load(open(infile, 'r'))
+    conn = d['conn']
+    conn_data = np.zeros(conn.shape, dtype=[('link', np.uint8), 
                                             ('distance', np.float32)])
-    conn_data['link'] = link
-    conn_data['distance'] = dist
+
+    conn_data['distance'] = conn['distance']
+    conn_data['link'] = conn['link'] > 0 
 
     model_name= "LogisticDistance"
 
@@ -200,14 +227,41 @@ def create_latents_ld((count_infile, dist_infile),
 
     pickle.dump(irm_latent, open(latent_filename, 'w'))
     pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'count_infile' : count_infile, 
-                 'dist_infile' : dist_infile},
+    pickle.dump({'infile' : infile}, 
+                open(meta_filename, 'w'))
+    
+@files(create_dist_count_matrix, 
+       [td("drosophila" + x) for x in [".edp.data", ".edp.latent", ".edp.meta"]])
+def create_latents_edp(infile,
+                      (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(infile, 'r'))
+    conn = d['conn']
+    conn_data = np.zeros(conn.shape, dtype=[('link', np.int32), 
+                                            ('distance', np.float32)])
+
+    conn_data['distance'] = conn['distance']
+    conn_data['link'] = conn['link'] 
+
+    model_name= "ExponentialDistancePoisson"
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_data, model_name)
+
+    HPS = {'mu_hp' : 5.0, 
+           'rate_scale_hp' : 2.0}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile}, 
                 open(meta_filename, 'w'))
     
 
 @follows(create_latents_ld)
 @follows(create_latents_gp)
 @follows(create_latents_bb)
+@follows(create_latents_edp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -354,18 +408,27 @@ def plot_best_latent(exp_results,
 
         conn_sorted = conn_matrix[ai]
         conn_sorted = conn_sorted[:, ai]
-        if  conn_sorted.dtype == np.uint8:
+        if  data_dict['relations']['R1']['model'] == "BetaBernoulli":
             ax.imshow(conn_sorted > 0, interpolation='nearest', 
                       cmap=pylab.cm.Greys)
-        elif conn_sorted.dtype == np.int32:
+        elif data_dict['relations']['R1']['model'] == "GammaPoisson": 
             ax.imshow(np.log(conn_sorted +1), interpolation='nearest', 
                       cmap=pylab.cm.Greys)
+        elif data_dict['relations']['R1']['model'] == "LogisticDistance": 
+            ax.imshow(conn_sorted['link'] > 0, interpolation='nearest', 
+                      cmap=pylab.cm.Greys)
+
+        elif data_dict['relations']['R1']['model'] == "ExponentialDistancePoisson": 
+            c = conn_sorted['link']
+            
+            ax.imshow(c>0, interpolation='nearest', cmap=pylab.cm.Greys)
+
 
         x_line_offset = 0.5
         y_line_offset = 0.4
         for i in  np.argwhere(np.diff(a[ai]) > 0):
-            ax.axhline(i + y_line_offset, c='b', alpha=0.7, linewidth=1.0)
-            ax.axvline(i + x_line_offset, c='b', alpha=0.7, linewidth=1.0)
+            ax.axhline(i + y_line_offset, c='k', alpha=0.7, linewidth=1.0)
+            ax.axvline(i + x_line_offset, c='k', alpha=0.7, linewidth=1.0)
 
         ax.set_xticks([])
         ax.set_yticks([])
@@ -377,7 +440,7 @@ def plot_best_latent(exp_results,
         pickle.dump(sample_latent, open(latent_pickle, 'w'))
 
 if __name__ == "__main__":
-    pipeline_run([create_count_matrix, create_dist_matrix, 
+    pipeline_run([create_count_matrix, create_dist_count_matrix, 
                   create_latents_gp, create_latents_ld, create_latents_bb,
                   run_exp, 
                   create_inits, 

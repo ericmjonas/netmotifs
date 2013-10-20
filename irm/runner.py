@@ -41,14 +41,14 @@ def add_relation_hp_grid_kernel(kernel_list, grids=None):
     return kl
 
 
-def default_kernel_anneal():
+def default_kernel_anneal(start_temp = 32.0, iterations=100):
     dk = default_kernel_nonconj_config()
     dk = add_domain_hp_grid_kernel(dk)
     dk = add_relation_hp_grid_kernel(dk)
     
-    return [('anneal', {'anneal_sched': {'start_temp' : 32.0, 
+    return [('anneal', {'anneal_sched': {'start_temp' : start_temp, 
                                          'stop_temp' : 1.0, 
-                                         'iterations' : 100}, 
+                                         'iterations' : iterations}, 
                          'subkernels': dk})]
 
               

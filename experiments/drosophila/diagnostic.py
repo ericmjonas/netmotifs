@@ -7,38 +7,20 @@ from preprocess import *
 # plot spatial distribution of each cell type
 # plot area vs cell body distance
 
-@files("countmatrix.pickle", 
-       "adj_comp.pdf")
-def adj_mat_plot(infile, adj_plot):
+@files("data.all.pickle", 
+       "pre_post_dist_hist.pdf")
+def pre_post_dist_hist(infile, adj_plot):
 
-    d = pickle.load(open(infile, 'r'))
-    cell_ids = np.array(d['cell_ids'])
-    cell_id_pos = np.argsort(cell_ids)
-    conn = d['conn']
-    conn = conn[cell_id_pos]
-    conn = conn[:, cell_id_pos]
-
-    f = pylab.figure()
-
-    ax_conn = f.add_subplot(1, 1, 1)
+    df = pickle.load(open(infile, 'r'))
     
-    pos = []
-    sizes = []
-    for xi, x in enumerate(conn):
-        for yi, count in enumerate(x):
-            print count.shape
-            if count > 0:
-                pos.append((xi, yi))
-                sizes.append(count)
+    f = pylab.figure(figsize=(6, 12))
+    for i, coord in enumerate(['x', 'y', 'z']):
 
-    pos = np.array(pos)
-    ax_conn.scatter(pos[:, 0], pos[:, 1], 
-                    s = np.array(sizes)/1.5, edgecolor='none', alpha=0.5)
-    ax_conn.set_xlim(0, len(conn))
-    ax_conn.set_ylim(0, len(conn))
-    ax_conn.set_xlabel("presynaptic")
-    ax_conn.set_ylabel("postsynaptic")
-    ax_conn.set_title("Drosophila optic medulla")
+        ax_conn = f.add_subplot(3,1, i+1)
+        ax_conn.hist(df['pre.%s' % coord] - df['post.%s' % coord], bins=np.linspace(-2, 2, 100))
+        ax_conn.grid()
+        ax_conn.set_title("distance between pre and post %s" % coord)
+
     f.savefig(adj_plot)
 
 @files("celldata.pickle", 
@@ -69,5 +51,38 @@ def celldata_plot(infile, cell_locations):
             
     f.savefig(cell_locations)
 
+@files("countmatrix.pickle", 
+       "adj_comp.pdf")
+def adj_mat_plot(infile, adj_plot):
+
+    d = pickle.load(open(infile, 'r'))
+    cell_ids = np.array(d['cell_ids'])
+    cell_id_pos = np.argsort(cell_ids)
+    conn = d['conn']
+    conn = conn[cell_id_pos]
+    conn = conn[:, cell_id_pos]
+
+    f = pylab.figure()
+
+    ax_conn = f.add_subplot(1, 1, 1)
+    
+    pos = []
+    sizes = []
+    for xi, x in enumerate(conn):
+        for yi, count in enumerate(x):
+            if count > 0:
+                pos.append((xi, yi))
+                sizes.append(count)
+
+    pos = np.array(pos)
+    ax_conn.scatter(pos[:, 0], pos[:, 1], 
+                    s = np.array(sizes)/1.5, edgecolor='none', alpha=0.5)
+    ax_conn.set_xlim(0, len(conn))
+    ax_conn.set_ylim(0, len(conn))
+    ax_conn.set_xlabel("presynaptic")
+    ax_conn.set_ylabel("postsynaptic")
+    ax_conn.set_title("Drosophila optic medulla")
+    f.savefig(adj_plot)
+
 if __name__ == "__main__":
-    pipeline_run([adj_mat_plot, celldata_plot])
+    pipeline_run([adj_mat_plot, celldata_plot, pre_post_dist_hist])
