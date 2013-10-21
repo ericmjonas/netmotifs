@@ -21,7 +21,7 @@ def plot_cluster_properties(assignments, true_cell_types,
     """
 
 
-    f = pylab.figure(figsize=(16, 9))
+    f = pylab.figure(figsize=(18, 12))
     X_MIN = np.min(pos_vec[:, 0])
     X_MAX = np.max(pos_vec[:, 0])
 
@@ -54,14 +54,20 @@ def plot_cluster_properties(assignments, true_cell_types,
         ax_x.plot(syn_hist, bins[:-1], c='r', 
                   linewidth=1, alpha=0.5)
         ax_yz.scatter(syn_th['y'], syn_th['z'], c='r', s=1, edgecolor='none')
+        if (col_i > 0):
+            ax_yz.set_xticklabels([])
+            ax_yz.set_yticklabels([])
 
+            ax_x.set_xticklabels([])
+            ax_x.set_yticklabels([])
 
     irm.plot.plot_purity_hists_h(f, assignments, true_cell_types, extra_rows=2, 
                                  extra_row_func=extra_plot_func, 
                                  thold = cluster_thold, class_colors = class_colors)
     #f.tight_layout()
-    f.suptitle(output_filename)
-    f.savefig(output_filename)
+    #f.suptitle(output_filename)
+    
+    f.savefig(output_filename, bbox_inches='tight')
 
 def reorder_synapse_ids(synapse_df, cell_id_permutation):
     """

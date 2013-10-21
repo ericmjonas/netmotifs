@@ -85,13 +85,18 @@ def plot_latent(latent, dist_matrix,
 
     a = np.array(latent['domains']['d1']['assignment'])
 
-    f = pylab.figure(figsize= (24, 26))
+    if ground_truth_assign == None:
+        f = pylab.figure(figsize= (24, 24))
+        gs = gridspec.GridSpec(1, 1)
+        ax = pylab.subplot(gs[0])
+    else:
+        f = pylab.figure(figsize= (24, 26))
     
-    gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
-    
-    
-    ax = pylab.subplot(gs[1])
-    ax_types = pylab.subplot(gs[0])
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
+        ax_types = pylab.subplot(gs[0])        
+        ax = pylab.subplot(gs[1])
+
+
     print "plot_t1t1_latent"
     ai = irm.plot.plot_t1t1_latent(ax, dist_matrix['link'], a)
 
@@ -123,7 +128,8 @@ def plot_latent(latent, dist_matrix,
                               latent['relations']['R1']['hps'], 
                               MAX_DIST=PLOT_MAX_DIST, model=model, 
                               MAX_CLASSES=MAX_CLASSES   )
-    f.suptitle(latent_filename)
+
+    f2.tight_layout()
     f2.savefig(pp, format='pdf')
 
     pp.close()

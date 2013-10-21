@@ -481,7 +481,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
                                  plot_truth_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.clusters.pdf" % d, ".%d.latent.pdf" % d )  for d in range(3)])
+           [(".%d.clusters.pdf" % d, ".%d.latent.pdf" % d )  for d in range(1)])
 def plot_best_cluster_latent(exp_results, 
                      out_filenames):
 

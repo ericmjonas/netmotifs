@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage[english,american]{babel}
+\usepackage{graphicx}
 \usepackage{todonotes}
 \usepackage{subfiles}
 \usepackage{grffile}
@@ -16,7 +17,10 @@
 
 \usepackage{amsmath}
 \usepackage{subcaption}
-\usepackage{multicol}
+
+\usepackage[firstpage]{draftwatermark}
+\SetWatermarkScale{4}
+
 
 \DeclareGraphicsRule{.ai}{pdf}{.ai}{}
 
@@ -192,7 +196,9 @@ and the per-relation, datatype-specific parameters.
 
 
 \subsubsection{Structural Inference}
-Algorithm 8 from radford neal \autocite{Neal2000}
+Algorithm 8 from radford neal \autocite{Neal2000} for dirichlet process
+inference. 
+
 
 \subsubsection{Per-component parameters in nonconjugate case}
 Slice sample on latent parameters \autocite{Neal2003}
@@ -200,9 +206,11 @@ Slice sample on latent parameters \autocite{Neal2003}
 
 \subsubsection{Hyperparameter Inferece}
 Gridded gibbs sampling for hyperparameter inference
+We set the grid by hand (empirical bayes)
+
 
 \subsubsection{Annealing}
-For many examples of the data here we perform annealing. 
+For many examples of the data here we perform annealing on the global likelihood during the burn-in period.  
 
 
 \section{Results}
@@ -224,7 +232,7 @@ neurons come into contact. There were $number$ cells originally, whcih
 were refined through various classification schemes. We selected the
 $950$ for which the location of the soma could be reconstruted from
 the provided cell plots (soma locations were not provided by the
-study's authors in machien-readble form).
+study's authors in machine-readble form).
 
 The authors were unable to disambiguate actual ``synapses'' in the
 full data set, but were able to measure the points of contact between
@@ -234,31 +242,77 @@ cells. Thus we don't have ``real'' synapses. We also don't have directionality.
   \centering 
   \includegraphics[width=0.5\textwidth]{mouseretina/adjmat.byz.png}
   \caption{Mouse connectome for the 950 cells with known soma positions, ordered by the position of the soma along the $z$ axis. The size of each point is proportional to the total area of contact between the cells.}
-  \label{fig:mouse_adj}
+  \label{fig:mouseretina:adj}
 \end{figure}
 
+\subsubsection{Results}
 
+\begin{figure}
+  \centering 
+  \includegraphics[width=\textwidth]{mouseretina/retina.1.0.ld.0.0.data-fixed_20_100-anneal_slow_400.0.clusters.pdf}
+  \caption{Identified clusters from the mouse retina connectome using a Logistic-Distance-Bernoulli likelihood. Each column of plots is a cluster, wider plots for clusters with more cells. \textbf{first row} of plots compares the identified cluster to the experimenter-provided latent cell types, of which there were 74. Each bar is the fraction (between 0 and 1) of the cells of that type that are in this cluster. Note that the experimentors ordered their latent cell types, so cell type 60 is closer to 61 than 65 (see main text). Colors reflect the macro cell types (red = retinal ganglion cells, blue are amacrine, green are bipolar, and black are other. \textbf{Second row} is the spatial distribution of soma (blue) and synapses (red) for this cluster along a direction approximately normal to the retina surface. \textbf{Third row} is the spatial distribution of the soma (blue dots) and synapses (red dots) in this cluster, across the retina surface.}
+  \label{fig:mouseretina:clusters}
+\end{figure}
+
+\begin{figure}
+  \centering 
+  \begin{subfigure}[b]{0.46\textwidth}
+    \includegraphics[width=\textwidth, page=1]{mouseretina/retina.1.0.ld.0.0.data-fixed_20_100-anneal_slow_400.0.latent.pdf}
+    \caption{Clustered latent connectivity matrix.}
+    \label{fig:gull}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.46\textwidth}
+    \includegraphics[width=\textwidth, page=2]{mouseretina/retina.1.0.ld.0.0.data-fixed_20_100-anneal_slow_400.0.latent.pdf}
+    \caption{Latent cluster parameters. }
+    \label{fig:gull}
+  \end{subfigure}
+  \caption{Latent structure for mouse retina connectome clusters above. The latent cluster parameters in (b.) show (blue) the empirical distribution of connectivity for this cluster as a function of distance, and (red) the fit logistic curve. The vertical black line is the value of $\mu$.}
+  \label{fig:mouseretina:latent}
+\end{figure}
 
 \subsection{C. elegans}
-Connectome across several animals traced out by sidney brenner back in the day.
-Small number of cells
-position is linear along body axis
-cell divisions are really precise
 
-only look at hermaphrdite, ignore phyranx. 
-
-Have directionality, chemical vs electrical, number
-
-279 neurons (non-phyrnx) 
-
+The connectome of the nematode Caenorhabditis elegans was traced by
+hand from serial electron micrographs from Sidney Brenner's laboratory
+in 1986 \autocite{White1986}. \textit{C. elegans} exhibits extremely
+stereotypic neural development, with each hermaphrodite animal having
+exactly 302 neurons, and the synaptic connectivity being 75\%
+identical \todo{where did this number come from} across animals. Here we
+examine 279 nonpharyngeal neurons with 6393 chemical synapes and 890 electrical junctions originally cleaned up in \autocite{Chen2006}. The adjacency matrix is shown in figure~\ref{fig:celegans:adj}  
 
 \begin{figure}
   \centering 
   \includegraphics[width=0.5\textwidth]{celegans/data.pos.pdf}
-  \caption{Connectome for the 279 non-pharynx cells in \textit{c. elegans}. Cells are ordered by their position along the body axis. Blue dots are chemical synapses, red dots are electrical synapses, and the area of each dot is equivalent to the number of synaptic contacts between the cells. Note that the chemical synapses (blue) are directional, thus the red dots form a symmetric matrix}
-  \label{fig:celegans_adj}
+  \caption{Connectome for the 279 nonpharyngeal cells in \textit{c. elegans}. Cells are ordered by their position along the body axis. Blue dots are chemical synapses, red dots are electrical synapses, and the area of each dot is equivalent to the number of synaptic contacts between the cells. Note that the chemical synapses (blue) are directional, thus the red dots form a symmetric matrix}
+  \label{fig:celegans:adj}
 \end{figure}
 
+
+The structure of the \textit{c. elegans} nervous system differs considerably 
+from the primary sensory connectomes we examined: 
+
+\begin{itemize}
+\item Lots of ganglia with global projections
+\item Many of Brenner's originally-identified cell types contain only two member cells, one on each side of the animal. 
+\item We have both electrical and chemical synapses, where the chemical synapses are directional. 
+\item Our position data only indicates the position along the body axis (on the interval $[0, 1]$. 
+\end{itemize}
+
+The neurons can be broadly classified into ``sensory'', ``motor'', and
+``interneurons''. In addition, there are several broad classes of both
+sensory and motor neurons containing up to twelve cells. Figure ~\ref{fig:celegans:classestruth} shows the locations the cells of the biggest classes. Note the anterior concentration of sensory and internurons in contrast to the broad spatial distribution of the motor neurons. 
+
+\begin{figure}
+  \centering 
+  \includegraphics[width=0.8\textwidth]{celegans/class.positions.pdf}
+  \caption{Positions of \textit{C. elegans} neurons grouped by cell type along the anterior-posterior axis. The cell type is listed to the right. Blue cells are motor neurons, green are sensory, and grey are interneurons. }
+  \label{fig:celegans:classestruth}
+\end{figure}
+
+\subsubsection{results}
+They are crappy. 
+
+\todo{Should we try to include the neuromuscular and sensory junctions? The data exists from wormatlas.org}
 
 \subsection{Drosophila medulla}
 \autocite{Takemura2013}
@@ -269,10 +323,12 @@ what the hell is a cell
 
 \begin{figure}
   \centering 
-  \includegraphics[width=0.5\textwidth]{drosophila/adj_comp.pdf}
+  \includegraphics[width=0.7\textwidth]{drosophila/adj_comp.pdf}
   \caption{Connectome for the 357 cells in \textit{drosophila} medulla. Cells are ordered by the order they appear in the data file. Dot area is proportional to the number of synapses; data are directional.}
   \label{fig:drosophila_adj}
 \end{figure}
+
+\subsubsection{results}
 
 \subsection{MOS 6502}
 
@@ -301,10 +357,12 @@ Challenges: not directed. Three terminals. Dense connections.
 
 THIS SHOULD WORK
 
+\subsubsection{results}
+
 \subsection{Zipcode data}
 
-This data is from career builder. It contains who applied to what jobs. This is our first non-graph example of a T1xT2 relation. 
-
+This data is from career builder. It contains who applied to what
+jobs. This is our first non-graph example of a T1xT2 relation.
 
 
 \section{Discussion}
