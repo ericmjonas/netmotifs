@@ -211,6 +211,78 @@ def plot_example_cells((pos_file, synapse_file), output_files):
 
         f.savefig(output_file)
 
+@files(["type_metadata.pickle", "soma.positions.pickle", "xlsxdata.pickle"], 
+       ['adjmat.byclass.png'])
+def plot_adjmat_byclass((type_file, pos_file, xlsxdata_file), (adj_mat_plot,)):
+    soma_pos = pickle.load(open(pos_file, 'r'))
+    type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
+    xlsdata = pickle.load(open(xlsxdata_file, 'r'))
+    types = xlsdata['types']
+    area_mat = xlsdata['area_mat']
+    pos_vec = soma_pos['pos_vec']
+    CELL_N = len(pos_vec)
+    print "CELL_N=", CELL_N
+
+
+    f = pylab.figure(figsize=(12, 12))
+    ax = f.add_subplot(1, 1, 1)
+    
+    x_pos = []
+    y_pos = []
+    s = []
+    for i in range(CELL_N):
+        for j in range(CELL_N):
+            a = area_mat[i, j]
+            if a > 1e-6:
+                x_pos.append(i)
+                y_pos.append(j)
+                s.append(a)
+    ax.scatter(x_pos, y_pos, s=s, edgecolor='none', alpha=0.5, c='k')
+    ax.set_xlim(0, CELL_N)
+    ax.set_ylim(CELL_N, 0)
+    ax.set_title("mouse retina connectivity matrix")
+    f.tight_layout()
+    f.savefig(adj_mat_plot, dpi=200)
+
+
+@files(["type_metadata.pickle", "soma.positions.pickle", "xlsxdata.pickle"], 
+       ['adjmat.byz.png'])
+def plot_adjmat_byz((type_file, pos_file, xlsxdata_file), (adj_mat_plot,)):
+    soma_pos = pickle.load(open(pos_file, 'r'))
+    type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
+    xlsdata = pickle.load(open(xlsxdata_file, 'r'))
+    types = xlsdata['types']
+    area_mat = xlsdata['area_mat']
+    pos_vec = soma_pos['pos_vec']
+    CELL_N = len(pos_vec)
+    print "CELL_N=", CELL_N
+    ai =  np.argsort(pos_vec[:, 2]).flatten()
+    area_mat = area_mat[ai]
+    area_mat = area_mat[:, ai]
+
+    
+    f = pylab.figure(figsize=(12, 12))
+    ax = f.add_subplot(1, 1, 1)
+    
+    x_pos = []
+    y_pos = []
+    s = []
+    for i in range(CELL_N):
+        for j in range(CELL_N):
+            a = area_mat[i, j]
+            if a > 1e-6:
+                x_pos.append(i)
+                y_pos.append(j)
+                s.append(a)
+    ax.scatter(x_pos, y_pos, s=s*2, edgecolor='none', alpha=0.5, c='k')
+    ax.set_xlim(0, CELL_N)
+    ax.set_ylim(CELL_N, 0)
+    ax.set_title("mouse retina connectivity matrix")
+    f.tight_layout()
+    f.savefig(adj_mat_plot, dpi=200)
+
+
 
 pipeline_run([mat_xls_consistency, plot_synapses, plot_adj, plot_somapos, 
-              plot_example_cells])
+              plot_example_cells, plot_adjmat_byclass, 
+              plot_adjmat_byz])

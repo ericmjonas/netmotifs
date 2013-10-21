@@ -9,7 +9,10 @@
 
 \usepackage{csquotes}% Recommended
 \usepackage{amssymb}
-\usepackage{biblatex}
+\usepackage[citestyle=numeric-comp,url=false,hyperref=auto,isbn=false]{biblatex}
+\addbibresource{connectomics motif.bib}
+\addbibresource{connectomics motif-relational models.bib}
+
 
 \usepackage{amsmath}
 \usepackage{subcaption}
@@ -64,7 +67,7 @@ stochastic block models that
 
 \subsection{infinite Spatial Relational Models}
 
-We adopt the terminology from \autocite{Kemp}. A domain $T_n$ is a
+We adopt the terminology from \autocite{Kemp2006a}. A domain $T_n$ is a
 collection of entities $\{e^t_i | i \in 0 \dots N^t -1 \} $ that share
 some common property. A relation is a collection of observation
 defined on a collection of domains. For example, if one domain is
@@ -133,14 +136,13 @@ prior on mu, lambda
 \begin{figure}
   \centering 
   \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=0.3\textwidth]{logisticdistance.ai}
-    \caption{Raw data}
+    \includegraphics[height=1.5in]{logisticdistance.ai}
+    \caption{Logistic-Distance Bernoulli Likelihood}
     \label{fig:gull}
   \end{subfigure}
-
   \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=0.3\textwidth]{exponentialdistancepoisson.ai}
-    \caption{Raw data}
+    \includegraphics[height=1.5in]{exponentialdistancepoisson.ai}
+    \caption{Exponential-Distance Poisson Likelihood}
     \label{fig:gull}
   \end{subfigure}
 
@@ -171,7 +173,7 @@ We don't do hyperparameter inference on $p_{min}$ and $p_{max}$.
 
 
 \subsubsection{Exponential Distance Poisson}
-Some of our observations are count-valued. 
+For distance-based models with count-based observations, we use an exponential 
 
 
 \subsubsection{Exponential Distance Normal}
@@ -190,10 +192,10 @@ and the per-relation, datatype-specific parameters.
 
 
 \subsubsection{Structural Inference}
-Algorithm 8 from radford neal \cite{nealalgo8}
+Algorithm 8 from radford neal \autocite{Neal2000}
 
 \subsubsection{Per-component parameters in nonconjugate case}
-Slice sample on latent parameters
+Slice sample on latent parameters \autocite{Neal2003}
 
 
 \subsubsection{Hyperparameter Inferece}
@@ -201,7 +203,6 @@ Gridded gibbs sampling for hyperparameter inference
 
 \subsubsection{Annealing}
 For many examples of the data here we perform annealing. 
-
 
 
 \section{Results}
@@ -218,10 +219,10 @@ The goal of the synthetic results is to show that we recover ground truth.
 \subsection{Mouse Retina}
 
 Dense serial electron microscopy of a $VOLUMNE$ in the mouse
-retina by \autocite{MouseReinta} yielded a listing of places where
+retina by \autocite{Helmstaedter2013} yielded a listing of places where
 neurons come into contact. There were $number$ cells originally, whcih
 were refined through various classification schemes. We selected the
-$NUMBER$ for which the location of the soma could be reconstruted from
+$950$ for which the location of the soma could be reconstruted from
 the provided cell plots (soma locations were not provided by the
 study's authors in machien-readble form).
 
@@ -242,7 +243,7 @@ Have directionality, chemical vs electrical, number
 
 
 \subsection{Drosophila medulla}
-\cite{DrosophilaConnectome}
+\autocite{Takemura2013}
 No cell bodies -- what to use for distance? 
 Human annotation
 what the hell is a cell
@@ -305,6 +306,9 @@ VB? spectral methods? Shitty heuristics?
 
 How in gods name do we make this hierarchical? 
 We expect there to be hierarchy 
+
+\printbibliography
+
 
 \end{document}
 
