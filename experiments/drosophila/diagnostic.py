@@ -13,14 +13,15 @@ def pre_post_dist_hist(infile, adj_plot):
 
     df = pickle.load(open(infile, 'r'))
     
-    f = pylab.figure(figsize=(6, 12))
+    f = pylab.figure(figsize=(6, 6))
     for i, coord in enumerate(['x', 'y', 'z']):
 
         ax_conn = f.add_subplot(3,1, i+1)
-        ax_conn.hist(df['pre.%s' % coord] - df['post.%s' % coord], bins=np.linspace(-2, 2, 100))
+        ax_conn.hist(df['pre.%s' % coord] - df['post.%s' % coord], bins=np.linspace(-2, 2, 100), normed=True)
         ax_conn.grid()
         ax_conn.set_title("distance between pre and post %s" % coord)
-
+        ax_conn.set_xlabel("um")
+    f.tight_layout()
     f.savefig(adj_plot)
 
 @files("celldata.pickle", 

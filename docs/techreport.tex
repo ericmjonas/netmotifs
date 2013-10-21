@@ -304,54 +304,61 @@ sensory and motor neurons containing up to twelve cells. Figure ~\ref{fig:celega
 
 \begin{figure}
   \centering 
-  \includegraphics[width=0.8\textwidth]{celegans/class.positions.pdf}
+  \includegraphics[width=0.7\textwidth]{celegans/class.positions.pdf}
   \caption{Positions of \textit{C. elegans} neurons grouped by cell type along the anterior-posterior axis. The cell type is listed to the right. Blue cells are motor neurons, green are sensory, and grey are interneurons. }
   \label{fig:celegans:classestruth}
 \end{figure}
 
 \subsubsection{Results}
-We used two relations, one for chemical and one for electrical synapses. 
-We binarize the synapse counts at greater than zero. 
+We model \textit{C. elegans} using two $T1\times T1$ binary relations, one for the chemical synapses and one for the electrical synapses. Two cells are connected if they have at least one synapse between them, giving rise to a binary matrix for each synapse type. We see the results of two likelihood models in figure~\ref{fig:celegans:clusters}. The logistic-distance Bernoulli likelihood segements the sensory and interneurons from the spatially-distributed motor neurons, whereas the normal-distance fixed-width likelihood \todo{Write about this; adopt consistent naming} creates an odd collection of clusters. 
+
 
 
 \begin{figure}
   \centering 
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{0.42\textwidth}
     \includegraphics[width=\textwidth]{celegans/celegans.2r.ld.00.data-fixed_100_200-anneal_slow_400.0.clusters.pdf}
     \caption{Logistic-Distance Bernoulli}
     \label{fig:celegans:clusters:ld}
   \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{0.47\textwidth}
     \includegraphics[width=\textwidth]{celegans/celegans.2r.ndfw.00.data-fixed_100_200-anneal_slow_400.0.clusters.pdf}
     \caption{Normal-Distance Fixed-Width}
     \label{fig:celegans:clusters:ndfw}
   \end{subfigure}
-  \caption{C. elegans clusters. }
+  \caption{C. elegans clusters for two different likelihoods, showing the clustering of the largest classically-known cell types. Green cells are sensory, grey are interneurons, and blue are motor neurons. The top row shows the cells in the cluster and where they are spatially; the bottom shows cluster purity. }
   \label{fig:celegans:clusters}
 \end{figure}
 
+\todo[inline]{Should we try to include the neuromuscular and sensory junctions? The data exists from wormatlas.org}
 
-They are crappy. 
+\todo[inline]{should we use the exponentail-distance-count likelihood?} 
 
-\todo{Should we try to include the neuromuscular and sensory junctions? The data exists from wormatlas.org}
-
-\todo{should we use the exponentail-distance-count likelihood?} 
-
-\subsection{Drosophila medulla}
-\autocite{Takemura2013}
-No cell bodies -- what to use for distance? 
-Human annotation
-what the hell is a cell
-357 cells by the time we get through it
+\todo[inline]{Better understanding of how we model ganglia-like structures}
+\subsection{Drosophila optic medulla}
+Serial electron microscopy was used to reconstruct several columns from the Drosophila optic medulla \autocite{Takemura2013}. Experimenters were able to measure the physical location of the pre- and post-synaptic side of each synapse in the neuropil, and thus the directionality. The neural cell bodies in the cortex surround the neuropil and were not measured due to computational infesability \autocite{MeinertzhagenPersonalComm}, thus we don't know the spatial location of the soma. 
 
 \begin{figure}
   \centering 
-  \includegraphics[width=0.7\textwidth]{drosophila/adj_comp.pdf}
-  \caption{Connectome for the 357 cells in \textit{drosophila} medulla. Cells are ordered by the order they appear in the data file. Dot area is proportional to the number of synapses; data are directional.}
+  \begin{subfigure}[b]{0.55\textwidth}
+    \includegraphics[width=\textwidth]{drosophila/adj_comp.pdf}
+    \caption{Drosophila optic medulla connectome}
+    \label{fig:drosophila:connectome}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{drosophila/pre_post_dist_hist.pdf}
+    \caption{Pre and post-synaptic distance}
+    \label{fig:drosophila:distprepost}
+  \end{subfigure}
+  \caption{a.) Connectome for the 357 cells in \textit{drosophila} medulla. Cells are ordered by the order they appear in the data file. Dot area is proportional to the number of synapses; data are directional. b.) Histogram of spatial distance between pre- and post-synaptic sites.}
   \label{fig:drosophila_adj}
 \end{figure}
 
-\subsubsection{results}
+\subsubsection{Results}
+From the provided spreadsheet of synapses we extract all synapses with cells with non-numeric IDs (357). We reduced the location of every synapse to the average of its pre and post-synaptic sites. 
+
+\todo[inline]{Is this the right thing to use for spatial location?}
+
 
 \subsection{MOS 6502}
 

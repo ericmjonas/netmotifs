@@ -35,12 +35,20 @@ def plot_positions(infile, outfile):
                 c = "#AAAAAA"
             ax.plot([0, 1], [plotted, plotted], c='k', alpha=0.5, linewidth=1)
             ax.scatter(g['soma_pos'], np.ones(N) * plotted, 
-                       c=c)
-            ax.text(1.02, plotted, gi, fontsize=8)
+                       c=c, s=30)
+            ax.text(1.01, plotted - 0.15, gi, fontsize=10)
             plotted +=1
+
     ax.set_xlim(-0.05, 1.1)
+    ax.set_xlabel("position along anterior-posterior axis")
     ax.set_ylim(-1, plotted)
+    ax.set_yticks([])
     ax.set_title('c elegans cell class positions')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+
     f.savefig(outfile)
     
 @files('data.processed.pickle', 'data.pos.pdf')
