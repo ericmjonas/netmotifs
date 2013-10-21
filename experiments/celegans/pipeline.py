@@ -538,7 +538,7 @@ def plot_best_cluster(exp_results,
         #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
         fig = plot_clusters_pretty_figure(a, neurons, no)
-        fig.savefig(cluster_fname)
+        fig.savefig(cluster_fname, bbox_inches='tight')
 
 # @transform(get_results, suffix(".samples"), [".clusters.html"])
 # def cluster_interpretation(exp_results, (output_filename,)):

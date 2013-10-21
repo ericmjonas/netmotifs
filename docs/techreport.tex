@@ -309,10 +309,33 @@ sensory and motor neurons containing up to twelve cells. Figure ~\ref{fig:celega
   \label{fig:celegans:classestruth}
 \end{figure}
 
-\subsubsection{results}
+\subsubsection{Results}
+We used two relations, one for chemical and one for electrical synapses. 
+We binarize the synapse counts at greater than zero. 
+
+
+\begin{figure}
+  \centering 
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{celegans/celegans.2r.ld.00.data-fixed_100_200-anneal_slow_400.0.clusters.pdf}
+    \caption{Logistic-Distance Bernoulli}
+    \label{fig:celegans:clusters:ld}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{celegans/celegans.2r.ndfw.00.data-fixed_100_200-anneal_slow_400.0.clusters.pdf}
+    \caption{Normal-Distance Fixed-Width}
+    \label{fig:celegans:clusters:ndfw}
+  \end{subfigure}
+  \caption{C. elegans clusters. }
+  \label{fig:celegans:clusters}
+\end{figure}
+
+
 They are crappy. 
 
 \todo{Should we try to include the neuromuscular and sensory junctions? The data exists from wormatlas.org}
+
+\todo{should we use the exponentail-distance-count likelihood?} 
 
 \subsection{Drosophila medulla}
 \autocite{Takemura2013}
