@@ -59,10 +59,11 @@ def adj_mat_plot(infile, adj_plot):
     cell_ids = np.array(d['cell_ids'])
     cell_id_pos = np.argsort(cell_ids)
     conn = d['conn']
+    print len(conn)
     conn = conn[cell_id_pos]
     conn = conn[:, cell_id_pos]
 
-    f = pylab.figure()
+    f = pylab.figure(figsize=(6,6))
 
     ax_conn = f.add_subplot(1, 1, 1)
     
@@ -75,13 +76,14 @@ def adj_mat_plot(infile, adj_plot):
                 sizes.append(count)
 
     pos = np.array(pos)
-    ax_conn.scatter(pos[:, 0], pos[:, 1], 
-                    s = np.array(sizes)/1.5, edgecolor='none', alpha=0.5)
+    ax_conn.scatter(pos[:, 1], pos[:, 0], 
+                    s = np.array(sizes)*3, edgecolor='none', alpha=0.3, c='k')
     ax_conn.set_xlim(0, len(conn))
-    ax_conn.set_ylim(0, len(conn))
-    ax_conn.set_xlabel("presynaptic")
-    ax_conn.set_ylabel("postsynaptic")
+    ax_conn.set_ylim(len(conn), 0)
+    ax_conn.set_ylabel("presynaptic")
+    ax_conn.set_xlabel("postsynaptic")
     ax_conn.set_title("Drosophila optic medulla")
+    f.tight_layout()
     f.savefig(adj_plot)
 
 if __name__ == "__main__":

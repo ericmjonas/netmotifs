@@ -79,8 +79,9 @@ def plot_adjmat(infile, plot_pos_filename):
         ax.scatter(elec_points[:, 0], elec_points[:, 1], c='r', 
                    edgecolor='none', s= elec_points[:, 2]*3, alpha=0.5)
         ax.set_xlim(0, NEURON_N)
-        ax.set_ylim(0, NEURON_N)
+        ax.set_ylim(NEURON_N, 0)
         ax.set_title("c. elegans. herm. somatic connectome adj. matrix %s" % sortby)
+        f.tight_layout()
         f.savefig(outfile)
 
 @files("data.processed.pickle", ['data.all.class.pdf', 'data.big.class.pdf'])

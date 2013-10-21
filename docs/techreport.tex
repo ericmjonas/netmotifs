@@ -230,6 +230,14 @@ The authors were unable to disambiguate actual ``synapses'' in the
 full data set, but were able to measure the points of contact between
 cells. Thus we don't have ``real'' synapses. We also don't have directionality. 
 
+\begin{figure}
+  \centering 
+  \includegraphics[width=0.5\textwidth]{mouseretina/adjmat.byz.png}
+  \caption{Mouse connectome for the 950 cells with known soma positions, ordered by the position of the soma along the $z$ axis. The size of each point is proportional to the total area of contact between the cells.}
+  \label{fig:mouse_adj}
+\end{figure}
+
+
 
 \subsection{C. elegans}
 Connectome across several animals traced out by sidney brenner back in the day.
@@ -241,12 +249,30 @@ only look at hermaphrdite, ignore phyranx.
 
 Have directionality, chemical vs electrical, number
 
+279 neurons (non-phyrnx) 
+
+
+\begin{figure}
+  \centering 
+  \includegraphics[width=0.5\textwidth]{celegans/data.pos.pdf}
+  \caption{Connectome for the 279 non-pharynx cells in \textit{c. elegans}. Cells are ordered by their position along the body axis. Blue dots are chemical synapses, red dots are electrical synapses, and the area of each dot is equivalent to the number of synaptic contacts between the cells. Note that the chemical synapses (blue) are directional, thus the red dots form a symmetric matrix}
+  \label{fig:celegans_adj}
+\end{figure}
+
 
 \subsection{Drosophila medulla}
 \autocite{Takemura2013}
 No cell bodies -- what to use for distance? 
 Human annotation
 what the hell is a cell
+357 cells by the time we get through it
+
+\begin{figure}
+  \centering 
+  \includegraphics[width=0.5\textwidth]{drosophila/adj_comp.pdf}
+  \caption{Connectome for the 357 cells in \textit{drosophila} medulla. Cells are ordered by the order they appear in the data file. Dot area is proportional to the number of synapses; data are directional.}
+  \label{fig:drosophila_adj}
+\end{figure}
 
 \subsection{MOS 6502}
 
