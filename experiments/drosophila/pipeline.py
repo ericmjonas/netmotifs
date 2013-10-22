@@ -35,10 +35,10 @@ EXPERIMENTS = [
     ('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
     ('drosophila.ld', 'fixed_100_200', 'anneal_slow_400'), 
     ('drosophila.edp', 'fixed_100_200', 'anneal_slow_400'), 
-    ('drosophila.gp', 'fixed_100_200', 'anneal_glacial_1000'), 
-    ('drosophila.bb', 'fixed_100_200', 'anneal_glacial_1000'), 
-    ('drosophila.ld', 'fixed_100_200', 'anneal_glacial_1000'), 
-    ('drosophila.edp', 'fixed_100_200', 'anneal_glacial_1000'), 
+    #('drosophila.gp', 'fixed_100_200', 'anneal_glacial_1000'), 
+    #('drosophila.bb', 'fixed_100_200', 'anneal_glacial_1000'), 
+    #('drosophila.ld', 'fixed_100_200', 'anneal_glacial_1000'), 
+    #('drosophila.edp', 'fixed_100_200', 'anneal_glacial_1000'), 
 ]
 
 INIT_CONFIGS = {'fixed_10_100' : {'N' : 10, 
@@ -67,12 +67,19 @@ KERNEL_CONFIGS = {
 pickle.dump(default_nonconj, open("kernel.config", 'w'))
 
 
-@files('synapses.pickle', 'countmatrix.pickle')
-def create_count_matrix(infile, outfile):
+@files(['synapses.pickle', 'celldata.pickle'],  'countmatrix.pickle')
+def create_count_matrix((synapse_infile, celldata_infile), outfile):
     
-    data = pickle.load(open(infile, 'r'))
+    data = pickle.load(open(synapse_infile, 'r'))
     synapse_df = data['synapses']
-    cell_ids = data['cell_ids']
+
+    celldata_df = pickle.load(open(celldata_infile, 'r'))['celldata']
+
+    celldata_df = celldata_df[np.isfinite(celldata_df['post.x'])] # identify missing entities
+
+    cell_ids = celldata_df.index.values
+
+    synapse_df = synapse_df[synapse_df['post.id'].isin(cell_ids) & synapse_df['pre.id'].isin(cell_ids)]
     
     
     # create the matrix
@@ -83,6 +90,8 @@ def create_count_matrix(infile, outfile):
         pre_idx = name_to_pos[row['pre.id']]
         post_idx = name_to_pos[row['post.id']]
         conn[pre_idx, post_idx] +=1
+
+    assert len(conn) == len(cell_ids)
 
     pickle.dump({'cell_ids' : cell_ids, 
                  'conn' : conn}, 
@@ -139,6 +148,7 @@ def create_dist_count_matrix((synapse_infile, celldata_infile), outfile):
                                             ('distance', np.float32)])
     conn_data['link'] = link
     conn_data['distance'] = dist_post
+    assert len(conn_data) == len(cell_ids)
 
     pickle.dump({'cell_ids' : cell_ids, 
                  'conn' : conn_data}, 
@@ -368,8 +378,28 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
 
     f.savefig(plot_latent_filename)
 
+def mat_to_scatter_pts(m):
+    """
+    Take in a matrix and return
+    x_pos
+    y_pos
+    vals
+    """
+    ROWS, COLS = m.shape
+    x = []
+    y = []
+    v = []
+    for r in range(ROWS):
+        for c in range(COLS):
+            if m[r, c] > 0:
+                x.append(r)
+                y.append(c)
+                v.append(m[r,c])
+    return np.array(x), np.array(y), np.array(v)
+
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, ".%d.latent.pickle" % d)  for d in range(3)])
+           [(".%d.latent.pdf" % d, ".%d.latent.pickle" % d, 
+             ".%d.clusters.pdf" % d)  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
 
@@ -384,7 +414,19 @@ def plot_best_latent(exp_results,
     meta_infile = m['infile']
     meta = pickle.load(open(meta_infile, 'r'))
     conn_matrix = meta['conn']
+    cell_ids = meta['cell_ids']
 
+    cell_properties = pickle.load(open("celldata.pickle", 'r'))['celldata']
+    cell_properties = cell_properties[cell_properties.index.isin(cell_ids)]
+
+    print "CONN_MATRIX.SHAPE", conn_matrix.shape
+    print "len(cell_properties)", len(cell_properties)
+
+    t = cell_properties['type']
+    type_order = np.unique(t)
+    t_to_i = {k : v for v, k in enumerate(type_order)}
+    type_ints = cell_properties['type'].apply(lambda x : t_to_i[x])
+    
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
 
@@ -394,7 +436,7 @@ def plot_best_latent(exp_results,
 
     # get data
     
-    for chain_pos, (latent_fname, latent_pickle) in enumerate(out_filenames):
+    for chain_pos, (latent_fname, latent_pickle, cluster_filename) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
@@ -415,29 +457,46 @@ def plot_best_latent(exp_results,
             ax.imshow(np.log(conn_sorted +1), interpolation='nearest', 
                       cmap=pylab.cm.Greys)
         elif data_dict['relations']['R1']['model'] == "LogisticDistance": 
-            ax.imshow(conn_sorted['link'] > 0, interpolation='nearest', 
-                      cmap=pylab.cm.Greys)
+            scatter_x, scatter_y, scatter_v = mat_to_scatter_pts(conn_sorted['link'])
 
+            ax.scatter(scatter_x, scatter_y, s=scatter_v, 
+                       c='k', edgecolor='none', 
+                       alpha=0.5)
         elif data_dict['relations']['R1']['model'] == "ExponentialDistancePoisson": 
-            c = conn_sorted['link']
-            
-            ax.imshow(c>0, interpolation='nearest', cmap=pylab.cm.Greys)
-
+            scatter_x, scatter_y, scatter_v = mat_to_scatter_pts(conn_sorted['link'])
+            ax.scatter(scatter_x, scatter_y, s=scatter_v, 
+                       c='k', edgecolor='none', 
+                       alpha=0.5)
 
         x_line_offset = 0.5
         y_line_offset = 0.4
         for i in  np.argwhere(np.diff(a[ai]) > 0):
             ax.axhline(i + y_line_offset, c='k', alpha=0.7, linewidth=1.0)
             ax.axvline(i + x_line_offset, c='k', alpha=0.7, linewidth=1.0)
-
+        ax.set_xlim(0, len(conn_matrix))
+        ax.set_ylim(len(conn_matrix), 0)
+        ax.set_aspect(1.0)
         ax.set_xticks([])
         ax.set_yticks([])
-
+        ax.set_xlabel('postsynaptic')
+        ax.set_ylabel('presynaptic')
+        f.tight_layout()
         f.savefig(pp, format='pdf')
         
         pp.close()
 
+
+        f = pylab.figure(figsize=(20, 15))
+        print "true_class_labels=", type_order
+        irm.plot.plot_purity_hists_h(f, a, type_ints, 
+                                     true_class_labels=type_order)
+
+        f.savefig(cluster_filename, bbox_inches='tight')
+
+
         pickle.dump(sample_latent, open(latent_pickle, 'w'))
+
+        
 
 if __name__ == "__main__":
     pipeline_run([create_count_matrix, create_dist_count_matrix, 

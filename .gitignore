@@ -4,7 +4,8 @@ irm/build
 irm/buildvm
 *.o
 *.pickle
-*.png
+experiments/*/*.png
+experiments/*/*/*.png
 experiments/*/*.pdf
 experiments/*/*/*.pdf
 *.init

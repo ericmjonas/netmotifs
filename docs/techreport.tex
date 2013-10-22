@@ -69,7 +69,7 @@ stochastic block models that
   \end{subfigure}
 \end{figure}
 
-\subsection{infinite Spatial Relational Models}
+\subsection{Infinite Spatial Relational Models}
 
 We adopt the terminology from \autocite{Kemp2006a}. A domain $T_n$ is a
 collection of entities $\{e^t_i | i \in 0 \dots N^t -1 \} $ that share
@@ -98,7 +98,14 @@ Note that this framework is equivalent to the classic stochastic block
 model, defined on a graph -- a relation $\operatorname{has-edge}(e_i,
 e_j)$ is defined on the domain $T1$ of nodes. 
 
-\subsubsection{Arbitrary discriminative funtions}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.5\textwidth]{comparison.pdf}
+  \caption{Posterior distributions for the number of found latent classes. Synthetic datasets with spatially-localized connectivity and one (left) and t two (right) true latent classes were created. The regular beta-bernoulli infinite relational model (top) over-segements the data dramatically, whereas the spatial-relational model with the logistic-distance bernoulli likelihood recovers the true number of classes}
+\end{figure}
+  
+
+\subsubsection{Arbitrary discriminative functions}
 We can extend models of this type 
 
 \begin{equation}
@@ -178,6 +185,9 @@ We don't do hyperparameter inference on $p_{min}$ and $p_{max}$.
 
 \subsubsection{Exponential Distance Poisson}
 For distance-based models with count-based observations, we use an exponential 
+
+\todo[inline]{Poisson is a pain because of linked mean/var}
+
 
 
 \subsubsection{Exponential Distance Normal}
@@ -336,7 +346,7 @@ We model \textit{C. elegans} using two $T1\times T1$ binary relations, one for t
 
 \todo[inline]{Better understanding of how we model ganglia-like structures}
 \subsection{Drosophila optic medulla}
-Serial electron microscopy was used to reconstruct several columns from the Drosophila optic medulla \autocite{Takemura2013}. Experimenters were able to measure the physical location of the pre- and post-synaptic side of each synapse in the neuropil, and thus the directionality. The neural cell bodies in the cortex surround the neuropil and were not measured due to computational infesability \autocite{MeinertzhagenPersonalComm}, thus we don't know the spatial location of the soma. 
+Serial electron microscopy was used to reconstruct several columns from the Drosophila optic medulla \autocite{Takemura2013}. Experimenters were able to measure the physical location of the pre- and post-synaptic side of each synapse in the neuropil, and thus the directionality. The neural cell bodies in the cortex surround the neuropil and were not measured due to technique limitations \autocite{MeinertzhagenPersonalComm}, thus we don't know the spatial location of the soma. 
 
 \begin{figure}
   \centering 
@@ -355,10 +365,33 @@ Serial electron microscopy was used to reconstruct several columns from the Dros
 \end{figure}
 
 \subsubsection{Results}
-From the provided spreadsheet of synapses we extract all synapses with cells with non-numeric IDs (357). We reduced the location of every synapse to the average of its pre and post-synaptic sites. 
 
-\todo[inline]{Is this the right thing to use for spatial location?}
+From the provided spreadsheet of synapses we extract all synapses for cells with non-numeric IDs (357). We reduced the location of every synapse to the average of its pre and post-synaptic sites, as the average distance is small (figure~\ref{fig:drosophila:distprepost}). For a given postsynaptic cell, we average the spatial location of all of its postsynaptic sites, and assign this point as the cell's location. The resulting clusters from using the exponential-distance-Poisson model with synapse count observations is in figure~\ref{fig:drosophila:clusters_edp}. The clusterings are not obvious, and don't reflect any particular clean division of their existing labeled subtypes, although the block structure appears pretty solid. 
 
+Next steps are:
+
+\begin{itemize}
+  \item Is the centroid of the presynaptic inputs the best point to use for the cell's ``distance'' calculations ? 
+  \item I've tried both EDP and LD models for count and binary data respectively, without any obvious benefits
+  \item How well do we really understand this system? My understanding both of the neuroanatomy and the data acquisition process for the mouse retina really guided my modelling efforts. I don't have that here, and need to read \autocite{Fischbach1989} to understand cell types. 
+  \item Did the experimenters measure just a ``single'' column completely and then whatever happened to be in nearby columns that connected to this focus column? If so, we have complete observation data for only one microcircuit. 
+    \item Are we sure this isn't just the result of some preprocessing bug? I need to run synthetic data through this pipeline. 
+      
+    \end{itemize}
+    
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{drosophila/drosophila.edp.data-fixed_100_200-anneal_slow_400.0.clusters.pdf}
+  \caption{}
+  \label{fig:drosophila:clusters_edp}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{drosophila/drosophila.edp.data-fixed_100_200-anneal_slow_400.0.latent.pdf}
+  \caption{}
+  \label{fig:drosophila:latent_edp}
+\end{figure}
 
 \subsection{MOS 6502}
 
@@ -373,23 +406,74 @@ with groups having successfully measured the original MOS6502 (Found
 in the Apple I), and then used this ``connectome'' to perform
 cycle-accruate simulation.
 
+
+\begin{figure}
+  \centering 
+  \begin{subfigure}[b]{0.43\textwidth}
+    \includegraphics[width=\textwidth]{mos6502/6502_shrunk.png}
+    \caption{MOS 6502 die}
+    \label{fig:mos6502:die}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.50\textwidth}
+    \includegraphics[width=\textwidth]{mos6502/transistors.pdf}
+    \caption{Identified transistor locations}
+    \label{fig:mos6502:transistors}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.7\textwidth}
+    \includegraphics[width=\textwidth]{mos6502/all.adj.png}
+    \caption{Adjacency matrix for entire IC}
+    \label{fig:mos6502:adj}
+  \end{subfigure}
+  \caption{}
+  \label{fig:mos6502:adjj}
+\end{figure}
+
+\subsubsection{Results}
+
 We extracted this data at the per-transistor level from the online
-github project, resulting in $NUMBER$ transistors. Each transistor has
-three terminals: $g$, $c_1$, and $c2$. Electronic circuits are fundamentally
-undirected at the physical leve. 
+github project, resulting in $NUMBER$ transistors. Each MOS transistor
+has three terminals: $g$, $c_1$, and $c2$. The resulting data is then
+a bipartate graph between the terminals of the transistors and various
+voltage ``nodes'', the wires that connect them. At the physical level
+electronic circuits are fundamentally undirected, and all terminals
+connected to a node will be at the same voltage. Ideally we'd be
+operating at a higher level of abstraction with digital elements (logic gates,
+registers) with more clearly-defined inputs and outputs, but this
+was the only data set available. 
 
-Remove CLK, VCC/VSS. 
+For our encoding, the entities are transistors, and the relation is
+true if any terminal of the transistor connects to any terminal of any
+other transistor. This results in an incredibly densely-connected
+graph, as almost all transistors are connected to very common nodes
+like ``power'', ``ground'', and the global clock, which we remove
+prior to analysis. We look at two subsets of the total chip, the
+instruction decoding region and the region consisting of the ``X'',
+``Y'', and ``S'' registers.
 
-This would work better up one level of abstraction. 
+\begin{figure}[h]
+\centering
+\begin{subfigure}[b]{0.43\textwidth}
+  \includegraphics[width=\textwidth]{mos6502/mos6502.all.decode.ld.data-fixed_20_200-anneal_slow_400.0.latent.pdf}
+  \caption{MOS 6502 Instruction Decode Latent}
+\end{subfigure}
+  
+\begin{subfigure}[b]{0.43\textwidth}
+  \includegraphics[width=\textwidth]{mos6502/mos6502.all.xysregs.ld.data-fixed_20_200-anneal_slow_400.0.latent.pdf}
+  \caption{MOS 6502 XYS Register Latent}
+\end{subfigure}
+\caption{}
+\label{}
+\end{figure}
+
+\todo[inline]{Show where those regions on the chip are}
+\todo[inline]{Run on entire chip}
+\todo[inline]{Other ways of encoding (multiple relations?) }
+\todo[inline]{Run on entire chip with annealing}
+\todo[inline]{interpret the damn latent structure}
 
 
-Challenges: not directed. Three terminals. Dense connections. 
 
-THIS SHOULD WORK
-
-\subsubsection{results}
-
-\subsection{Zipcode data}
+\subsection{Job application data}
 
 This data is from career builder. It contains who applied to what
 jobs. This is our first non-graph example of a T1xT2 relation.

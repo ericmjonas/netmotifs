@@ -139,8 +139,15 @@ def plot_transistors(input_file, output_file):
 
     f = pylab.figure()
     ax = f.add_subplot(1, 1, 1)
-    ax.scatter(tfdf['x'], tfdf['y'], s=5, edgecolor='none', alpha=0.5)
-    f.savefig(output_file)
+    ax.scatter(tfdf['x'], tfdf['y'], s=5, edgecolor='none', c='k', alpha=0.5)
+    ax.set_xlim(0, 9000)
+    ax.set_ylim(0, 10000)
+    ax.set_xlabel("um")
+    ax.set_ylabel("um")
+
+    ax.set_aspect(1.0)
+    f.tight_layout()
+    f.savefig(output_file, bbox_inches='tight')
 
 @files(load_data, "graph.pickle")
 def create_raw_graph(input_file, output_file):
@@ -457,7 +464,8 @@ def plot_adj_matrix(infile, (adj_matrix_outfile, distance_outfile)):
     # ax_dist.imshow(adj_mat['distance'], 
     #                interpolation='nearest')
     ax_link.set_xlim(0, len(adj_mat))
-    ax_link.set_ylim(0, len(adj_mat))
+    ax_link.set_ylim(len(adj_mat), 0)
+    f.tight_layout()
     f.savefig(adj_matrix_outfile, dpi=300)
     print "next fig" 
     f = pylab.figure(figsize=(12, 12))

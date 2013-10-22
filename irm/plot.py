@@ -273,6 +273,7 @@ def plot_purity_hists(fig, assign_vect, true_assign_vect,
 def plot_purity_hists_h(fig, assign_vect, true_assign_vect, 
                         thold=0.9, clust_labels = None, plot_zero=True, 
                         extra_rows = 0, extra_row_func = None, 
+                        true_class_labels = tuple(), 
                         class_colors = tuple()):
     """
 
@@ -348,7 +349,14 @@ def plot_purity_hists_h(fig, assign_vect, true_assign_vect,
         ax.set_xlim(0, 1.0)
         ax.set_xticks([0, 1.0])
         if plot_zero:
-            if class_i > 0:
+            if class_i == 0:
+                ax.set_yticks(xpos - BAR_SPACE/2 + BAR_WIDTH/2., minor=True)
+                if len(true_class_labels) > 0:
+                    ax.set_yticklabels(true_class_labels, minor=True, 
+                                       size='xx-small')
+                    ax.set_yticklabels([], major=True)
+
+            else:
                 ax.set_yticks(xpos - BAR_SPACE/2 + BAR_WIDTH/2., minor=True)
                 ax.set_yticklabels([])
                 
