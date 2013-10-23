@@ -29,11 +29,12 @@ def td(fname): # "to directory"
 
 
 EXPERIMENTS = [
-               ('celegans.2r.bb.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.bb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.gp.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.edp.00', 'fixed_100_200', 'anneal_slow_400'),  
 
            ]
 
@@ -57,6 +58,7 @@ GP_HPS = [(1.0, 2.0)]# , (2.0, 2.0), (3.0, 2.0)]
 LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
 NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
 SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
+EDP_HPS = [(0.1, 1.0), (1.0, 1.0), (0.1, 2.0)]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
@@ -191,6 +193,10 @@ def create_latents_2r_param():
         base = td('celegans.2r.ndfw.%02d' % ndfw_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'NormalDistanceFixedWidth', ndfw_hpi
         
+    for edp_hpi in range(len(EDP_HPS)):
+        base = td('celegans.2r.edp.%02d' % edp_hpi)
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'ExponentialDistancePoisson', edp_hpi
+        
 @files(create_latents_2r_param)
 def create_latents_2r_paramed(infile, 
                               (data_filename, latent_filename, meta_filename), 
@@ -312,7 +318,31 @@ def create_latents_2r_paramed(infile,
         HPS = {'alpha' : GP_HPS[hp_i][0], 
                'beta' : GP_HPS[hp_i][1]}
                
-    
+    elif model_name == "ExponentialDistancePoisson":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                             dtype=[('link', np.int32), 
+                                    ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                             dtype=[('link', np.int32), 
+                                    ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical']
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'mu_hp' : EDP_HPS[hp_i][0], 
+               'rate_scale_hp' : EDP_HPS[hp_i][1]}
+
+   
     irm_latent['relations']['R1']['hps'] = HPS
     irm_latent['relations']['R2']['hps'] = HPS
 
