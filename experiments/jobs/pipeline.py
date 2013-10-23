@@ -443,7 +443,8 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     f.savefig(plot_latent_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, ".%d.latent.pickle" % d)  for d in range(3)])
+           [(".%d.latent.pdf" % d, ".%d.latent.pickle" % d, 
+             ".%d.latent.maps.pdf")  for d in range(3)])
 def plot_best_latent(exp_results, 
                      out_filenames):
 
@@ -468,7 +469,7 @@ def plot_best_latent(exp_results,
 
     # get data
     
-    for chain_pos, (latent_fname, latent_pickle) in enumerate(out_filenames):
+    for chain_pos, (latent_fname, latent_pickle, maps_fname) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
@@ -513,6 +514,8 @@ def plot_best_latent(exp_results,
 
         pickle.dump(sample_latent, open(latent_pickle, 'w'))
 
+
+        # 
 def plot_t1t2_params(fig, conn_and_dist, a1, a2, ss, hps, MAX_DIST=10, 
                      model="LogisticDistance", MAX_CLASSES = 20):
     """

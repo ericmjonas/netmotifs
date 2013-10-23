@@ -37,16 +37,44 @@ def load_apps_df(infile, outfile):
                 open(outfile, 'w'))
 
 
-@files(os.path.join(RAW_DATA_DIR, "dl/splitjobs/jobs2.tsv"), 
-       "jobs.%d.pickle" % WINDOW_N)
-def load_jobs(infile, outfile):
-    #jobs1 has an encoding error because everything remotely associated with tsv is a cl
+@merge(os.path.join(RAW_DATA_DIR, "dl/splitjobs/jobs*.tsv"), 
+       "jobs.pickle")
+def load_jobs(infiles, outfile):
 
-    jobs_df = pandas.io.parsers.read_csv(infile, sep='\t', index_col=0, 
-                                          converters={'Zip5' : zip_conv })
+    jobs = []
+    USECOLS = [0, 1, 2,  4, 5, 6, 7, 8, 9, 10] # drop descr
+    for infile in infiles:
+        jobs.append(pandas.io.parsers.read_csv(infile, sep='\t', index_col=0, 
+                                               converters={'Zip5' : zip_conv }, 
+                                               usecols= USECOLS,
+                                               error_bad_lines=False))
+    jobs_df = pandas.concat(jobs)
     pickle.dump({'jobs' : jobs_df}, 
                 open(outfile, 'w'))
 
+@files([load_user_df, load_apps_df, load_jobs], 'appszips.pickle')
+def clean_merge_apps((users_filename, apps_filename, jobs_filename), 
+                     out_filename):
+    """
+    Clean up the apps, merge in zipcodes, 
+    """
+
+    apps_df = pickle.load(open(apps_filename, 'r'))['apps']
+    users_df = pickle.load(open(users_filename, 'r'))['users']
+    jobs_df = pickle.load(open(jobs_filename, 'r'))['jobs']
+    jobs_zips = jobs_df['Zip5']
+    users_zips = users_df['ZipCode']
+    apps_df = apps_df.join(users_zips, on='UserID')
+    apps_df = apps_df.join(jobs_zips, on='JobID')
+    
+    apps_df = apps_df.dropna(subset=['UserID', 'JobID'])
+
+    
+    pickle.dump({'apps' : apps_df}, 
+                open(out_filename, 'w'))
+
+                 
+    
 @files(os.path.join(RAW_DATA_DIR, "zip_codes_states.csv"), 
        "zipcodes.pickle")
 def load_zipcodes(infile, outfile):
@@ -81,4 +109,5 @@ def zipcodeshapes(indir, outfile):
 
 if __name__ == "__main__":
     pipeline_run([load_user_df, load_apps_df, load_jobs, 
+                  clean_merge_apps, 
                   load_zipcodes, zipcodeshapes])
