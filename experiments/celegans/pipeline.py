@@ -126,6 +126,8 @@ slow_anneal[0][1]['subkernels'][-1][1]['grids']['NormalDistanceFixedWidth'] = ge
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['BetaBernoulli'] =  [{'alpha' : a, 'beta' : b} for a, b in irm.util.cart_prod([irm.util.logspace(0.001, 1.0, 20), irm.util.logspace(0.1, 10, 20)])]
 
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(dist_scale = 2.0, rate_scale_scale = 2.0, GRIDN = 20)
+
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
@@ -513,7 +515,7 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
     f.savefig(plot_hypers_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.clusters.pdf" % d, )  for d in range(1)])
+           [(".%d.clusters.pdf" % d, )  for d in range(2)])
 def plot_best_cluster(exp_results, 
                      out_filenames):
     from matplotlib.backends.backend_pdf import PdfPages
@@ -567,7 +569,7 @@ def plot_best_cluster(exp_results,
         #                             model=data['relations']['R1']['model'], 
         #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
-        fig = plot_clusters_pretty_figure(a, neurons, no)
+        fig = plot_clusters_pretty_figure(a, neurons, no, thold=0.97)
         fig.savefig(cluster_fname, bbox_inches='tight')
 
 # @transform(get_results, suffix(".samples"), [".clusters.html"])
@@ -887,6 +889,9 @@ def plot_best_latent(exp_results,
 
         if model == "GammaPoisson":
             data_mat = data['relations']['R1']['data']
+        elif model == "ExponentialDistancePoisson":
+            data_mat = data['relations']['R1']['data']['link']
+            #print data_mat.shape, data_mat.dtype
         elif model == "LogisticDistance" or model == "SquareDistanceBump" or model == "NormalDistanceFixedWidth":
             data_mat = data['relations']['R1']['data']['link'].astype(int)
             data_mat += data['relations']['R2']['data']['link'].astype(int)*2

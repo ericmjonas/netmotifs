@@ -174,13 +174,25 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
             # ax.set_yticks([])
 
             if model == "LogisticDistance":
-                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)
                 c = ss[(c1, c2)]
+                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins), c
                 y = util.logistic(fine_bins, c['mu'], c['lambda']) 
                 y = y * (hps['p_max'] - hps['p_min']) + hps['p_min']
                 ax.plot(fine_bins, y, c='r') 
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
+                ax.axvline(c['mu'], c='k')
+            elif model == "ExponentialDistancePoisson":
+                c = ss[(c1, c2)]
+                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins), c
+                mu = c['mu']
+                rate_scale = c['rate_scale']
+                lamb = 1./mu 
+                y = lamb * np.exp(-lamb * fine_bins)
+                y = y * rate_scale
+                ax.plot(fine_bins, y, c='r') 
+                ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
+                ax.text(0, 0.6, r"rate_scale: %3.2f" % c['rate_scale'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
             elif model == "LinearDistance":
                 print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)

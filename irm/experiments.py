@@ -64,7 +64,7 @@ def create_init(latent_filename, data_filename, out_filenames,
         # generate new suffstats, recompute suffstats in light of new assignment
 
         irm.irmio.set_model_latent(irm_model, latent, rng)
-
+        print "estimating suffstats"
         irm.irmio.estimate_suffstats(irm_model, rng, ITERS=2)
 
 
@@ -257,8 +257,12 @@ def plot_chains_hypers(f, chains, data):
             for p in ['mu_hp', 'p_alpha', 'p_beta', 'p_min']:
                 per_r_hp[r].append(p)
                 hp_n +=1 
+        elif m == 'ExponentialDistancePoisson':
+            for p in ['rate_scale_hp', 'mu_hp']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
         else:
-            raise RuntimeError("Unknown model")
+            raise RuntimeError("Unknown model'%s'" % m)
     pos = 1
     for r in RELATIONS:   
         per_r_hp_ax[r] = [] 
@@ -283,6 +287,7 @@ def plot_chains_hypers(f, chains, data):
                 print "hp_name=", hp_name
                 ax = per_r_hp_ax[rel_name][hp_i]
                 vals = np.array([d['latents'][k]['relations'][rel_name]['hps'][hp_name] for k in ki])
+                print vals, ki
                 min_val = np.min(vals)
                 max_val = np.max(vals)
                 range_mid = (min_val + max_val)/2. 
