@@ -82,9 +82,10 @@ def default_grid_crp():
 def default_grid_relation_hps():
     return DEFAULT_RELATION_GRIDS
 
-def default_grid_exponential_distance_poisson(dist_scale = 1.0, rate_scale_scale = 1.0):
-    mu = util.logspace(0.1, 1.0, 10) * dist_scale
-    rate_scale = util.logspace(0.1, 1.0, 10) * rate_scale_scale
+def default_grid_exponential_distance_poisson(dist_scale = 1.0, rate_scale_scale = 1.0, 
+                                              GRIDN = 10):
+    mu = util.logspace(0.1, 1.0, GRIDN) * dist_scale
+    rate_scale = util.logspace(0.1, 1.0, GRIDN) * rate_scale_scale
     hps = []
     for m in mu:
         for r in rate_scale:
