@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import pylab
 from ruffus import * 
 import cPickle as pickle
+import matplotlib
 import util
 
 DATA_DIR = "../../../data/netlists"
@@ -126,9 +127,9 @@ def load_data(input_file, output_file):
 
 # x1 y1 x2 y2
  
-REGIONS = {'decode' : (7650, 750, 8700, 8200), 
-           'xysregs' : (500, 1000, 4400, 2400), 
-           'all' : (0, 0, 900, 9000)}
+REGIONS = {'decode' : {'x': (750, 8400), 'y': (7600, 8800)}, 
+           'xysregs' : {'x' : (1400, 3000), 'y' : ( 1000, 4300)}, 
+           'all' : {'x' : (0, 9000), 'y' : (0, 10000)}}
 
 
 
@@ -140,6 +141,30 @@ def plot_transistors(input_file, output_file):
     f = pylab.figure()
     ax = f.add_subplot(1, 1, 1)
     ax.scatter(tfdf['x'], tfdf['y'], s=5, edgecolor='none', c='k', alpha=0.5)
+    ax.set_xlim(0, 9000)
+    ax.set_ylim(0, 10000)
+    ax.set_xlabel("um")
+    ax.set_ylabel("um")
+
+    ax.set_aspect(1.0)
+    f.tight_layout()
+    f.savefig(output_file, bbox_inches='tight')
+
+@files(load_data, "transistors.regions.pdf")
+def plot_transistors_regions(input_file, output_file):
+    d = pickle.load(open(input_file, 'r'))
+    tfdf = d['tfdf']
+
+    f = pylab.figure()
+    ax = f.add_subplot(1, 1, 1)
+    ax.scatter(tfdf['x'], tfdf['y'], s=5, edgecolor='none', c='k', alpha=0.5)
+
+    for region_name, r in REGIONS.iteritems():
+        ax.add_patch(matplotlib.patches.Rectangle((r['x'][0], r['y'][0]), 
+                                                  r['x'][1] - r['x'][0], 
+                                                  r['y'][1] - r['y'][0], 
+                                                  facecolor='none'))
+        
     ax.set_xlim(0, 9000)
     ax.set_ylim(0, 10000)
     ax.set_xlabel("um")
@@ -490,10 +515,10 @@ def carve_out_region(infile, outfiles):
     wiredf = d['wiredf']
     raw_adj_mat = pickle.load(open(infile, 'r'))['adj_mat']
 
-    for region_i, (region_name, region) in enumerate(REGIONS.iteritems()):
+    for region_i, (region_name, r) in enumerate(REGIONS.iteritems()):
         # select the transitors in the region
-        x_mask = (tfdf['x'] >= region[0] ) & (tfdf['x'] <= region[2])
-        y_mask = (tfdf['y'] >= region[1] ) & (tfdf['y'] <= region[3])
+        x_mask = (tfdf['x'] >= r['x'][0] ) & (tfdf['x'] <= r['x'][1])
+        y_mask = (tfdf['y'] >= r['y'][0] ) & (tfdf['y'] <= r['y'][1])
         idx = x_mask & y_mask
         sub_df = tfdf[idx]
         indices = np.argwhere(idx).flatten()
@@ -506,7 +531,7 @@ def carve_out_region(infile, outfiles):
 
         pickle.dump({'infile' : infile, 
                      'region_name' : region_name, 
-                     'region' : region, 
+                     'region' : r, 
                      'subdf' : sub_df, 
                      'indices' : indices, 
                      'adj_mat' : adj_mat}, 
@@ -514,7 +539,8 @@ def carve_out_region(infile, outfiles):
 
 
 
-pipeline_run([load_data, plot_transistors, create_raw_graph, 
+pipeline_run([load_data, plot_transistors, plot_transistors_regions, 
+              create_raw_graph, 
               plot_raw_graph, #analysis, 
               plot_merged_graph, 
               create_all_adj_matrix, create_dir_adj_matrix, 

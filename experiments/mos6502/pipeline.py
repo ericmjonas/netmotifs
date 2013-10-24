@@ -17,15 +17,22 @@ BUCKET_BASE="srm/experiments/mos6502"
 
 EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.all.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               #('mos6502.all.all.bb', 'fixed_20_200', 'anneal_slow_400'), 
+
                ('mos6502.dir.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
-               ('mos6502.dir.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'),
+               #('mos6502.dir.all.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               
                ('mos6502.all.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.all.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               #('mos6502.all.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
+
                ('mos6502.dir.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.dir.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               #('mos6502.dir.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
 
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
-               # ('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               #('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
            ]
 
 INIT_CONFIGS = {'fixed_20_200' : {'N' : 20, 
@@ -374,7 +381,7 @@ def plot_hypers(exp_results, (plot_hypers_filename,)):
 
     
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, )  for d in range(2)])
+           [(".%d.latent.pdf" % d, ".%d.latent.pickle" % d)  for d in range(2)])
 def plot_best_latent(exp_results, 
                      out_filenames):
     print "Plotting best latent", exp_results
@@ -399,7 +406,8 @@ def plot_best_latent(exp_results,
     print "CHAINN=", CHAINN, "out_filenames=", out_filenames
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, ) in enumerate(out_filenames):
+    for chain_pos, (latent_plot_fname, 
+                    latent_pickle_fname) in enumerate(out_filenames):
         print "plotting chain", chain_pos
 
         best_chain_i = chains_sorted_order[chain_pos]
@@ -407,10 +415,10 @@ def plot_best_latent(exp_results,
         sample_latent = best_chain['state']
 
         model = data['relations']['R1']['model']
-        irm.experiments.plot_latent(sample_latent, dist_matrix, latent_fname, 
+        irm.experiments.plot_latent(sample_latent, dist_matrix, latent_plot_fname, 
                                     model=model, PLOT_MAX_DIST=10000)
     
-
+        pickle.dump(sample_latent, open(latent_pickle_fname, 'w'))
 
 pipeline_run([data_mos6502_region, 
               create_inits, get_results, plot_best_latent, plot_scores_z, 
