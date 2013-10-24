@@ -4,3 +4,9 @@ Load matlab data
 FIXME: why does the matlab data have 1159 cell IDS? 
 FIXME : Why does the excel file have difficulty reading the right # of rows? 
  
+# input data file
+
+# preprocess
+
+# likelihood configuration
+

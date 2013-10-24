@@ -44,37 +44,6 @@ def load_synapse_data(mat_file, output_file):
     pickle.dump({'synapsedf' : df},  
                  open(output_file, 'w'))
 
-@files(load_synapse_data, 
-       ["conn.areacount.pickle"])
-def transform_data(synapse_file, (areacount_file,)):
-    """
-    """
-    synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
-    HIGHEST_CELL_ID = synapses['to_id'].max()
-    CELL_N = HIGHEST_CELL_ID + 1
-
-    MAX_CONTACT_AREA = 5.0 # microns, to eliminate touching somata
-
-    area_mat = np.zeros((CELL_N, CELL_N), dtype=[('area', np.float32), 
-                                                 ('count', np.uint32)])
-
-    for (from_id, to_id), cell_synapses in synapses.groupby(['from_id', 'to_id']):
-        area_mat[from_id, to_id]['count'] = len(cell_synapses)
-        area = cell_synapses['area']
-
-        area_mat[from_id, to_id]['area'] = area[area < MAX_CONTACT_AREA].sum()
-
-    # now make symmetric
-    lower_idx = np.tril_indices(CELL_N)
-    # now this should be zeros
-    assert area_mat[lower_idx]['count'].sum() == 0
-    area_mat['count'] += area_mat.T['count']
-    area_mat['area'] += area_mat.T['area']
-
-
-    pickle.dump({'area_mat': area_mat}, 
-                open(areacount_file, 'w'))
-
 
 @files("../../../data/mouseretina/Helmstaedter_et_al_SUPPLinformation4.xlsx", 
        "xlsxdata.pickle")
@@ -100,6 +69,42 @@ def load_xlsx_data(xlsx_file, output_file):
     pickle.dump({'area_mat' : data, 
                  'types' : types}, 
                 open(output_file, 'w'))
+
+@files([load_synapse_data, load_xlsx_data], 
+       ["conn.areacount.pickle"])
+def transform_data((synapse_file, xlsx_data_file),  (areacount_file,)):
+    """
+    use the xlsdata file to copy over the type information because
+    we want it all in this master "input" file
+    """
+    synapses = pickle.load(open(synapse_file, 'r'))['synapsedf']
+    HIGHEST_CELL_ID = synapses['to_id'].max()
+    CELL_N = HIGHEST_CELL_ID + 1
+
+    MAX_CONTACT_AREA = 5.0 # microns, to eliminate touching somata
+
+    area_mat = np.zeros((CELL_N, CELL_N), dtype=[('area', np.float32), 
+                                                 ('count', np.uint32)])
+
+    for (from_id, to_id), cell_synapses in synapses.groupby(['from_id', 'to_id']):
+        area_mat[from_id, to_id]['count'] = len(cell_synapses)
+        area = cell_synapses['area']
+
+        area_mat[from_id, to_id]['area'] = area[area < MAX_CONTACT_AREA].sum()
+
+    # now make symmetric
+    lower_idx = np.tril_indices(CELL_N)
+    # now this should be zeros
+    assert area_mat[lower_idx]['count'].sum() == 0
+    area_mat['count'] += area_mat.T['count']
+    area_mat['area'] += area_mat.T['area']
+
+    xlsx_data = pickle.load(open(xlsx_data_file, 'r'))
+    
+    pickle.dump({'area_mat': area_mat, 
+                 'types' : xlsx_data['types']}, 
+                open(areacount_file, 'w'))
+
 
 
 BASEDIR = "../../../data/mouseretina"

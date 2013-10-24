@@ -30,11 +30,10 @@ EXPERIMENTS = [
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    #('Retinaun.ld', 'fixed_100_200', 'default_nc_100')
-    #('retina.bb', 'fixed_100_200', 'default_10000'), 
-    ('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
-
-    #('retina.1.1.ld.0.0', 'fixed_20_100', 'default_nc_100'), # just for slice sampler testing
+    ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
+    #('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
+    ('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
+    ('retina.count.edp', 'fixed_10_20', 'debug'), 
                
 ]
 
@@ -83,6 +82,9 @@ KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
 
+                  'debug' : {'ITERS' : 10, 
+                             'kernels' : irm.runner.default_kernel_nonconj_config()}, 
+
                   }
 
 
@@ -95,7 +97,7 @@ def create_tholds():
     systematicaly vary the threshold for "synapse" and whether or not
     we use the z-axis
     """
-    infiles = ['xlsxdata.pickle', 
+    infiles = ['conn.areacount.pickle', 
                'soma.positions.pickle']
     for use_x in [1]:
         for tholdi, thold in enumerate(THOLDS):
@@ -103,8 +105,8 @@ def create_tholds():
             yield infiles, [outfile], thold, use_x
 
 @files(create_tholds)
-def data_retina_adj((xlsx_infile, positions_infile), 
-                    (retina_outfile,), AREA_THOLD, USE_X):
+def data_retina_adj_bin((conn_areacount_infile, positions_infile), 
+                        (retina_outfile,), AREA_THOLD, USE_X):
     """
     From the raw file, create the adjacency matrix. 
 
@@ -114,8 +116,8 @@ def data_retina_adj((xlsx_infile, positions_infile),
     and this makes a lot of interpretation challenging
     """
 
-    data = pickle.load(open(xlsx_infile, 'r'))
-    area_mat = data['area_mat']
+    data = pickle.load(open(conn_areacount_infile, 'r'))
+    area_mat = data['area_mat']['area']
     positions_data = pickle.load(open(positions_infile, 'r'))
     pos_vec = positions_data['pos_vec']
     NEURON_N = 950 # only the ones for which we also have position data
@@ -151,7 +153,68 @@ def data_retina_adj((xlsx_infile, positions_infile),
                  'area_thold' : AREA_THOLD, 
                  'types' : cell_types, 
                  'cell_id_permutation' : cell_id_permutation,
-                 'infile' : xlsx_infile}, open(retina_outfile, 'w'))
+                 'infile' : conn_areacount_infile}, open(retina_outfile, 'w'))
+
+
+def create_tholds():
+    """
+    systematicaly vary the threshold for "synapse" and whether or not
+    we use the z-axis
+    """
+    infiles = ['conn.areacount.pickle', 
+               'soma.positions.pickle']
+    for use_x in [1]:
+        for tholdi, thold in enumerate(THOLDS):
+            outfile = td("retina.%d.%d.data.pickle" % (use_x, tholdi))
+            yield infiles, [outfile], thold, use_x
+
+@files(['conn.areacount.pickle', 
+        'soma.positions.pickle'], ('data/retina.count.data.pickle', ))
+def data_retina_adj_count((conn_areacount_infile, positions_infile), 
+                          (retina_outfile,)):
+    """
+    From the raw file, create the adjacency matrix. 
+
+    NOTE THAT WE PERMUTE THE ROWS
+
+    Bewcause in the raw file things are already sorted by their 'type'
+    and this makes a lot of interpretation challenging
+    """
+
+    data = pickle.load(open(conn_areacount_infile, 'r'))
+    area_mat = data['area_mat']['count']
+    positions_data = pickle.load(open(positions_infile, 'r'))
+    pos_vec = positions_data['pos_vec']
+    NEURON_N = 950 # only the ones for which we also have position data
+
+    np.random.seed(0)
+    cell_id_permutation = np.random.permutation(NEURON_N)
+
+
+    area_mat_sub = area_mat[:NEURON_N, :NEURON_N]
+
+    area_mat_sub = area_mat_sub[cell_id_permutation, :]
+    area_mat_sub = area_mat_sub[:, cell_id_permutation]
+    pos_vec = pos_vec[cell_id_permutation]
+
+    dist_matrix = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.int32), 
+                                  ('distance', np.float32)])
+
+    cell_types = data['types'][cell_id_permutation]
+
+    dist_matrix['link'] = area_mat_sub 
+    for n1 in range(NEURON_N):
+        for n2 in range(NEURON_N):
+            p1 = pos_vec[n1]
+            p2 = pos_vec[n2]
+            
+            dist_matrix[n1, n2]['distance'] = dist(p1, p2)
+
+    pickle.dump({'dist_matrix' : dist_matrix, 
+                 'types' : cell_types, 
+                 'cell_id_permutation' : cell_id_permutation,
+                 'infile' : conn_areacount_infile}, open(retina_outfile, 'w'))
                 
 def create_latents_ld_params():
     for a in create_tholds():
@@ -163,7 +226,7 @@ def create_latents_ld_params():
                 yield inf, [outf + '.data', 
                             outf + '.latent', outf + '.meta'], mulamb, p
         
-@follows(data_retina_adj)
+@follows(data_retina_adj_bin)
 @files(create_latents_ld_params)
 def create_latents_ld(infile, 
                       (data_filename, latent_filename, meta_filename), 
@@ -189,33 +252,28 @@ def create_latents_ld(infile,
                  }, open(meta_filename, 'w'))
 
 
-def create_latents_lind_params():
-    for a in create_tholds():
-        inf = a[1][0]
-        for mli, mulamb in enumerate(MULAMBS):
-            outf_base = inf[:-len('.data.pickle')]
-            outf = "%s.lind.%d" % (outf_base, mli)
-            yield inf, [outf + '.data', 
-                        outf + '.latent', outf + '.meta'], mulamb
+
+def create_latents_edp_params():
+    inf = td('retina.count.data.pickle')
+    outf_base = inf[:-len('.data.pickle')]
+    outf = "%s.edp" % (outf_base)
+    yield inf, [outf + '.data', 
+                outf + '.latent', outf + '.meta']
         
-    
-@follows(data_retina_adj)
-@files(create_latents_lind_params)
-def create_latents_lind(infile, 
-                      (data_filename, latent_filename, meta_filename), 
-                      mulamb):
+@follows(data_retina_adj_count)
+@files(create_latents_edp_params)
+def create_latents_edp(infile, 
+                      (data_filename, latent_filename, meta_filename)):
 
     d = pickle.load(open(infile, 'r'))
     conn_and_dist = d['dist_matrix']
     
-    model_name= "LinearDistance" 
+    model_name= "ExponentialDistancePoisson"
 
     irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
 
-    HPS = {'mu_hp' : mulamb,
-           'p_alpha' : 1.0, 
-           'p_beta' : 3.0, 
-           'p_min' : 0.01}
+    HPS = {'rate_scale_hp' : 10.0, 
+           'mu_hp': 10.0}
 
     irm_latent['relations']['R1']['hps'] = HPS
 
@@ -224,29 +282,9 @@ def create_latents_lind(infile,
     pickle.dump({'infile' : infile, 
                  }, open(meta_filename, 'w'))
 
-@transform(data_retina_adj, suffix(".data.pickle"), 
-           [".bb.data", ".bb.latent", ".bb.meta"])
-def create_latents_bb((infile, ),
-                      (data_filename, latent_filename, meta_filename)):
-
-    d = pickle.load(open(infile, 'r'))
-    conn = d['dist_matrix']['link']
-    
-    model_name= "BetaBernoulli"
-
-    irm_latent, irm_data = irm.irmio.default_graph_init(conn, model_name)
-
-    HPS = {'alpha' : 1.0, 
-           'beta' : 1.0}
-
-    irm_latent['relations']['R1']['hps'] = HPS
-
-    pickle.dump(irm_latent, open(latent_filename, 'w'))
-    pickle.dump(irm_data, open(data_filename, 'w'))
-    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
 
-@transform(data_retina_adj, suffix(".data.pickle"), 
+@transform(data_retina_adj_bin, suffix(".data.pickle"), 
            [".ld.truth.data", ".ld.truth.latent", ".ld.truth.meta"])
 def create_latents_ld_truth((infile, ),
                       (data_filename, latent_filename, meta_filename)):
@@ -330,20 +368,18 @@ def init_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
         for data_filename in get_dataset(data_name):
             name, _ = os.path.splitext(data_filename)
-
             yield data_filename, ["%s-%s.%02d.init" % (name, init_config_name, i) for i in range(INIT_CONFIGS[init_config_name]['N'])], init_config_name, INIT_CONFIGS[init_config_name]
 
 
             
 @follows(create_latents_ld_truth)
 @follows(create_latents_ld)
-@follows(create_latents_lind)
-@follows(create_latents_bb)
+@follows(create_latents_edp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
     latent_filename = basename + ".latent"
-
+    
     irm.experiments.create_init(latent_filename, data_filename, 
                                 out_filenames, 
                                 init= init_config['config'])
@@ -446,7 +482,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
     
     ### Plot scores
     for di, d in enumerate(chains):
-        subsamp = 4
+        subsamp = 2
         s = np.array(d['scores'])[::subsamp]
         t = np.array(d['times'])[::subsamp] - d['times'][0]
         ax_score.plot(t, s, alpha=0.7, c='k')
@@ -551,6 +587,7 @@ def plot_best_cluster_latent(exp_results,
                                      cluster_fname, class_colors=type_colors)
 
         util.plot_latent(sample_latent, dist_matrix, latent_fname, 
+                         model = data['relations']['R1']['model'],
                          PLOT_MAX_DIST=120.0, MAX_CLASSES=20)
         
 @transform(get_results, suffix(".samples"), [".hypers.pdf"])
@@ -614,11 +651,14 @@ def plot_params(exp_results, (plot_params_filename,)):
     f.savefig(plot_params_filename)
 
 
-pipeline_run([data_retina_adj, create_latents_bb, 
+pipeline_run([data_retina_adj_bin, 
+              data_retina_adj_count, 
+              create_inits, 
               plot_scores_z, 
               plot_best_cluster_latent, 
-              plot_hypers, 
+              #plot_hypers, 
               plot_latents_ld_truth, 
               plot_params, 
-              create_latents_ld_truth], multiprocess=2)
+              create_latents_ld_truth
+          ], multiprocess=2)
                         

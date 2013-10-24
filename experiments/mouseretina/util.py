@@ -14,7 +14,7 @@ from irm.experiments import plot_latent
 def plot_cluster_properties(assignments, true_cell_types, 
                             pos_vec, synapses, output_filename,
                             cluster_thold= 0.98, 
-                            class_colors=None):
+                            class_colors=tuple()):
 
     """
     Plot histogram of cell depth, 
