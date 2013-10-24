@@ -126,7 +126,7 @@ slow_anneal[0][1]['subkernels'][-1][1]['grids']['NormalDistanceFixedWidth'] = ge
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['BetaBernoulli'] =  [{'alpha' : a, 'beta' : b} for a, b in irm.util.cart_prod([irm.util.logspace(0.001, 1.0, 20), irm.util.logspace(0.1, 10, 20)])]
 
-slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(dist_scale = 2.0, rate_scale_scale = 2.0, GRIDN = 20)
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(dist_scale = 50.0, rate_scale_scale = 50.0, GRIDN = 50)
 
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
