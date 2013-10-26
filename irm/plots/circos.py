@@ -119,7 +119,6 @@ def write(config, outfilename, tempdir=None):
                 d = config.id_to_chrom_pos[dest_id]
                 links.append({'src_c' : "c%d" % s[0], 'src_i' : s[1], 
                               'dest_c' : "c%d" % d[0], 'dest_i' : d[1]})
-            print "LINKS=", links
             links_str = links_template.render(links = links)
             fid = open("links.txt", 'w')
             fid.write(links_str)

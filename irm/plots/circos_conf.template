@@ -42,9 +42,8 @@ bezier_radius = 0.1r
 <link>
 show         = yes
 color        = vvdgrey
-thickness    = 8
+thickness    = 1
 file         = links.txt 
-record_limit = 2500
 </link>
 {% endif %}
 
@@ -55,7 +54,6 @@ color        = black_a5
 ribbon = yes
 thickness    = 8
 file         = ribbons.txt 
-record_limit = 2500
 flat=yes
 </link>
 {% endif %}
@@ -84,5 +82,6 @@ flat=yes
 # Debugging, I/O an dother system parameters
 # Included from Circos distribution.
 <<include etc/housekeeping.conf>>
+
 
 

@@ -1,3 +1,3 @@
 {% for chr in chromosomes %}
-chr - {{chr['name']}} {{chr['label']}} 0 {{chr['entities'] | length}} chr{{loop.index+1}}
+chr - {{chr['name']}} {{chr['label']}} 0 {{chr['entities'] | length}} chr{{(loop.index+1) % 24}}
 {% endfor %}

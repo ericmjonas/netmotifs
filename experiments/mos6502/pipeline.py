@@ -459,7 +459,62 @@ def plot_best_latent(exp_results,
         pickle.dump(sample_latent, open(latent_pickle_fname, 'w'))
 
 
+@transform(get_results, suffix(".samples"), 
+           [(".%d.circos.png" % d,)  for d in range(1)])
+def plot_best_circos(exp_results, 
+                     out_filenames):
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+
+    d = pickle.load(open(meta_infile, 'r'))
+    dist_matrix = d['dist_matrix']
+
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+    for chain_pos, (latent_plot_fname, ) in enumerate(out_filenames):
+
+
+        best_chain_i = chains_sorted_order[chain_pos]
+        best_chain = chains[best_chain_i]
+        sample_latent = best_chain['state']
+        a = sample_latent['domains']['d1']['assignment']
+
+        cp = irm.plots.circos.CircosPlot(a)
+        # cp.set_entity_labels(canonical_neuron_ordering, label_size="15p")
+
+        links = []
+        if data['relations']['R1']['model'] in ["BetaBernoulli", "GammaPoisson"]:
+            link_data = data['relations']['R1']['data']
+        else:
+            link_data = data['relations']['R1']['data']['link']
+        for r in range(len(a)):
+            for c in range(len(a)):
+                if link_data[r, c]  > 0:
+                    links.append((r, c))
+        links = np.array(links)
+        LINK_MAX = 2500
+        if len(links) > LINK_MAX:
+            links = links[np.random.permutation(len(links))[:(LINK_MAX-1)]]
+        cp.set_entity_links(links)
+
+        irm.plots.circos.write(cp, latent_plot_fname)
+
+
+
 pipeline_run([data_mos6502_region, 
               create_inits, get_results, plot_best_latent, plot_scores_z, 
-              plot_hypers])
+              plot_hypers, plot_best_circos])
                         
