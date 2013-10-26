@@ -21,7 +21,7 @@ type       = text
 file       = structure.label.txt
 color      = black
 label_font = default
-label_size = 40p
+label_size = {{labels_config['label_size']}}
 r0         = 1.0r
 r1         = 1.4r
 rpadding   = 10p
@@ -47,6 +47,20 @@ file         = links.txt
 record_limit = 2500
 </link>
 {% endif %}
+
+{% if has_ribbons %} 
+<link>
+show         = yes
+color        = black_a5
+ribbon = yes
+thickness    = 8
+file         = ribbons.txt 
+record_limit = 2500
+flat=yes
+</link>
+{% endif %}
+
+
 </links>
 
 

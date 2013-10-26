@@ -1,0 +1,4 @@
+{% for r in ribbons %}
+link{{loop.index}} {{r['src_c']}} 0 {{r['src_len']}}
+link{{loop.index}} {{r['dest_c']}} 0 {{r['dest_len']}}
+{%endfor%}
