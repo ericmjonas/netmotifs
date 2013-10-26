@@ -1,0 +1,74 @@
+# circos.conf
+
+karyotype = karyotype.txt
+
+<ideogram>
+
+<spacing>
+default = 0.005r
+</spacing>
+
+radius    = 0.8r
+thickness = 40p
+fill      = yes
+
+</ideogram>
+
+<plots>
+{% if has_labels %}
+<plot>
+type       = text
+file       = structure.label.txt
+color      = black
+label_font = default
+label_size = 40p
+r0         = 1.0r
+r1         = 1.4r
+rpadding   = 10p
+  overflow       = show
+  overflow_font  = bold
+  overflow_size  = 10p
+  overflow_color = red
+</plot>
+{% endif %}
+</plots>
+
+<links>
+z      = 0
+radius = 0.98r
+bezier_radius = 0.1r
+
+{% if has_links %} 
+<link>
+show         = yes
+color        = vvdgrey
+thickness    = 8
+file         = links.txt 
+record_limit = 2500
+</link>
+{% endif %}
+</links>
+
+
+################################################################
+# The remaining content is standard and required. It is imported 
+# from default files in the Circos distribution.
+#
+# These should be present in every Circos configuration file and
+# overridden as required. To see the content of these files, 
+# look in etc/ in the Circos distribution.
+
+<image>
+# Included from Circos distribution.
+<<include etc/image.conf>>
+</image>
+
+# RGB/HSV color definitions, color lists, location of fonts, fill patterns.
+# Included from Circos distribution.
+<<include etc/colors_fonts_patterns.conf>>
+
+# Debugging, I/O an dother system parameters
+# Included from Circos distribution.
+<<include etc/housekeeping.conf>>
+
+

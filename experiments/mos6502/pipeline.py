@@ -17,19 +17,27 @@ BUCKET_BASE="srm/experiments/mos6502"
 
 EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.all.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.all.lower.bb', 'fixed_20_200', 'anneal_slow_400'), 
                #('mos6502.all.all.bb', 'fixed_20_200', 'anneal_slow_400'), 
 
                ('mos6502.dir.decode.bb', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.dir.xysregs.bb', 'fixed_20_200', 'anneal_slow_400'),
+               ('mos6502.dir.lower.bb', 'fixed_20_200', 'anneal_slow_400'),
                #('mos6502.dir.all.bb', 'fixed_20_200', 'anneal_slow_400'), 
                
                ('mos6502.all.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.all.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.all.lower.ld', 'fixed_20_200', 'anneal_slow_400'), 
                #('mos6502.all.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
 
                ('mos6502.dir.decode.ld', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.dir.xysregs.ld', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.dir.lower.ld', 'fixed_20_200', 'anneal_slow_400'), 
                #('mos6502.dir.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
+
+               ('mos6502.count.decode.edp', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.count.xysregs.edp', 'fixed_20_200', 'anneal_slow_400'), 
+               ('mos6502.count.lower.edp', 'fixed_20_200', 'anneal_slow_400'), 
 
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
                #('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
@@ -72,8 +80,16 @@ def from_bucket(filename):
     return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
 
 
-@transform('*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
+@transform('[ad]*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
 def data_mos6502_region(infile, all_file):
+    data = pickle.load(open(infile, 'r'))
+
+    
+    pickle.dump({'dist_matrix' : data['adj_mat'], 
+                 'infile' : infile}, open(all_file, 'w'))
+
+@transform('count*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
+def data_mos6502_region_count(infile, all_file):
     data = pickle.load(open(infile, 'r'))
 
     
@@ -123,6 +139,28 @@ def create_latents_bb(infile,
     pickle.dump(irm_latent, open(latent_filename, 'w'))
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
+
+
+@transform(data_mos6502_region_count, suffix(".data.pickle"), [".edp.data", ".edp.latent", ".edp.meta"])
+def create_latents_edp(infile, 
+                      (data_filename, latent_filename, meta_filename)):
+    print "INPUT FILE IS", infile
+    d = pickle.load(open(infile, 'r'))
+    conn_and_dist = d['dist_matrix']
+    
+    model_name= "ExponentialDistancePoisson"
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+
+    HPS = {'mu_hp' : 1000., 
+           'rate_scale_hp' : 1000.}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 }, open(meta_filename, 'w'))
 
 
 def create_init(latent_filename, out_filenames, 
@@ -175,7 +213,7 @@ def init_generator():
 
             
 
-@follows(create_latents_ld, create_latents_bb)
+@follows(create_latents_ld, create_latents_bb, create_latents_edp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -419,6 +457,7 @@ def plot_best_latent(exp_results,
                                     model=model, PLOT_MAX_DIST=10000)
     
         pickle.dump(sample_latent, open(latent_pickle_fname, 'w'))
+
 
 pipeline_run([data_mos6502_region, 
               create_inits, get_results, plot_best_latent, plot_scores_z, 

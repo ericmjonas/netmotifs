@@ -129,6 +129,7 @@ def load_data(input_file, output_file):
  
 REGIONS = {'decode' : {'x': (750, 8400), 'y': (7600, 8800)}, 
            'xysregs' : {'x' : (1400, 3000), 'y' : ( 1000, 4300)}, 
+           'lower' : {'x' : (1350, 7700), 'y' : ( 1000, 4350)}, 
            'all' : {'x' : (0, 9000), 'y' : (0, 10000)}}
 
 
@@ -435,6 +436,42 @@ def create_all_adj_matrix((data_file, graph_file), output_file):
     pickle.dump({'adj_mat' : adj_mat}, 
                 open(output_file, 'w'))
 
+@files([load_data, merge_wires_graph], 'count.adjmat.pickle')
+def create_count_adj_matrix((data_file, graph_file), output_file):
+    """
+    Take the merged graph and compute the adjacency matrix 
+    of count data
+    
+    """
+
+    d = pickle.load(open(data_file, 'r'))
+    tfdf = d['tfdf']
+    wiredf = d['wiredf']
+    
+    gf = pickle.load(open(graph_file, 'r'))
+    g = gf['graph']
+
+    canonical_node_ordering = tfdf.index
+    N = len(canonical_node_ordering)
+    adj_mat = np.zeros((N, N), dtype = [('link', np.int32), 
+                                        ('distance', np.float32)])
+                  
+    print "now walk"
+    # create graph
+    for n1_i, (n1, n1_data) in enumerate(tfdf.iterrows()):
+        x1 = n1_data['x']
+        y1 = n1_data['y']
+        print n1_i
+        for n2_i, (n2, row_data) in enumerate(tfdf.iterrows()):
+            if g.has_edge(n1, n2):
+                adj_mat[n1_i, n2_i]['link']  += 1
+            x2 = row_data['x']
+            y2 = row_data['y']
+            d = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+            adj_mat[n1_i, n2_i]['distance'] = d
+    pickle.dump({'adj_mat' : adj_mat}, 
+                open(output_file, 'w'))
+
 
 @files([load_data, create_dir_graph], 'dir.adjmat.pickle')
 def create_dir_adj_matrix((data_file, graph_file), output_file):
@@ -505,7 +542,8 @@ def plot_adj_matrix(infile, (adj_matrix_outfile, distance_outfile)):
     ax_conndist.hist(conn_only.flat, bins=40)
     f.savefig(distance_outfile)
 
-@transform([create_all_adj_matrix, create_dir_adj_matrix], 
+@transform([create_all_adj_matrix, create_dir_adj_matrix, 
+            create_count_adj_matrix], 
            regex(r"(.+).adjmat.pickle"), 
            [r"\1.%s.region.pickle" % r for r in REGIONS.keys() ])
 def carve_out_region(infile, outfiles):
@@ -544,6 +582,7 @@ pipeline_run([load_data, plot_transistors, plot_transistors_regions,
               plot_raw_graph, #analysis, 
               plot_merged_graph, 
               create_all_adj_matrix, create_dir_adj_matrix, 
+              create_count_adj_matrix, 
               plot_adj_matrix, 
               carve_out_region
           ])

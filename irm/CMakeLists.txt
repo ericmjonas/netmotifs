@@ -72,3 +72,9 @@ FILE(GLOB py_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
 
 install(FILES ${py_files}
               DESTINATION ${pyirm_install_DIR}/data)
+
+FILE(GLOB py_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/plots/*.py"     "${CMAKE_CURRENT_SOURCE_DIR}/plots/*.template")
+
+install(FILES ${py_files}
+              DESTINATION ${pyirm_install_DIR}/plots)

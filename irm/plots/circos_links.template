@@ -1,0 +1,3 @@
+{% for l in links %}
+{{l['src_c']}} {{l['src_i']}} {{l['src_i'] + 1}} {{l['dest_c']}} {{l['dest_i']}} {{l['dest_i'] + 1}}
+{%endfor%}
