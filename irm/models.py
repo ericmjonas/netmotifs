@@ -614,8 +614,8 @@ class ExponentialDistancePoisson(object):
         """
         d = np.random.exponential(hps['mu_hp'])
         def exp_dist(x, lamb):
-            return lamb * np.exp(-lamb  * x)
-        rate = ss['rate_scale'] * exp_dist(d, 1./ss['mu'])
+            return np.exp(-x / lamb)
+        rate = ss['rate_scale'] * exp_dist(d, ss['mu'])
 
         count = np.random.poisson(rate)
         

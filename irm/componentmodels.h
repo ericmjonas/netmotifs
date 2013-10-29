@@ -1376,6 +1376,7 @@ struct SquareDistanceBump {
 
 }; 
 
+
 struct ExponentialDistancePoisson { 
     /*
       Link function is exp(dist, 1./mu)*rate
@@ -1411,8 +1412,7 @@ struct ExponentialDistancePoisson {
     }; 
 
     static float exp_rate(float x, float mu, float rate_scale) { 
-        float lamb = 1.0f/mu; 
-        float r = lamb * expf(-lamb * x); 
+        float r = expf(-x / mu); 
         float r_scaled = r * rate_scale; 
         const float RATE_MIN = 0.000001; 
         if(r_scaled < RATE_MIN) 
