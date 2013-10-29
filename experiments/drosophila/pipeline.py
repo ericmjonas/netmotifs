@@ -27,10 +27,10 @@ def td(fname): # "to directory"
 
 
 EXPERIMENTS = [
-    ('drosophila.gp', 'fixed_10_100', 'nc_10'), 
-    ('drosophila.bb', 'fixed_10_100', 'nc_10'), 
-    ('drosophila.ld', 'fixed_10_100', 'nc_10'), 
-    ('drosophila.edp', 'fixed_10_100', 'nc_10'), 
+    # ('drosophila.gp', 'fixed_10_100', 'nc_10'), 
+    # ('drosophila.bb', 'fixed_10_100', 'nc_10'), 
+    # ('drosophila.ld', 'fixed_10_100', 'nc_10'), 
+    # ('drosophila.edp', 'fixed_10_100', 'nc_10'), 
     ('drosophila.gp', 'fixed_100_200', 'anneal_slow_400'), 
     ('drosophila.bb', 'fixed_100_200', 'anneal_slow_400'), 
     ('drosophila.ld', 'fixed_100_200', 'anneal_slow_400'), 
@@ -50,6 +50,12 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
                 
 
 slow_anneal = irm.runner.default_kernel_anneal()
+slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
+slow_anneal[0][1]['anneal_sched']['iterations'] = 300
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(10.0, 10.0, 50.0)
+
+
+
 glacial_anneal = irm.runner.default_kernel_anneal(64.0, 800)
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
@@ -497,6 +503,23 @@ def plot_best_latent(exp_results,
         pickle.dump(sample_latent, open(latent_pickle, 'w'))
 
         
+@transform(get_results, suffix(".samples"), [".hypers.pdf"])
+def plot_hypers(exp_results, (plot_hypers_filename,)):
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+
+    f = pylab.figure(figsize= (12, 8))
+
+    
+    chains = [c for c in chains if type(c['scores']) != int]
+
+    irm.experiments.plot_chains_hypers(f, chains, data)
+
+    f.savefig(plot_hypers_filename)
 
 if __name__ == "__main__":
     pipeline_run([create_count_matrix, create_dist_count_matrix, 
@@ -504,5 +527,6 @@ if __name__ == "__main__":
                   run_exp, 
                   create_inits, 
                   get_results, plot_scores_z, 
+                  plot_hypers, 
                   plot_best_latent
               ], multiprocess=2)
