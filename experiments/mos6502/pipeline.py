@@ -39,6 +39,20 @@ EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'),
                ('mos6502.count.xysregs.edp', 'fixed_20_200', 'anneal_slow_400'), 
                ('mos6502.count.lower.edp', 'fixed_20_200', 'anneal_slow_400'), 
 
+               ('mos6502.typed.xysregs.bb', 'fixed_2_40', 'debug'), 
+               ('mos6502.typed.xysregs.ld', 'fixed_2_40', 'debug'), 
+
+               ('mos6502.typed.xysregs.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.xysregs.ld', 'fixed_100_200', 'anneal_slow_400'), 
+
+               ('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
+
+               ('mos6502.typed.lower.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.lower.ld', 'fixed_100_200', 'anneal_slow_400'), 
+
+               ('mos6502.typed.all.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.all.ld', 'fixed_100_200', 'anneal_slow_400'), 
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
                #('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
            ]
@@ -65,12 +79,13 @@ slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = irm.gridgibbshps.default_grid_logistic_distance(500)
 
+default_nonconj = irm.runner.default_kernel_nonconj_config()
 
 KERNEL_CONFIGS = {
-                  'anneal_slow_400' : {'ITERS' : 400, 
-                                       'kernels' : slow_anneal},
-
-                  }
+    'anneal_slow_400' : {'ITERS' : 400, 
+                         'kernels' : slow_anneal},
+    'debug' : {'ITERS' : 25, 
+               'kernels' : default_nonconj}}
 
 
 def to_bucket(filename):
@@ -90,6 +105,14 @@ def data_mos6502_region(infile, all_file):
 
 @transform('count*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
 def data_mos6502_region_count(infile, all_file):
+    data = pickle.load(open(infile, 'r'))
+
+    
+    pickle.dump({'dist_matrix' : data['adj_mat'], 
+                 'infile' : infile}, open(all_file, 'w'))
+
+@transform('typed*.region.pickle', regex("(.+)\.region.pickle"), r'%s/mos6502.\1.data.pickle' % WORKING_DIR)
+def data_mos6502_region_typed(infile, all_file):
     data = pickle.load(open(infile, 'r'))
 
     
@@ -135,6 +158,86 @@ def create_latents_bb(infile,
            'beta' : 0.1}
 
     irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
+
+@transform(data_mos6502_region_typed, suffix(".data.pickle"), [".bb.data", ".bb.latent", ".bb.meta"])
+def create_latents_bb_typed(infile, 
+                            (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(infile, 'r'))
+    conn = d['dist_matrix']
+    region_infile = pickle.load(open(d['infile'], 'r'))
+    pre_region_file = pickle.load(open(region_infile['infile'], 'r'))
+    
+    pin_pairs = pre_region_file['pin_pairs']
+    N = conn.shape[0]
+    relation_data = []
+
+    for pin_pair in pin_pairs:
+        cm = np.zeros((N, N), dtype=np.uint8)
+        cm = conn["%s_%s" % pin_pair]
+        #cm = np.zeros((N, N), dtype=[('link', np.uint8), 
+        #                             ('distance', np.float32)])
+        #cm['distance'] = conn['distance']
+        #cm['link']= conn["%s_%s" % pin_pair]
+        relation_data.append(cm)
+
+    model_name= "BetaBernoulli"
+    
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(relation_data[0], 
+                                                        model_name, 
+                                                        extra_conn = relation_data[1:])
+
+    HPS = {'alpha' : 0.1, 
+           'beta' : 0.1}
+
+    for rel_name in irm_latent['relations']:
+        irm_latent['relations'][rel_name]['hps'] = HPS
+
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
+
+@transform(data_mos6502_region_typed, suffix(".data.pickle"), [".ld.data", ".ld.latent", ".ld.meta"])
+def create_latents_ld_typed(infile, 
+                            (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(infile, 'r'))
+    conn = d['dist_matrix']
+    region_infile = pickle.load(open(d['infile'], 'r'))
+    pre_region_file = pickle.load(open(region_infile['infile'], 'r'))
+    
+    pin_pairs = pre_region_file['pin_pairs']
+    N = conn.shape[0]
+    relation_data = []
+
+    for pin_pair in pin_pairs:
+        cm = np.zeros((N, N), dtype=[('link', np.uint8), 
+                                     ('distance', np.float32)])
+        cm['distance'] = conn['distance']
+        cm['link']= conn["%s_%s" % pin_pair]
+        relation_data.append(cm)
+
+    model_name= "LogisticDistance"
+    
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(relation_data[0], 
+                                                        model_name, 
+                                                        extra_conn = relation_data[1:])
+
+    HPS = {'mu_hp' : 1000., 
+           'lambda_hp' : 1000., 
+           'p_min' : 0.0001, 
+           'p_max' : 0.95}
+
+    for rel_name in irm_latent['relations']:
+        irm_latent['relations'][rel_name]['hps'] = HPS
+
 
     pickle.dump(irm_latent, open(latent_filename, 'w'))
     pickle.dump(irm_data, open(data_filename, 'w'))
@@ -213,7 +316,8 @@ def init_generator():
 
             
 
-@follows(create_latents_ld, create_latents_bb, create_latents_edp)
+@follows(create_latents_ld, create_latents_bb, create_latents_edp, 
+         create_latents_bb_typed, create_latents_ld_typed)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
@@ -252,6 +356,8 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      [BUCKET_BASE]*CHAINS_TO_RUN,
+                     _label="%s-%s-%s" % (data_filename, inits[0], 
+                                          kernel_config_name), 
                      _env='connectivitymotif', 
                      _type='f2')
 
@@ -358,9 +464,7 @@ def plot_scores_z(exp_results, (plot_latent_filename,)):
     meta_infile = meta['infile']
 
     d = pickle.load(open(meta_infile, 'r'))
-    conn = d['dist_matrix']['link']
     orig_data = pickle.load(open(d['infile']))
-    print "len(dist_matrix):", conn.shape
     #cell_types = orig_data['types'][:len(conn)]
 
     # nodes_with_class = meta['nodes']
@@ -436,8 +540,9 @@ def plot_best_latent(exp_results,
     print "meta_infile=", meta_infile
 
     d = pickle.load(open(meta_infile, 'r'))
-    dist_matrix = d['dist_matrix']
+    dist_matrix = data['relations']['R1']['data']
 
+    model = data['relations']['R1']['model']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -451,8 +556,7 @@ def plot_best_latent(exp_results,
         best_chain_i = chains_sorted_order[chain_pos]
         best_chain = chains[best_chain_i]
         sample_latent = best_chain['state']
-
-        model = data['relations']['R1']['model']
+        
         irm.experiments.plot_latent(sample_latent, dist_matrix, latent_plot_fname, 
                                     model=model, PLOT_MAX_DIST=10000)
     
@@ -515,6 +619,9 @@ def plot_best_circos(exp_results,
 
 
 pipeline_run([data_mos6502_region, 
-              create_inits, get_results, plot_best_latent, plot_scores_z, 
+              create_latents_bb_typed, 
+              create_inits, get_results, 
+              plot_best_latent, 
+              plot_scores_z, 
               plot_hypers, plot_best_circos])
                         

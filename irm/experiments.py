@@ -98,7 +98,10 @@ def plot_latent(latent, dist_matrix,
 
 
     print "plot_t1t1_latent"
-    ai = irm.plot.plot_t1t1_latent(ax, dist_matrix['link'], a)
+    if "istance" in model:
+        ai = irm.plot.plot_t1t1_latent(ax, dist_matrix['link'], a)
+    else:
+        ai = irm.plot.plot_t1t1_latent(ax, dist_matrix, a)
 
     if ground_truth_assign != None:
         for i in  np.argwhere(np.diff(a[ai]) != 0):

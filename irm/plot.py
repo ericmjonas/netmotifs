@@ -73,7 +73,7 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect, cmap=None, norm=None):
     ai = np.argsort(a).flatten()
         
     conn = adj_matrix
-    
+    print "adj_matrix", adj_matrix.shape, adj_matrix.dtype
     s_conn =conn[ai]
     s_conn = s_conn[:, ai]
     if cmap == None:
@@ -129,7 +129,9 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                     share_all=True, 
                     label_mode = 'L',
                      )
-    
+
+    if "istance" not in model:
+        return 
 
     for c1i, c1_canon in enumerate(CLASSES[:MAX_CLASSES]):
         for c2i, c2_canon in enumerate(CLASSES[:MAX_CLASSES]):

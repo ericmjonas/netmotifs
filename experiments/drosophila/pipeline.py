@@ -66,7 +66,7 @@ slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(10.0, 10.0, 50.0)
 
-slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson']   = grid_logistic_distance(scale=0.8)
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance']   = grid_logistic_distance(scale=0.8)
 
 
 glacial_anneal = irm.runner.default_kernel_anneal(64.0, 800)
