@@ -637,7 +637,7 @@ struct LogisticDistanceFixedLambda {
         score += log_exp_dist(mu, 1./mu_hp); 
 
         boost::math::beta_distribution<> dist(alpha, beta);
-        if((p_scale >= 1.0) || (p_scale < 0.0)) { 
+        if((p_scale >= 0.9999) || (p_scale <= 0.0001)) { // safety
             return -std::numeric_limits<float>::infinity();
         }
 
