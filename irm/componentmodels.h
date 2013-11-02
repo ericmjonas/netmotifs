@@ -575,7 +575,11 @@ struct LogisticDistanceFixedLambda {
 
             boost::math::beta_distribution<> dist(alpha, beta);
             double p = quantile(dist, uniform_01(rng)); 
-
+            if (p < 0.0001) 
+                p = 0.0001; 
+            if (p > 0.9999)
+                p = 0.9999; 
+                    
             return std::make_pair(mu, p); 
 
         } catch (...){
@@ -637,7 +641,7 @@ struct LogisticDistanceFixedLambda {
         score += log_exp_dist(mu, 1./mu_hp); 
 
         boost::math::beta_distribution<> dist(alpha, beta);
-        if((p_scale >= 0.9999) || (p_scale <= 0.0001)) { // safety
+        if((p_scale > 0.99999) || (p_scale < 0.00001)) { // safety
             return -std::numeric_limits<float>::infinity();
         }
 

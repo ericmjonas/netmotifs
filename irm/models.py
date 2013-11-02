@@ -354,6 +354,12 @@ class LogisticDistanceFixedLambda(object):
         mu = np.random.exponential(hps['mu_hp'])
         p_scale = np.random.beta(hps['p_scale_alpha_hp'], 
                                  hps['p_scale_beta_hp'])
+        # fix numeric precision issues
+        if p_scale < 0.0001:
+            p_scale = 0.0001 
+        elif p_scale > 0.9999:
+            p_scale = 0.9999
+
         
         return {'p_scale' : p_scale, 
                 'mu' : mu}

@@ -116,15 +116,26 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
 
 
     }
-    auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
-                                      ss->mu = x; 
-                                      return LogisticDistanceFixedLambda::score(ss, hps, data, 
+    try { 
+        auto mu = slice_sample2_double(
+                                       [ss, &hps, data, &dppos, temp](float x) -> float{
+                                           ss->mu = x; 
+                                           return LogisticDistanceFixedLambda::score(ss, hps, data, 
                                                                      dppos) /temp;
-                                  }, ss->mu, width, rng); 
-    
-    ss->mu = mu; 
-
+                                       }, ss->mu, width, rng); 
+        
+        ss->mu = mu; 
+    } catch (std::exception & e){ 
+        std::cout << "ss->mu=" << ss->mu 
+                  << " hps->mu_hp=" << hps->mu_hp 
+                  << " ss->p_scale=" << ss->p_scale 
+                  << " hps->lambda = " << hps->lambda
+                  << " hps->p_scale_alpha_hp = " << hps->p_scale_alpha_hp 
+                  << " hps->p_scale_beta_hp = " << hps->p_scale_beta_hp 
+                  << std::endl; 
+        throw; 
+    }
+    try { 
     auto p_scale = slice_sample2_double(
                                       [ss, &hps, data, &dppos, temp](float x) -> float{
                                           ss->p_scale = x; 
@@ -134,6 +145,10 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
                                       0.1, rng); 
     
     ss->p_scale = p_scale; 
+    } catch (std::exception & e){ 
+        std::cout << "ss->p_scale=" << ss->p_scale  << std::endl; 
+        throw; 
+    }
 
 }
 
