@@ -98,6 +98,45 @@ void slice_sample_exec<LogisticDistance>
 
 }
 
+
+template<>
+void slice_sample_exec<LogisticDistanceFixedLambda>
+(rng_t & rng, float width, 
+ LogisticDistanceFixedLambda::suffstats_t * ss, 
+ LogisticDistanceFixedLambda::hypers_t * hps, 
+ std::vector<LogisticDistanceFixedLambda::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos,
+ float temp){
+    if (width == 0.0) {
+        width = hps->mu_hp*2.0; 
+    } else {
+        std::cout << "Slice width manually set to " << width 
+                  << " (automatic would have been " 
+                  << hps->mu_hp/4.0 << ")" << std::endl; 
+
+
+    }
+    auto mu = slice_sample2_double(
+                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      ss->mu = x; 
+                                      return LogisticDistanceFixedLambda::score(ss, hps, data, 
+                                                                     dppos) /temp;
+                                  }, ss->mu, width, rng); 
+    
+    ss->mu = mu; 
+
+    auto p_scale = slice_sample2_double(
+                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                          ss->p_scale = x; 
+                                          return LogisticDistanceFixedLambda::score(ss, hps, data, 
+                                                                         dppos)/temp;
+                                      }, ss->p_scale, 
+                                      0.1, rng); 
+    
+    ss->p_scale = p_scale; 
+
+}
+
 template<>
 void slice_sample_exec<SigmoidDistance>
 (rng_t & rng, float width, 

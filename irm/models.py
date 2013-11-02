@@ -326,6 +326,60 @@ class LogisticDistance(object):
         
         """
 
+class LogisticDistanceFixedLambda(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('link',  np.bool), 
+                ('distance', np.float32)]
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'lambda' :  np.random.gamma(1, 1), 
+                'mu_hp' : np.random.gamma(1.2, 4), 
+                'p_min' : np.random.uniform(0.01, 0.1), 
+                'p_scale_alpha_hp' : 1.0, 
+                'p_scale_beta_hp' :1.0}
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        mu = np.random.exponential(hps['mu_hp'])
+        p_scale = np.random.beta(hps['p_scale_alpha_hp'], 
+                                 hps['p_scale_beta_hp'])
+        
+        return {'p_scale' : p_scale, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        d = np.random.exponential(hps['mu_hp'])
+        p = util.logistic(d, ss['mu'], hps['lambda'])
+        
+        p = p * (ss['p_scale'] - hps['p_min']) + hps['p_min']
+        link = np.random.rand() < p
+        
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['distance'] = d
+        x[0]['link'] = link
+        return x[0]
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
         
 
 class SigmoidDistance(object):
@@ -635,6 +689,7 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
          'SigmoidDistance' : SigmoidDistance, 
          'LogisticDistance' : LogisticDistance, 
+         'LogisticDistanceFixedLambda' : LogisticDistanceFixedLambda, 
          'LinearDistance' : LinearDistance, 
          'GammaPoisson' : GammaPoisson, 
          'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 

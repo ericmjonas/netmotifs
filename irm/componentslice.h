@@ -55,6 +55,15 @@ void slice_sample_exec<LogisticDistance>
  const std::vector<dppos_t> & dppos,
  float temp);
 
+template<>
+void slice_sample_exec<LogisticDistanceFixedLambda>
+(rng_t & rng, float width, 
+ LogisticDistanceFixedLambda::suffstats_t * ss, 
+ LogisticDistanceFixedLambda::hypers_t * hps, 
+ std::vector<LogisticDistanceFixedLambda::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos,
+ float temp);
+
 
 template<>
 void slice_sample_exec<SigmoidDistance>

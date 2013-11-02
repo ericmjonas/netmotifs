@@ -18,6 +18,8 @@ class Relation(object):
             modeltypestr = "AccumModel"
         elif isinstance(modeltype, models.LogisticDistance):
             modeltypestr = "LogisticDistance"
+        elif isinstance(modeltype, models.LogisticDistanceFixedLambda):
+            modeltypestr = "LogisticDistanceFixedLambda"
         elif isinstance(modeltype, models.SigmoidDistance):
             modeltypestr = "SigmoidDistance"
         elif isinstance(modeltype, models.LinearDistance):

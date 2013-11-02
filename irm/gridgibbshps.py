@@ -31,6 +31,23 @@ def default_grid_logistic_distance(scale=1.0):
 
 DEFAULT_RELATION_GRIDS['LogisticDistance'] = default_grid_logistic_distance()
 
+def default_grid_logistic_distance_fixed_lambda(scale=1.0):
+    space_vals =  np.logspace(-1.5, 1.8, 50)*scale
+    p_mins = np.array([0.001, 0.01, 0.02])
+    p_maxs = np.array([0.90, 0.80, 0.50, 0.20])
+    alpha_betas = [0.1, 1.0, 2.0]
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for alpha_beta in alpha_betas:
+                res.append({'lambda' : s, 'mu_hp' : s, 
+                           'p_min' : p_min, 
+                            'p_scale_alpha_hp' : alpha_beta, 
+                            'p_scale_beta_hp' : alpha_beta})
+    return res
+
+DEFAULT_RELATION_GRIDS['LogisticDistanceFixedLambda'] = default_grid_logistic_distance_fixed_lambda()
+
 def default_grid_normal_distance_fixed_width():
     p_mins = np.array([0.001, 0.01, 0.02])
     mus = np.array([0.1, 1.0])

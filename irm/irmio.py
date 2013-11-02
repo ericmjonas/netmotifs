@@ -36,6 +36,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
             m = models.BetaBernoulliNonConj()
         elif rel_config['model'] == "LogisticDistance":
             m = models.LogisticDistance()
+        elif rel_config['model'] == "LogisticDistanceFixedLambda":
+            m = models.LogisticDistanceFixedLambda()
         elif rel_config['model'] == "SigmoidDistance":
             m = models.SigmoidDistance()
         elif rel_config['model'] == "LinearDistance":
@@ -274,6 +276,10 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
     for i in range(ITERS):
         for relation_name, relation in irm_model.relations.iteritems():
             if relation.modeltypestr == "LogisticDistance":
+                params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+
+            elif relation.modeltypestr == "LogisticDistanceFixedLambda":
                 params = {'width' : relation.get_hps()['mu_hp'] / 2.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
  

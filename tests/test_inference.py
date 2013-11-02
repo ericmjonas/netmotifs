@@ -13,6 +13,7 @@ and relation classes.
 ITERS_TO_RUN = 1
 MODELS =  ["BetaBernoulliNonConj", 
            'LogisticDistance', 
+           'LogisticDistanceFixedLambda', 
            'LinearDistance', 
            'SigmoidDistance', 
            'GammaPoisson',
