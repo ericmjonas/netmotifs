@@ -569,7 +569,7 @@ def plot_best_cluster(exp_results,
         #                             model=data['relations']['R1']['model'], 
         #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
-        fig = plot_clusters_pretty_figure(a, neurons, no, thold=0.97)
+        fig = plot_clusters_pretty_figure(a, neurons, no, thold=0.999)
         fig.savefig(cluster_fname, bbox_inches='tight')
 
 # @transform(get_results, suffix(".samples"), [".clusters.html"])
@@ -738,12 +738,16 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
     gs = gridspec.GridSpec(2, CLASSN_TO_PLOT,
                            width_ratios=height_ratios, 
                            height_ratios=[0.6, 0.3])
-    NEURON_CLASSES = ['AS', 'DA', 'DB', 'DD', 'VA', 'VB', 'VD', 
-                      'IL1', 'IL2', 'OLQ', 'RMD', 'SAA', 'SIB', 'SMD', 
+    NEURON_CLASSES = ['AS', 'DA', 'DB', 'DD', 
+                      'VA', 'VB', 'VD', 'IL1', 
+                      'IL2', 'OLQ', 'RMD', 'SAA', 
+                      'SIB', 'SMB', 'SMD', 
                       'URA', 'URB', 'URY']
-    NEURON_CLASSES_ROLES = ['M', 'M', 'M', 'M', 'M', 'M', 'M', 
-                          '', '', 'S', '', 'S', '', 'S', 
-                          'S', 'S', 'S']
+    NEURON_CLASSES_ROLES = ['M', 'M', 'M', 'M', 
+                            'M', 'M', 'M', '',
+                            '', 'S', 'M', 'S', 
+                            '', '', 'M', 
+                            'S', 'S', 'S']
     neuron_classes_size = {}
     # compute sizes 
     for nc in NEURON_CLASSES:
@@ -855,9 +859,23 @@ def plot_best_latent(exp_results,
     meta_infile = meta['infile']
     print "meta_infile=", meta_infile
 
-    # d = pickle.load(open(meta_infile, 'r'))
-    # dist_matrix = d['dist_matrix']
+    if isinstance(meta_infile, list): # hack to correct for the fact that multi-relation datasets have multiple infiles. Should fix 
+        meta_infile = meta_infile[0] 
 
+
+    d = pickle.load(open(meta_infile, 'r'))
+
+    if 'infile' not in d: # And this gross hack is due to our parametric exploration 
+        # of the hypers above, where we directly generate the .data from the raw source=
+        orig_processed_data = d
+    else:
+        very_original_data = d['infile']
+        orig_processed_data = pickle.load(open(very_original_data, 'r'))
+
+    canonical_neuron_ordering = orig_processed_data['canonical_neuron_ordering']
+    no = np.array(canonical_neuron_ordering)
+
+    neurons = orig_processed_data['neurons']
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
@@ -872,33 +890,34 @@ def plot_best_latent(exp_results,
 
         model = data['relations']['R1']['model']
         
-        f = pylab.figure(figsize= (24, 26))
+        f = pylab.figure(figsize= (25, 12))
         
-        gs = gridspec.GridSpec(2, 1, height_ratios=[1,12])
-        ax = f.add_subplot(gs[1, 0])
+        gs = gridspec.GridSpec(1, 3, width_ratios=[1,12, 12])
+        
+        ax_true = f.add_subplot(gs[0, 0])
+        ax_r1 =  f.add_subplot(gs[0, 1])
+        ax_r2 =  f.add_subplot(gs[0, 2])
 
-        cmap = colors.ListedColormap(['white', 'red', 'blue', 
-                                      'purple'])
-        bounds=[0,1, 2, 3, 5]
-        norm = colors.BoundaryNorm(bounds, cmap.N)
 
-        if model == "BetaBernoulli":
-            data_mat = data['relations']['R1']['data'].astype(int)
-
-            data_mat += data['relations']['R2']['data'].astype(int)*2
-
-        if model == "GammaPoisson":
-            data_mat = data['relations']['R1']['data']
-        elif model == "ExponentialDistancePoisson":
-            data_mat = data['relations']['R1']['data']['link']
-            #print data_mat.shape, data_mat.dtype
-        elif model == "LogisticDistance" or model == "SquareDistanceBump" or model == "NormalDistanceFixedWidth":
-            data_mat = data['relations']['R1']['data']['link'].astype(int)
-            data_mat += data['relations']['R2']['data']['link'].astype(int)*2
         a = sample_latent['domains']['d1']['assignment']
-        irm.plot.plot_t1t1_latent(ax, data_mat, a, cmap=cmap, norm=norm)
-                                  
+        a = irm.util.canonicalize_assignment(a)
+
+        if 'istance' in model:
+            r1_data = data['relations']['R1']['data']['link']
+            r2_data = data['relations']['R2']['data']['link']
+        else:
+            r1_data = data['relations']['R1']['data']
+            r2_data = data['relations']['R2']['data']
         
+        if "oisson" in model:
+            ai = irm.plot.plot_t1t1_latent_count(ax_r1, r1_data, a)
+            irm.plot.plot_t1t1_latent_count(ax_r2, r2_data, a)
+        else:
+            ai = irm.plot.plot_t1t1_latent(ax_r1, r1_data, a)
+            irm.plot.plot_t1t1_latent(ax_r2, r2_data, a)
+        ax_r1.set_yticks(np.arange(r1_data.shape[0]), minor=True)
+        ax_r1.set_yticklabels(neurons['class'][ai], minor=True, fontsize=3)
+        f.tight_layout()
         f.savefig(latent_fname)
 
 @transform(get_results, suffix(".samples"), 

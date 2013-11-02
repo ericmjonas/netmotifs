@@ -93,6 +93,50 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect, cmap=None, norm=None):
 
     return ai
 
+
+def plot_t1t1_latent_count(ax, adj_matrix, assign_vect, size_scale=1.0):
+    """
+    Plot a latent with the assign vect for count data 
+
+    returns the sorted order of the assignment vector
+    """
+
+    from matplotlib import pylab
+
+    a = util.canonicalize_assignment(assign_vect) # make big clusters first
+
+    ai = np.argsort(a).flatten()
+        
+    conn = adj_matrix
+    print "adj_matrix", adj_matrix.shape, adj_matrix.dtype
+    s_conn =conn[ai]
+    s_conn = s_conn[:, ai]
+
+    # scatter points 
+    s_x = []
+    s_y = []
+    s_s = []
+    for r in range(conn.shape[0]):
+        for c in range(conn.shape[1]):
+            if s_conn[r, c] > 0:
+                s_x.append(c)
+                s_y.append(r)
+                s_s.append(s_conn[r, c])
+
+    ax.scatter(s_x, s_y, s=s_s, c='k', edgecolor='none')
+
+    x_line_offset = 0.5
+    y_line_offset = 0.4
+    for i in  np.argwhere(np.diff(a[ai]) > 0):
+        ax.axhline(i + y_line_offset, c='k', alpha=0.7, linewidth=1.0)
+        ax.axvline(i + x_line_offset, c='k', alpha=0.7, linewidth=1.0)
+    ax.set_xlim(0, s_conn.shape[1])
+    ax.set_ylim(s_conn.shape[0], 0)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    return ai
+
 def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10, 
                      model="LogisticDistance", MAX_CLASSES = 20):
     """
