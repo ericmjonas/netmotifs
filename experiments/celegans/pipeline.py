@@ -748,6 +748,9 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
                             '', 'S', 'M', 'S', 
                             '', '', 'M', 
                             'S', 'S', 'S']
+    # the RMD and SMD types are taken from the wormatlas.org per-cell-type LUT 
+    # http://www.wormatlas.org/ver1/MoW_built0.92/cells/rmd.html
+
     neuron_classes_size = {}
     # compute sizes 
     for nc in NEURON_CLASSES:
