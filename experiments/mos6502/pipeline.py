@@ -45,14 +45,14 @@ EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'),
                ('mos6502.typed.xysregs.bb', 'fixed_100_200', 'anneal_slow_400'), 
                ('mos6502.typed.xysregs.ld', 'fixed_100_200', 'anneal_slow_400'), 
 
-               ('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
-               ('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
 
-               ('mos6502.typed.lower.bb', 'fixed_100_200', 'anneal_slow_400'), 
-               ('mos6502.typed.lower.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.lower.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.lower.ld', 'fixed_100_200', 'anneal_slow_400'), 
 
-               ('mos6502.typed.all.bb', 'fixed_100_200', 'anneal_slow_400'), 
-               ('mos6502.typed.all.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.all.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               #('mos6502.typed.all.ld', 'fixed_100_200', 'anneal_slow_400'), 
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
                #('mos6502.all.ld', 'fixed_20_200', 'anneal_slow_400'), 
            ]
@@ -77,7 +77,20 @@ slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 128.0
 slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 
-slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = irm.gridgibbshps.default_grid_logistic_distance(500)
+def grid_logistic_distance_hypers():
+    space_vals =  irm.util.logspace(10, 500, 20)
+    p_mins = np.array([0.001, 0.01, 0.02])
+    p_maxs = np.array([0.95, 0.90, 0.85])
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for p_max in p_maxs:
+                res.append({'lambda_hp' : s, 'mu_hp' : s, 
+                           'p_min' : p_min, 'p_max' : p_max})
+    return res
+
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = grid_logistic_distance_hypers()
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 
