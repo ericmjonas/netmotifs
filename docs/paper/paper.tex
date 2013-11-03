@@ -37,42 +37,47 @@
 \end{abstract}
 
 \section{Introduction}
-``type'' is a recurreing theme in biology
-Cell type in bio literature, stem cells, something something
+Computing systems, biological or human-engineered, contain computing
+elements that can be classified into ``type'', which give
+insight into function. 
 
-It is only through understanding the types of the system that we can understand
-its function. 
+The rise of connectomics data allows discovery of cell types
+based on connectivity information. 
+
+Here we describe a Bayesian non-parametric model that can discover
+both the cell types and their patterns of interconnection automatically
+from connectomics data. 
+
+We apply it to the recently-released mouse retina connectome, the
+c. elegans connectome, and a ``connectome'' obtained by
+reverse-engineering a portion of a classical microprocessor.
+
 
 \section{Methods}
-Stochastic blockmodels long known
+Stochastic block models assume a hidden or ``latent'' type is associated
+wtih each node that ultimately influences its connectivity. 
 
-We take an infinite extension of the SBM (the IRM ) \todo{cite both}
-and modify it to learn the structure of the underlying code. 
+We extend this class of model to incorporate notions of spatial locality, 
+as the connectivity of many neural systems is substantially constrained. 
 
-
-Spatial component by performing a GLM-style link function. 
-
-Describe the model
-
-We develop a series of Markov-chain monte carlo scheems to solve for
-the posterior, presenting the MAP estimate. To avoid local minima we
-slowly anneal, over 1000 iterations \todo{Fix numbers}.
-
-Hyperparameter inference. 
-
-We show that we recover ground truth. 
-
+We perform posterior inference in this model using a series of Markov-chain
+Monte Carlo techniques. 
 
 \section{Results}
 
+\subsection{Synthetic Data}
+We show our model works by generating synthetic data with known spatial/connectivity patterns and recovering ground truth, even when the generating process makes assumptions very different from our model. 
+
 \subsubsection{Mouse Retina}
-The recent release of connectome-scale data for the mouse retina. 
-
-Look we recover known classes! 
-
-\subsection{Drosophila}
+When applied to the mouse retina dataset, we recover spatially-homogeneous patterns of activity that reflect a coarsening of ground truth. 
 
 \subsection{C. elegans}
+When applied to c. elegans, we segregate ``head and sensor'' interneurons from the spatially-distributed neurons along the body axis. 
+
+\subsection{Microprocessor}
+
+We recover the logical structure of the three primary registers of the
+MOS6502 integrated circuit.
 
 
 \section{Discussion}
