@@ -739,15 +739,19 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
                            width_ratios=height_ratios, 
                            height_ratios=[0.6, 0.3])
     NEURON_CLASSES = ['AS', 'DA', 'DB', 'DD', 
-                      'VA', 'VB', 'VD', 'IL1', 
+                      'VA', 'VB', 'VC', 'VD', 'IL1', 
                       'IL2', 'OLQ', 'RMD', 'SAA', 
                       'SIB', 'SMB', 'SMD', 
-                      'URA', 'URB', 'URY']
+                      'CEP', 'SIA', 
+                      'URA', # 'URB' only has 2, 
+                      'URY']
     NEURON_CLASSES_ROLES = ['M', 'M', 'M', 'M', 
-                            'M', 'M', 'M', '',
+                            'M', 'M', 'M', 'M', '',
                             '', 'S', 'M', 'S', 
                             '', '', 'M', 
-                            'S', 'S', 'S']
+                            'S', '', 
+                            'S', 
+                            'S']
     # the RMD and SMD types are taken from the wormatlas.org per-cell-type LUT 
     # http://www.wormatlas.org/ver1/MoW_built0.92/cells/rmd.html
 
