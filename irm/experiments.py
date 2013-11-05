@@ -252,6 +252,10 @@ def plot_chains_hypers(f, chains, data):
             for p in ['mu_hp', 'lambda_hp', 'p_min', 'p_max']:
                 per_r_hp[r].append(p)
                 hp_n +=1 
+        elif m == 'LogisticDistanceFixedLambda':
+            for p in ['mu_hp', 'lambda', 'p_min', 'p_scale_alpha_hp', 'p_scale_beta_hp']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
         elif m == 'NormalDistanceFixedWidth':
             for p in ['mu_hp', 'p_alpha', 'p_beta', 'p_min', 'width']:
                 per_r_hp[r].append(p)
