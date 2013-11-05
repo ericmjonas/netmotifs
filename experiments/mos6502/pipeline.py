@@ -41,16 +41,20 @@ EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'),
 
                ('mos6502.typed.xysregs.bb', 'fixed_2_40', 'debug'), 
                ('mos6502.typed.xysregs.ld', 'fixed_2_40', 'debug'), 
+               ('mos6502.typed.xysregs.ldfl', 'fixed_2_40', 'debug'), 
 
                ('mos6502.typed.xysregs.bb', 'fixed_100_200', 'anneal_slow_400'), 
                ('mos6502.typed.xysregs.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.xysregs.ldfl', 'fixed_100_200', 'anneal_slow_400'), 
 
-               #('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
-               #('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.decode.ldfl', 'fixed_100_200', 'anneal_slow_400'), 
 
-               #('mos6502.typed.lower.bb', 'fixed_100_200', 'anneal_slow_400'), 
-               #('mos6502.typed.lower.ld', 'fixed_100_200', 'anneal_slow_400'), 
-
+               ('mos6502.typed.lower.bb', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.lower.ld', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.lower.ldfl', 'fixed_100_200', 'anneal_slow_400'), 
+               
                #('mos6502.typed.all.bb', 'fixed_100_200', 'anneal_slow_400'), 
                #('mos6502.typed.all.ld', 'fixed_100_200', 'anneal_slow_400'), 
                # ('mos6502.all.bb', 'fixed_20_200', 'default_100'), 
@@ -92,6 +96,22 @@ def grid_logistic_distance_hypers():
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = grid_logistic_distance_hypers()
 
+def grid_logistic_distance_fixed_lambda_hypers():
+    space_vals =  irm.util.logspace(10, 500, 20)
+    p_mins = np.array([0.001, 0.01, 0.02])
+    alpha_betas = [0.1, 1.0, 2.0]
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for alpha_beta in alpha_betas:
+                res.append({'lambda' : s/10.0, 'mu_hp' : s, 
+                            'p_min' : p_min, 
+                            'p_scale_alpha_hp' : alpha_beta, 
+                            'p_scale_beta_hp' : alpha_beta})
+    return res
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistanceFixedLambda'] = grid_logistic_distance_fixed_lambda_hypers()
+
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 
 KERNEL_CONFIGS = {
@@ -100,6 +120,7 @@ KERNEL_CONFIGS = {
     'debug' : {'ITERS' : 25, 
                'kernels' : default_nonconj}}
 
+pickle.dump(slow_anneal, open("kernel.config", 'w'))
 
 def to_bucket(filename):
     cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
@@ -256,6 +277,47 @@ def create_latents_ld_typed(infile,
     pickle.dump(irm_data, open(data_filename, 'w'))
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
+@transform(data_mos6502_region_typed, suffix(".data.pickle"), [".ldfl.data", ".ldfl.latent", ".ldfl.meta"])
+def create_latents_ldfl_typed(infile, 
+                            (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(infile, 'r'))
+    conn = d['dist_matrix']
+    region_infile = pickle.load(open(d['infile'], 'r'))
+    pre_region_file = pickle.load(open(region_infile['infile'], 'r'))
+    
+    pin_pairs = pre_region_file['pin_pairs']
+    N = conn.shape[0]
+    relation_data = []
+
+    for pin_pair in pin_pairs:
+        cm = np.zeros((N, N), dtype=[('link', np.uint8), 
+                                     ('distance', np.float32)])
+        cm['distance'] = conn['distance']
+        cm['link']= conn["%s_%s" % pin_pair]
+        relation_data.append(cm)
+
+    model_name= "LogisticDistanceFixedLambda"
+    
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(relation_data[0], 
+                                                        model_name, 
+                                                        extra_conn = relation_data[1:])
+
+    HPS = {'mu_hp' : 100., 
+           'lambda' : 100., 
+           'p_min' : 0.0001, 
+           'p_scale_alpha_hp' : 1.0, 
+           'p_scale_beta_hp' : 1.0}
+
+    for rel_name in irm_latent['relations']:
+        irm_latent['relations'][rel_name]['hps'] = HPS
+
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
+
 
 @transform(data_mos6502_region_count, suffix(".data.pickle"), [".edp.data", ".edp.latent", ".edp.meta"])
 def create_latents_edp(infile, 
@@ -330,7 +392,7 @@ def init_generator():
             
 
 @follows(create_latents_ld, create_latents_bb, create_latents_edp, 
-         create_latents_bb_typed, create_latents_ld_typed)
+         create_latents_bb_typed, create_latents_ld_typed, create_latents_ldfl_typed)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)
