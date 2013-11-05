@@ -210,9 +210,8 @@ def create_latents_2r_paramed(infile,
     neurons = data['neurons']
     canonical_neuron_ordering = data['canonical_neuron_ordering']
     NEURON_N = len(canonical_neuron_ordering)
-    dist_matrix = np.zeros((NEURON_N, NEURON_N), 
-                           dtype=[('link', np.uint8), 
-                                  ('distance', np.float32)])
+    dist_matrix = np.zeros((NEURON_N, NEURON_N), dtype=np.float32)
+
 
     for n1_i, n1 in enumerate(canonical_neuron_ordering):
         for n2_i, n2 in enumerate(canonical_neuron_ordering):
