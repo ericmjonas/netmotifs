@@ -67,7 +67,6 @@ class CircosPlot(object):
         list of (source group, dest group, width)
         """
         self.class_ribbons = ribbons
-        
     
 def write(config, outfilename, tempdir=None):
     """
@@ -129,11 +128,12 @@ def write(config, outfilename, tempdir=None):
             ribbon_template = Template(read_template("circos_ribbons.template"))
             ribbons = []
             # write wribbons
-            for src_id, dest_id in config.class_ribbons:
+            for src_id, dest_id, width in config.class_ribbons:
                 ribbons.append({'src_c' : "c%d" % src_id, 
-                              'src_len' : len(config.chromosomes[src_id]), 
-                              'dest_c' : "c%d" % dest_id, 
-                              'dest_len' : len(config.chromosomes[dest_id])})
+                                'src_len' : len(config.chromosomes[src_id]), 
+                                'dest_c' : "c%d" % dest_id, 
+                                'dest_len' : len(config.chromosomes[dest_id]), 
+                                'width' : width})
 
             ribbons_str = ribbon_template.render(ribbons= ribbons)
             fid = open("ribbons.txt", 'w')
