@@ -326,6 +326,14 @@ class LogisticDistance(object):
         
         """
 
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        p = util.logistic(d, ss['mu'], ss['lambda'])
+        p = p * (hps['p_max'] - hps['p_min']) + hps['p_min']
+        return p
+
 class LogisticDistanceFixedLambda(object):
     """
     Just a placeholder
