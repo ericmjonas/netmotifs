@@ -32,8 +32,9 @@ EXPERIMENTS = [
     ('celegans.2r.bb.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.gp.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ld.00', 'fixed_100_200', 'anneal_slow_400'),  
-    ('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
-    ('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ldfl.00', 'fixed_100_200', 'anneal_slow_400'),  
+    #('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
+    #('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.edp.00', 'fixed_100_200', 'anneal_slow_400'),  
 
            ]
@@ -56,6 +57,7 @@ INIT_CONFIGS = {'fixed_10_100' : {'N' : 10,
 BB_HPS = [(0.1, 0.1)]# , (1.0, 1.0), (2.0, 2.0), (3.0, 1.0)]
 GP_HPS = [(1.0, 2.0)]# , (2.0, 2.0), (3.0, 2.0)]
 LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
+LDFL_HPS = [(0.2, 0.4, 0.01, 1.0, 1.0)] # , (0.1, 0.1, 0.5, 0.001),
 NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
 SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
 EDP_HPS = [(0.1, 1.0), (1.0, 1.0), (0.1, 2.0)]
@@ -82,6 +84,20 @@ def generate_ld_hypers():
     return res
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = generate_ld_hypers()
+
+def generate_ldfl_hypers():
+    space_vals =  irm.util.logspace(0.01, 0.9, 40)
+    p_mins = np.array([0.001, 0.01, 0.02])
+    alpha_betas = [0.1, 1.0, 2.0]
+    res = []
+    for s in space_vals:
+        for p_min in p_mins:
+            for alpha_beta in alpha_betas:
+                res.append({'lambda' : s, 'mu_hp' : s, 
+                            'p_min' : p_min, 
+                            'p_scale_alpha_hp' : alpha_beta, 
+                            'p_scale_beta_hp' : alpha_beta})
+    return res
 
 
 def generate_sdb_hypers():
@@ -187,6 +203,10 @@ def create_latents_2r_param():
         base = td('celegans.2r.ld.%02d' % ld_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistance', ld_hpi
 
+    for ldfl_hpi in range(len(LDFL_HPS)):
+        base = td('celegans.2r.ldfl.%02d' % ldfl_hpi)
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistanceFixedLambda', ldfl_hpi
+
     for sdb_hpi in range(len(SDB_HPS)):
         base = td('celegans.2r.sdb.%02d' % sdb_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'SquareDistanceBump', sdb_hpi
@@ -253,6 +273,34 @@ def create_latents_2r_paramed(infile,
                'lambda_hp' : LD_HPS[hp_i][1], 
                'p_max' : LD_HPS[hp_i][2], 
                'p_min' : LD_HPS[hp_i][3]}
+
+    elif model_name == "LogisticDistanceFixedLambda":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] > 0 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                           dtype=[('link', np.uint8), 
+                                  ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical'] > 0 
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'mu_hp' : LDFL_HPS[hp_i][0], 
+               'lambda' : LDFL_HPS[hp_i][1], 
+               'p_min' : LDFL_HPS[hp_i][2],
+               'p_scale_alpha_hp' : LDFL_HPS[hp_i][3], 
+               'p_scale_beta_hp' : LDFL_HPS[hp_i][4]}
+
     elif model_name == "NormalDistanceFixedWidth":
         # compute distance
                 
@@ -568,7 +616,8 @@ def plot_best_cluster(exp_results,
         #                             model=data['relations']['R1']['model'], 
         #                             PLOT_MAX_DIST=1.2)
         a = irm.util.canonicalize_assignment(sample_latent['domains']['d1']['assignment'])
-        fig = plot_clusters_pretty_figure(a, neurons, no, thold=0.999)
+        fig = plot_clusters_pretty_figure(a, neurons, no, thold=1.001, 
+                                          cluster_size_width=False)
         fig.savefig(cluster_fname, bbox_inches='tight')
 
 # @transform(get_results, suffix(".samples"), [".clusters.html"])
@@ -712,7 +761,8 @@ def cluster_interpretation_plot(exp_results, (output_filename,)):
 
     fig.savefig(output_filename)
 
-def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
+def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9, 
+                                cluster_size_width=True):
     df = metadata_df
 
     purity = irm.util.canonicalize_assignment(purity)
@@ -723,9 +773,12 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
     class_sizes = np.zeros(CLASSN)
     for i in range(CLASSN):
         class_sizes[i] = np.sum(purity == i)
-    height_ratios = class_sizes / np.sum(class_sizes)
+    if cluster_size_width == False:
+        class_sizes[:] = 1
 
-    w = np.argwhere(np.cumsum(height_ratios) <= thold).flatten()
+    width_ratios = class_sizes / np.sum(class_sizes)
+
+    w = np.argwhere(np.cumsum(width_ratios) <= thold).flatten()
     if len(w) == 0:
         CLASSN_TO_PLOT = 1
     else:
@@ -735,7 +788,7 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9):
     fig = pylab.figure(figsize=(8, 6))
 
     gs = gridspec.GridSpec(2, CLASSN_TO_PLOT,
-                           width_ratios=height_ratios, 
+                           width_ratios=width_ratios, 
                            height_ratios=[0.6, 0.3])
     NEURON_CLASSES = ['AS', 'DA', 'DB', 'DD', 
                       'VA', 'VB', 'VC', 'VD', 'IL1', 
@@ -865,6 +918,8 @@ def plot_best_latent(exp_results,
     meta_infile = meta['infile']
     print "meta_infile=", meta_infile
 
+    from matplotlib.backends.backend_pdf import PdfPages
+
     if isinstance(meta_infile, list): # hack to correct for the fact that multi-relation datasets have multiple infiles. Should fix 
         meta_infile = meta_infile[0] 
 
@@ -906,7 +961,6 @@ def plot_best_latent(exp_results,
 
 
         a = sample_latent['domains']['d1']['assignment']
-        a = irm.util.canonicalize_assignment(a)
 
         if 'istance' in model:
             r1_data = data['relations']['R1']['data']['link']
@@ -924,7 +978,22 @@ def plot_best_latent(exp_results,
         ax_r1.set_yticks(np.arange(r1_data.shape[0]), minor=True)
         ax_r1.set_yticklabels(neurons['class'][ai], minor=True, fontsize=3)
         f.tight_layout()
-        f.savefig(latent_fname)
+
+        pp = PdfPages(latent_fname)
+        f.savefig(pp, format='pdf')
+
+        if 'istance' in model:
+            # now plot the individual relations params
+            for r in ["R1", 'R2']:
+                f_latent = pylab.figure()
+                irm.plot.plot_t1t1_params(f_latent, data['relations'][r]['data'],
+                                          sample_latent['domains']['d1']['assignment'], 
+                                          sample_latent['relations'][r]['ss'], 
+                                          sample_latent['relations'][r]['hps'], 
+                                          MAX_DIST=1.0, model=model)
+                f_latent.savefig(pp, format='pdf')
+        pp.close()
+
 
 @transform(get_results, suffix(".samples"), 
            [(".%d.circos.png" % d, )  for d in range(1)])

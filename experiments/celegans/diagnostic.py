@@ -312,6 +312,46 @@ def plot_conn_dist(infile, (all_out, med_out, big_out)):
 
         f.savefig(outfile)
 
+@files('data.processed.pickle', 'example.latents.pdf')
+def plot_example_latents(infile, outfile):
+    
+    data = pickle.load(open(infile, 'r'))
+
+    neurons = data['neurons']
+    canonical_neuron_ordering = data['canonical_neuron_ordering']
+    conn_matrix = data['conn_matrix']
+    
+    f = pylab.figure()
+    ax = f.add_subplot(1, 1, 1)
+    plotted = 0
+    for ei, (gi, g) in enumerate(n.groupby('class')):
+        N = len(g)
+        if N >= 4:
+            r = g.iloc[0]['role']
+            if r == 'M':
+                c = 'b'
+            elif r == 'S':
+                c = 'g'
+            else:
+                c = "#AAAAAA"
+            ax.plot([0, 1], [plotted, plotted], c='k', alpha=0.5, linewidth=1)
+            ax.scatter(g['soma_pos'], np.ones(N) * plotted, 
+                       c=c, s=30)
+            ax.text(1.01, plotted - 0.15, gi, fontsize=10)
+            plotted +=1
+
+    ax.set_xlim(-0.05, 1.1)
+    ax.set_xlabel("position along anterior-posterior axis")
+    ax.set_ylim(-1, plotted)
+    ax.set_yticks([])
+    ax.set_title('c elegans cell class positions')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+
+    f.savefig(outfile)
+
 
 pipeline_run([plot_adjmat, plot_classmat, plot_positions, 
               plot_conn_dist])

@@ -151,7 +151,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
 
     from mpl_toolkits.axes_grid1 import Grid
     from matplotlib import pylab
-    
+    assign_vect = np.array(assign_vect)
     canon_assign_vect = util.canonicalize_assignment(assign_vect)
     # create the mapping between existing and new
     canon_to_old  = {}
@@ -188,6 +188,9 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
             nodes_2 = np.argwhere(assign_vect == c2).flatten()
             conn_dist_hist = []
             noconn_dist_hist = []
+            flatten_dist_val = []
+            assert len(nodes_1) > 0
+            assert len(nodes_2) > 0 
             for n1 in nodes_1:
                 for n2 in nodes_2:
                     d = conn_and_dist[n1, n2]['distance']
@@ -195,29 +198,21 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                         conn_dist_hist.append(d)
                     else:
                         noconn_dist_hist.append(d)
-
+                    flatten_dist_val.append((d, conn_and_dist[n1, n2]['link']))
+            flatten_dist_val = np.array(flatten_dist_val)
             bins = np.linspace(0, MAX_DIST, 20)
             fine_bins = np.linspace(0, MAX_DIST, 100)
             
-            # compute prob as a function of distance for this class
-            htrue, _ = np.histogram(conn_dist_hist, bins)
+            if model == "LogisticDistance" or model == "LogisticDistanceFixedLambda":
+                # compute prob as a function of distance for this class
+                htrue, _ = np.histogram(conn_dist_hist, bins)
 
-            hfalse, _ = np.histogram(noconn_dist_hist, bins)
+                hfalse, _ = np.histogram(noconn_dist_hist, bins)
 
-            p = htrue.astype(float) / (hfalse + htrue)
-            # # TOTAL INSANE GROSS HACK REMOVE ASAP
-            # pickle.dump({'conn_dist_hist' : conn_dist_hist, 
-            #              'noconn_dist_hist' : noconn_dist_hist, 
-            #              'htrue' : htrue, 
-            #              'hfalse' : hfalse, 
-            #              'p' : p, 'bins' : bins, 'fine_bins' : fine_bins}, 
-            #             open("component.%d.%d.pickle" % (c1i, c2i), 'w'))
-            
-            ax.plot(bins[:-1], p)
-            #ax.set_xlim(0, MAX_DIST)
-            #ax.set_ylim(0, 1.0)
-            # ax.set_xticks([])
-            # ax.set_yticks([])
+                p = htrue.astype(float) / (hfalse + htrue)
+
+                ax.plot(bins[:-1], p)
+
 
             if model == "LogisticDistance":
                 c = ss[(c1, c2)]
@@ -230,26 +225,34 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 ax.axvline(c['mu'], c='k')
 
             elif model == "LogisticDistanceFixedLambda":
+
                 c = ss[(c1, c2)]
-                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins), c
                 y = util.logistic(fine_bins, c['mu'], hps['lambda']) 
                 y = y * (c['p_scale'] - hps['p_min']) + hps['p_min']
                 ax.plot(fine_bins, y, c='r') 
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % hps['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
+
             elif model == "ExponentialDistancePoisson":
+                if len(flatten_dist_val) > 0:
+                    x_jitter = np.random.normal(0, 0.01, len(flatten_dist_val))
+                    y_jitter = np.random.normal(0, 0.05, len(flatten_dist_val))
+                    ax.scatter(flatten_dist_val[:, 0] + x_jitter, 
+                               flatten_dist_val[:, 1] + y_jitter, 
+                               edgecolor='none', 
+                               s=2)
                 c = ss[(c1, c2)]
-                print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins), c
                 mu = c['mu']
                 rate_scale = c['rate_scale']
-                lamb = 1./mu 
-                y = lamb * np.exp(-lamb * fine_bins)
+                y = np.exp(-fine_bins/mu)
                 y = y * rate_scale
                 ax.plot(fine_bins, y, c='r') 
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"rate_scale: %3.2f" % c['rate_scale'], fontsize=4)
+                ax.set_ylim(-1, 20.0)
                 ax.axvline(c['mu'], c='k')
+
             elif model == "LinearDistance":
                 print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)
                 c = ss[(c1, c2)]
