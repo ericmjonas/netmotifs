@@ -394,6 +394,13 @@ class LogisticDistanceFixedLambda(object):
         
         """
 
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        p = util.logistic(d, ss['mu'], hps['lambda'])
+        p = p * (ss['p_scale'] - hps['p_min']) + hps['p_min']
+        return p
         
 
 class SigmoidDistance(object):

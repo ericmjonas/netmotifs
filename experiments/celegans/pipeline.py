@@ -994,9 +994,10 @@ def plot_best_latent(exp_results,
                 f_latent.savefig(pp, format='pdf')
         pp.close()
 
-
+CIRCOS_DIST_THRESHOLDS = [0.01, 0.5, 0.9]
 @transform(get_results, suffix(".samples"), 
-           [(".%d.circos.png" % d, )  for d in range(1)])
+           [(".circos.%d.elec.png" % d, 
+             ".circos.%d.chem.png" % d) for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_best_circos(exp_results, 
                      out_filenames):
     print "Plotting best latent", exp_results
@@ -1032,31 +1033,39 @@ def plot_best_circos(exp_results,
     CHAINN = len(chains)
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, ) in enumerate(out_filenames):
+    best_chain_i = chains_sorted_order[0]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
 
-        best_chain_i = chains_sorted_order[chain_pos]
-        best_chain = chains[best_chain_i]
-        sample_latent = best_chain['state']
-
-        model = data['relations']['R1']['model']
-        
-        a = sample_latent['domains']['d1']['assignment']
-        cp = irm.plots.circos.CircosPlot(a)
-        cp.set_entity_labels(canonical_neuron_ordering, label_size="15p")
-
-        links = []
-        if data['relations']['R1']['model'] in ["BetaBernoulli", "GammaPoisson"]:
-            link_data = data['relations']['R1']['data']
-        else:
-            link_data = data['relations']['R1']['data']['link']
-        for r in range(len(a)):
-            for c in range(len(a)):
-                if link_data[r, c]  > 0:
-                    links.append((r, c))
-        cp.set_entity_links(links)
+    cell_assignment = sample_latent['domains']['d1']['assignment']
 
 
-        irm.plots.circos.write(cp, latent_fname)
+    for fi, circos_filenames in enumerate(out_filenames):
+        for relation, filename in zip(['R1', 'R2'], circos_filenames):
+            model_name = data['relations'][relation]['model']
+
+            circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+
+            circos_p.set_entity_labels(canonical_neuron_ordering)
+
+            a = irm.util.canonicalize_assignment(cell_assignment)        
+            if model_name == "LogisticDistance" or model_name == "LogisticDistanceFixedLambda":
+                v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+                                                   sample_latent['relations'][relation]['ss'], 
+                                                   sample_latent['relations'][relation]['hps'], 
+                                                   model_name)
+                thold = 0.01
+                ribbons = []
+                links = []
+                for (src, dest), p in v.iteritems():
+                    if p > thold :
+                        pix = int(120*p)
+                        print src, dest, p, pix
+
+                        ribbons.append((src, dest, pix))
+                circos_p.set_class_ribbons(ribbons)
+
+            irm.plots.circos.write(circos_p, filename)
 
 
 pipeline_run([create_inits, get_results, plot_scores_z, 

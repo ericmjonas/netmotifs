@@ -315,3 +315,15 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
             else:
                 raise NotImplementedError() 
 
+def latent_distance_eval(distance, suffstats, hps, model_name):
+    """
+    for each tuple of suffstats, evaluate the latent
+    dist at that point, and return
+    """
+
+    ss_vals = {}
+    for ss_key, ss in suffstats.iteritems():
+        m = irm.models.NAMES[model_name]()
+        ss_vals[ss_key] = m.param_eval(distance, ss, hps)
+
+    return ss_vals
