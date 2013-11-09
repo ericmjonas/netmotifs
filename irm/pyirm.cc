@@ -65,7 +65,12 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
         IComponentContainer * cc = new ComponentContainer<ExponentialDistancePoisson>(data, data_dims_v); 
         return cc; 
 
+    } else if(modeltype == "LogisticDistancePoisson") { 
+        IComponentContainer * cc = new ComponentContainer<LogisticDistancePoisson>(data, data_dims_v); 
+        return cc; 
+
     } else { 
+        std::cout << modeltype << std::endl; 
         throw std::runtime_error("unknown model type"); 
     }
     

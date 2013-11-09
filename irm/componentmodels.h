@@ -1700,6 +1700,7 @@ struct ExponentialDistancePoisson {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
+                
             float rate = exp_rate(data[dpi].distance, ss->mu, 
                                           ss->rate_scale); 
             float lscore = log_poisson_dist(data[dpi].link, rate); 
@@ -1750,6 +1751,188 @@ struct ExponentialDistancePoisson {
 
 }; 
 
+
+struct LogisticDistancePoisson { 
+    class value_t {
+    public:
+        int32_t link; 
+        float distance; 
+    } __attribute__((packed)); 
+    
+    class suffstats_t { 
+    public:
+        float mu; 
+        float rate_scale; 
+    }; 
+
+    class hypers_t {
+    public:
+        // NOTE : BE CAREFUL there are multiple parameterizations of the 
+        // expoentnail distribution here. np expects 1/lamb, boost expects lamb
+        float mu_hp; // mu_hp : with our exponential prior, this is the mean. 
+        float rate_scale_hp; 
+        float rate_min; 
+        float lambda; 
+        inline hypers_t() : 
+            mu_hp(1.0), 
+            lambda(1.0), 
+            rate_min(0.1), 
+            rate_scale_hp(1.0)
+        { 
+
+
+        }
+    }; 
+
+    static float rev_logistic_scaled(float x, float mu, float lambda, 
+                                     float pmin, float pmax) { 
+        // reversed logistic function 
+        float ratio = (x-mu)/lambda; 
+        float rate_unscaled = 1.0/(1.0 + MYEXP(ratio)); 
+        return rate_unscaled * (pmax-pmin) + pmin;         
+    }
+
+    static std::pair<float, float> sample_from_prior(hypers_t * hps, rng_t & rng) {
+        float mu_hp = hps->mu_hp; 
+        float rate_scale_hp = hps->rate_scale_hp; 
+
+        float r1 = uniform_01(rng); 
+        float r2 = uniform_01(rng); 
+        
+        try { 
+            boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
+            float mu = quantile(mu_dist, r1); 
+
+            boost::math::exponential_distribution<> pscale_dist(1.0/rate_scale_hp);
+            float rate_scale = quantile(pscale_dist, r2); 
+
+            if (rate_scale < 0.0001) 
+                rate_scale = 0.0001; 
+                    
+            return std::make_pair(mu, rate_scale); 
+
+        } catch (...){
+            
+            std::cout << "mu_hp=" << mu_hp 
+                      << "rate_scale_hp=" << rate_scale_hp
+                      << std::endl; 
+            std::cout << "r1=" << r1 << " r2=" << r2 << std::endl; 
+            throw std::runtime_error("Sample from prior error"); 
+
+        }
+    }
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        std::pair<float, float> params = sample_from_prior(hps, rng); 
+        ss->mu = params.first; 
+        ss->rate_scale = params.second; 
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.insert(dp_pos); 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        //ss->datapoint_pos_.erase(dp_pos); 
+    }
+
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        float mu = ss->mu; 
+        float rate_scale = ss->rate_scale; 
+        
+        float rate = rev_logistic_scaled(val.distance, mu, hps->lambda, 
+                                         hps->rate_min, rate_scale); 
+        
+        return log_poisson_dist(val.link, rate); 
+    }
+
+    
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        float mu = ss->mu; 
+        float rate_scale = ss->rate_scale; 
+        if( (rate_scale < 0.0) || mu < 0.0) { 
+            return -std::numeric_limits<float>::infinity();
+        }
+
+        float score = 0.0; 
+        score += log_exp_dist(mu, 1./hps->mu_hp); 
+        score += log_exp_dist(rate_scale, 1.0/hps->rate_scale_hp); 
+        return score; 
+
+    }
+    
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+    {
+        float score = 0.0; 
+
+        for(auto dpi : dppos) { 
+            float rate = rev_logistic_scaled(data[dpi].distance, ss->mu, 
+                                             hps->lambda, hps->rate_min, 
+                                             ss->rate_scale); 
+            //p = p * p_range + hps->p_min;  // already calculated
+            float lscore = log_poisson_dist(data[dpi].link, rate); 
+
+            score += lscore; 
+
+        }
+        return score; 
+    }
+    
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data, 
+                       const std::vector<dppos_t> & dppos)
+    { 
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        return prior_score + likelihood_score; 
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu_hp = bp::extract<float>(hps["mu_hp"]); 
+        hp.lambda = bp::extract<float>(hps["lambda"]);
+        hp.rate_min = bp::extract<float>(hps["rate_min"]);
+        hp.rate_scale_hp = bp::extract<float>(hps["rate_scale_hp"]);
+        return hp; 
+
+    }
+
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu_hp"] = hps.mu_hp; 
+        hp["lambda"] = hps.lambda; 
+        hp["rate_min"] = hps.rate_min; 
+        hp["rate_scale_hp"] = hps.rate_scale_hp; 
+
+        return hp; 
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = ss->mu; 
+        d["rate_scale"] = ss->rate_scale; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = bp::extract<float>(v["mu"]); 
+        ss->rate_scale = bp::extract<float>(v["rate_scale"]); 
+            
+    }
+
+}; 
 
 
 }

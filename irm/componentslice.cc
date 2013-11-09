@@ -360,4 +360,50 @@ template<> void slice_sample_exec<ExponentialDistancePoisson>
 }
 
 
+template<> void slice_sample_exec<LogisticDistancePoisson>
+(rng_t & rng, float width, 
+ LogisticDistancePoisson::suffstats_t * ss, 
+ LogisticDistancePoisson::hypers_t * hps, 
+ std::vector<LogisticDistancePoisson::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos,
+ float temp){
+
+    float mu_width = width; 
+    float rate_scale_width = width; 
+    if (width == 0.0) {
+        mu_width = hps->mu_hp*4.0; 
+    }
+    if (width == 0.0) {
+        rate_scale_width = hps->rate_scale_hp*4.0; 
+    }
+    //std::cout << "EDP : slice sampling mu, mu_width=" << mu_width << std::endl; 
+    auto mu = slice_sample2_double(
+                            [ss, &hps, data, &dppos, temp](float x) -> float{
+                                ss->mu = x; 
+                                if(x > 1e50) { 
+                                    throw std::runtime_error("mu the hell do you think you are?"); 
+                                }
+
+                                return LogisticDistancePoisson::score(ss, hps, data, 
+                                                                         dppos) /temp;
+                            }, ss->mu, mu_width, rng); 
+    
+    ss->mu = mu; 
+    // the width for this is always 0.1 because we're always sampling 
+    // on [0, 1]
+    //std::cout << "EDP : slice sampling rate_scale, rate_scale_width=" << rate_scale_width << std::endl; 
+
+    auto rate_scale = slice_sample2_double(
+                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                          ss->rate_scale = x; 
+                                          return LogisticDistancePoisson::score(ss, hps, data, 
+                                                                         dppos)/temp;
+                                      }, ss->rate_scale, rate_scale_width, rng); 
+
+    
+    ss->rate_scale = rate_scale; 
+
+}
+
+
 }

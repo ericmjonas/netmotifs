@@ -28,28 +28,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
         #domains_to_relations_pos[t] = {}
     for rel_name, rel_config in relations_config.iteritems():
         domaindef = [(tn, domains_config[tn]['N']) for tn in rel_config['relation']]
-        if rel_config['model'] == "BetaBernoulli":
-            m = models.BetaBernoulli()
-        elif rel_config['model'] == "GammaPoisson":
-            m = models.GammaPoisson()
-        elif rel_config['model'] == "BetaBernoulliNonConj":
-            m = models.BetaBernoulliNonConj()
-        elif rel_config['model'] == "LogisticDistance":
-            m = models.LogisticDistance()
-        elif rel_config['model'] == "LogisticDistanceFixedLambda":
-            m = models.LogisticDistanceFixedLambda()
-        elif rel_config['model'] == "SigmoidDistance":
-            m = models.SigmoidDistance()
-        elif rel_config['model'] == "LinearDistance":
-            m = models.LinearDistance()
-        elif rel_config['model'] == "NormalDistanceFixedWidth":
-            m = models.NormalDistanceFixedWidth()
-        elif rel_config['model'] == "SquareDistanceBump": 
-            m = models.SquareDistanceBump()
-        elif rel_config['model'] == "ExponentialDistancePoisson": 
-            m = models.ExponentialDistancePoisson()
-        else:
-            raise NotImplementedError()
+        m = models.NAMES[rel_config['model']]()
+
         rel = relation_class(domaindef, relations_config[rel_name]['data'], 
                              m)
         relations[rel_name] = rel
@@ -306,6 +286,10 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 params = {'width' : 0.0} # relation.get_hps()['mu_hp'] / 2.0
                 # 'rate_width' : relation.get_hps()['rate_hp'] / 4.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
+            elif relation.modeltypestr == "LogisticDistancePoisson":
+                params = {'width' : 0.0} # relation.get_hps()['mu_hp'] / 2.0
+                # 'rate_width' : relation.get_hps()['rate_hp'] / 4.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
 
             elif relation.modeltypestr == "BetaBernoulli":
                 pass
@@ -313,7 +297,7 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 pass
 
             else:
-                raise NotImplementedError() 
+                raise NotImplementedError("Model %s not implemented" % relation.modeltypestr) 
 
 def latent_distance_eval(distance, suffstats, hps, model_name):
     """

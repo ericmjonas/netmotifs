@@ -32,6 +32,10 @@ add_executable(benchmark
    benchmark.cc
 )
 
+add_executable(disttest
+        disttest.cc
+)
+
 add_library(irm 
    relation.cc
    componentmodels.cc

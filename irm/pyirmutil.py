@@ -30,6 +30,8 @@ class Relation(object):
             modeltypestr = "SquareDistanceBump"
         elif isinstance(modeltype, models.ExponentialDistancePoisson):
             modeltypestr = "ExponentialDistancePoisson"
+        elif isinstance(modeltype, models.LogisticDistancePoisson):
+            modeltypestr = "LogisticDistancePoisson"
 
         else:
             raise NotImplementedError()

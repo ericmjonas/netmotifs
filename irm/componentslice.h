@@ -132,6 +132,16 @@ void slice_sample_exec<ExponentialDistancePoisson>
  const std::vector<dppos_t> & dppos,
  float temp);
 
+
+template<>
+void slice_sample_exec<LogisticDistancePoisson>
+(rng_t & rng, float width, 
+ LogisticDistancePoisson::suffstats_t * ss, 
+ LogisticDistancePoisson::hypers_t * hps, 
+ std::vector<LogisticDistancePoisson::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos,
+ float temp);
+
 }
 
 #endif

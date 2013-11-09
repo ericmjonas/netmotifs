@@ -705,6 +705,71 @@ class ExponentialDistancePoisson(object):
         
         """
 
+class LogisticDistancePoisson(object):
+    """
+    Like logistic distance fixed lambda but rate_scale can be > 1.0 
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('link',  np.int32), 
+                ('distance', np.float32)]
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'lambda' :  np.random.gamma(1, 1), 
+                'mu_hp' : np.random.gamma(1.2, 4), 
+                'rate_min' : np.random.uniform(0.01, 0.1), 
+                'rate_scale_hp' : np.random.uniform(0.2, 5.0)}
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+        """
+        mu = np.random.exponential(hps['mu_hp'])
+        rate_scale = np.random.exponential(hps['rate_scale_hp'])
+
+        # fix numeric precision issues
+        if rate_scale < 0.0001:
+            rate_scale = 0.0001 
+        
+        return {'rate_scale' : rate_scale, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        d = np.random.exponential(hps['mu_hp'])
+        rate = util.logistic(d, ss['mu'], hps['lambda'])
+        
+        rate = rate * (ss['rate_scale'] - hps['rate_min']) + hps['rate_min']
+        count = np.random.poisson(rate) 
+        
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['distance'] = d
+        x[0]['link'] = count
+        return x[0]
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        rate = util.logistic(d, ss['mu'], hps['lambda'])
+        rate = rate * (ss['rate_scale'] - hps['rate_min']) + hps['rate_min']
+        return rate
+        
+
 
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
@@ -715,6 +780,7 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'GammaPoisson' : GammaPoisson, 
          'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 
          'SquareDistanceBump' : SquareDistanceBump, 
-         'ExponentialDistancePoisson' : ExponentialDistancePoisson
+         'ExponentialDistancePoisson' : ExponentialDistancePoisson, 
+         'LogisticDistancePoisson' : LogisticDistancePoisson
 }
 

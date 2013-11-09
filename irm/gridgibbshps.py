@@ -111,3 +111,19 @@ def default_grid_exponential_distance_poisson(dist_scale = 1.0, rate_scale_scale
     return hps
 
 DEFAULT_RELATION_GRIDS['ExponentialDistancePoisson'] = default_grid_exponential_distance_poisson()
+
+
+def default_grid_logistic_distance_poisson(dist_scale = 1.0, rate_scale_scale = 1.0, 
+                                           GRIDN = 10):
+    mu = util.logspace(0.1, 1.0, GRIDN) * dist_scale
+    rate_scale = util.logspace(0.1, 1.0, GRIDN) * rate_scale_scale
+    hps = []
+    for m in mu:
+        for r in rate_scale:
+            hps.append({'mu_hp' : m, 
+                        'lambda' : m, 
+                        'rate_scale_hp' : rate_scale, 
+                        'rate_min' : 0.01})
+    return hps
+
+DEFAULT_RELATION_GRIDS['LogisticDistancePoisson'] = default_grid_logistic_distance_poisson()
