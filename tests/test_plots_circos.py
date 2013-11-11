@@ -51,9 +51,20 @@ def test_ribbons():
     cp = circos.CircosPlot(av)
     cp.set_entity_labels(["conn%d" % x for x in  np.arange(N)])
     
-    cp.set_class_ribbons([(0, 4), (7, 3)])
+    cp.set_class_ribbons([(0, 4, 2), (7, 3, 2)])
                  
     circos.write(cp, 'ribbons.100.png', tempdir='plots')
+
+def test_multi_ribbons():
+    N = 100
+    av = np.arange(N, dtype=np.int32) % 10
+    cp = circos.CircosPlot(av)
+    cp.set_entity_labels(["conn%d" % x for x in  np.arange(N)])
+    
+    cp.add_class_ribbons([(0, 4, 2), (7, 3, 2)], 'red_a5')
+    cp.add_class_ribbons([(2, 3, 6), (1, 4, 4)], 'blue_a5')
+                 
+    circos.write(cp, 'ribbons.multi.100.png', tempdir='plots')
 
     
 def test_both():
@@ -63,6 +74,6 @@ def test_both():
     cp.set_entity_labels(["conn%d" % x for x in  np.arange(N)])
     cp.set_entity_links(zip(np.random.permutation(N), np.random.permutation(N)))
     
-    cp.set_class_ribbons([(0, 4), (7, 3)])
+    cp.set_class_ribbons([(0, 4, 2), (7, 3, 4)])
                  
     circos.write(cp, 'both.100.png', tempdir='plots')

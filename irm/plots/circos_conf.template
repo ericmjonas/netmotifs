@@ -47,16 +47,16 @@ file         = links.txt
 </link>
 {% endif %}
 
-{% if has_ribbons %} 
+{% for ribbon_def, ribbon_color in ribbons %}
 <link>
 show         = yes
-color        = black_a5
+color        = {{ribbon_color}}
 ribbon = yes
 thickness    = 8
-file         = ribbons.txt 
+file         = ribbons.{{loop.index-1}}.txt 
 flat=yes
 </link>
-{% endif %}
+{% endfor %}
 
 
 </links>

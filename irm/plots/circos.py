@@ -47,7 +47,7 @@ class CircosPlot(object):
         self.labels = None
         self.labels_config = {'label_size' : '40p'}
         self.links = None
-        self.class_ribbons = None
+        self.class_ribbons = []
 
     def set_entity_labels(self, labels, **kargs):
         assert len(labels) == len(self.init_assign_vect)
@@ -63,10 +63,14 @@ class CircosPlot(object):
         self.links = links
 
     def set_class_ribbons(self, ribbons):
+        self.add_class_ribbons(ribbons)
+
+    def add_class_ribbons(self, ribbons, color='black_a5'):
         """
         list of (source group, dest group, width)
         """
-        self.class_ribbons = ribbons
+        self.class_ribbons.append((ribbons, color))
+
     
 def write(config, outfilename, tempdir=None):
     """
@@ -124,11 +128,11 @@ def write(config, outfilename, tempdir=None):
             fid.close()
 
         # write the ribbons
-        if config.class_ribbons != None:
+        for ribbon_i, (class_ribbons, ribbon_color) in enumerate(config.class_ribbons):
             ribbon_template = Template(read_template("circos_ribbons.template"))
             ribbons = []
             # write wribbons
-            for src_id, dest_id, width in config.class_ribbons:
+            for src_id, dest_id, width in class_ribbons:
                 ribbons.append({'src_c' : "c%d" % src_id, 
                                 'src_len' : len(config.chromosomes[src_id]), 
                                 'dest_c' : "c%d" % dest_id, 
@@ -136,7 +140,7 @@ def write(config, outfilename, tempdir=None):
                                 'width' : width})
 
             ribbons_str = ribbon_template.render(ribbons= ribbons)
-            fid = open("ribbons.txt", 'w')
+            fid = open("ribbons.%d.txt" % ribbon_i, 'w')
             fid.write(ribbons_str)
             fid.close()
         
@@ -146,7 +150,7 @@ def write(config, outfilename, tempdir=None):
         conf_template = Template(read_template("circos_conf.template"))
         conf_str = conf_template.render(has_labels = (config.labels != None), 
                                         has_links = (config.links != None), 
-                                        has_ribbons = (config.class_ribbons != None), 
+                                        ribbons = config.class_ribbons, 
                                         labels_config = config.labels_config)
         
         fid = open("circos.conf", 'w')
