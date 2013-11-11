@@ -122,7 +122,7 @@ def default_grid_logistic_distance_poisson(dist_scale = 1.0, rate_scale_scale = 
         for r in rate_scale:
             hps.append({'mu_hp' : m, 
                         'lambda' : m, 
-                        'rate_scale_hp' : rate_scale, 
+                        'rate_scale_hp' : r, 
                         'rate_min' : 0.01})
     return hps
 

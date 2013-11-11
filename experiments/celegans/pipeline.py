@@ -36,6 +36,9 @@ EXPERIMENTS = [
     #('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
     #('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.edp.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ldp.00', 'fixed_100_200', 'anneal_slow_400'),  
+    #('celegans.2r.ldp.00', 'fixed_10_100', 'anneal_slow_20'),  
+    #('celegans.2r.edp.00', 'fixed_10_100', 'anneal_slow_20'),  
 
            ]
 
@@ -61,6 +64,7 @@ LDFL_HPS = [(0.2, 0.4, 0.01, 1.0, 1.0)] # , (0.1, 0.1, 0.5, 0.001),
 NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
 SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
 EDP_HPS = [(0.1, 1.0), (1.0, 1.0), (0.1, 2.0)]
+LDP_HPS = [(1.0, 1.0, 0.01, 2.0)]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
@@ -142,14 +146,21 @@ slow_anneal[0][1]['subkernels'][-1][1]['grids']['NormalDistanceFixedWidth'] = ge
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['BetaBernoulli'] =  [{'alpha' : a, 'beta' : b} for a, b in irm.util.cart_prod([irm.util.logspace(0.001, 1.0, 20), irm.util.logspace(0.1, 10, 20)])]
 
-slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(dist_scale = 50.0, rate_scale_scale = 50.0, GRIDN = 50)
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = irm.gridgibbshps.default_grid_exponential_distance_poisson(dist_scale = 2.0, rate_scale_scale = 20.0, GRIDN = 20)
+
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistancePoisson'] = irm.gridgibbshps.default_grid_logistic_distance_poisson(dist_scale = 2.0, rate_scale_scale = 20.0, GRIDN = 20)
+
 
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
+                  'anneal_slow_20' : {'ITERS' : 20, 
+                                       'kernels' : slow_anneal},
 
                   }
 
+pickle.dump(slow_anneal, open("kernel.config", 'w'))
 
 
 
@@ -218,6 +229,10 @@ def create_latents_2r_param():
     for edp_hpi in range(len(EDP_HPS)):
         base = td('celegans.2r.edp.%02d' % edp_hpi)
         yield infile, [base + '.data', base+'.latent', base+'.meta'], 'ExponentialDistancePoisson', edp_hpi
+
+    for ldp_hpi in range(len(LDP_HPS)):
+        base = td('celegans.2r.ldp.%02d' % ldp_hpi)
+        yield infile, [base + '.data', base+'.latent', base+'.meta'], 'LogisticDistancePoisson', ldp_hpi
         
 @files(create_latents_2r_param)
 def create_latents_2r_paramed(infile, 
@@ -390,6 +405,33 @@ def create_latents_2r_paramed(infile,
 
         HPS = {'mu_hp' : EDP_HPS[hp_i][0], 
                'rate_scale_hp' : EDP_HPS[hp_i][1]}
+
+    elif model_name == "LogisticDistancePoisson":
+        # compute distance
+                
+        chem_conn = np.zeros((NEURON_N, NEURON_N), 
+                             dtype=[('link', np.int32), 
+                                    ('distance', np.float32)])
+
+        chem_conn['link'] =  conn_matrix['chemical'] 
+        chem_conn['distance'] = dist_matrix
+
+        elec_conn = np.zeros((NEURON_N, NEURON_N), 
+                             dtype=[('link', np.int32), 
+                                    ('distance', np.float32)])
+
+        elec_conn['link'] =  conn_matrix['electrical']
+        elec_conn['distance'] = dist_matrix
+
+
+        irm_latent, irm_data = irm.irmio.default_graph_init(chem_conn, model_name, 
+                                                            extra_conn=[elec_conn])
+
+        HPS = {'mu_hp' : LDP_HPS[hp_i][0], 
+               'lambda' : LDP_HPS[hp_i][1], 
+               'rate_min' : LDP_HPS[hp_i][2],
+               'rate_scale_hp' : LDP_HPS[hp_i][3], 
+           }
 
    
     irm_latent['relations']['R1']['hps'] = HPS

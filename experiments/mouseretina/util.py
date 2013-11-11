@@ -13,7 +13,7 @@ from irm.experiments import plot_latent
 
 def plot_cluster_properties(assignments, true_cell_types, 
                             pos_vec, synapses, output_filename,
-                            cluster_thold= 0.98, 
+                            cluster_thold= 1.01, 
                             class_colors=tuple()):
 
     """

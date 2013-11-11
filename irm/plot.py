@@ -253,6 +253,23 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 ax.set_ylim(-1, 20.0)
                 ax.axvline(c['mu'], c='k')
 
+            elif model == "LogisticDistancePoisson":
+                if len(flatten_dist_val) > 0:
+                    x_jitter = np.random.normal(0, 0.01, len(flatten_dist_val))
+                    y_jitter = np.random.normal(0, 0.05, len(flatten_dist_val))
+                    ax.scatter(flatten_dist_val[:, 0] + x_jitter, 
+                               flatten_dist_val[:, 1] + y_jitter, 
+                               edgecolor='none', 
+                               s=2)
+                c = ss[(c1, c2)]
+                y = util.logistic(fine_bins, c['mu'], hps['lambda']) 
+                y = y * (c['rate_scale'] - hps['rate_min']) + hps['rate_min']
+                ax.plot(fine_bins, y, c='r') 
+                ax.text(0, 1, r"mu: %3.2f" % c['mu'], fontsize=4)
+                ax.text(0, 3, r"rate_scale: %3.2f" % c['rate_scale'], fontsize=4)
+                ax.set_ylim(-1, 20.0)
+                ax.axvline(c['mu'], c='k')
+
             elif model == "LinearDistance":
                 print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins)
                 c = ss[(c1, c2)]

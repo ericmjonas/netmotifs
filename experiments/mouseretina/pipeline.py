@@ -588,7 +588,7 @@ def plot_best_cluster_latent(exp_results,
 
         util.plot_latent(sample_latent, dist_matrix, latent_fname, 
                          model = data['relations']['R1']['model'],
-                         PLOT_MAX_DIST=120.0, MAX_CLASSES=20)
+                         PLOT_MAX_DIST=150.0, MAX_CLASSES=20)
         
 @transform(get_results, suffix(".samples"), [".hypers.pdf"])
 def plot_hypers(exp_results, (plot_hypers_filename,)):
@@ -650,6 +650,69 @@ def plot_params(exp_results, (plot_params_filename,)):
     
     f.savefig(plot_params_filename)
 
+CIRCOS_DIST_THRESHOLDS = [20, 50, 100]
+
+@transform(get_results, suffix(".samples"), 
+           [(".circos.%02d.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+def plot_circos_latent(exp_results, 
+                       out_filenames):
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
+
+    dist_matrix = d['dist_matrix']
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = d['types'][:len(conn)]
+
+    type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    chain_pos = 0
+
+    best_chain_i = chains_sorted_order[chain_pos]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
+    cell_assignment = np.array(sample_latent['domains']['d1']['assignment'])
+
+    model_name = data['relations']['R1']['model']
+    for fi, circos_filename in enumerate(out_filenames):
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+
+        if model_name == "LogisticDistance":
+            v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+                                               sample_latent['relations']['R1']['ss'], 
+                                               sample_latent['relations']['R1']['hps'], 
+                                               model_name)
+            thold = 0.50 
+            ribbons = []
+            links = []
+            for (src, dest), p in v.iteritems():
+                print src, dest, p 
+                if p > thold and src != dest:
+                    ribbons.append((src, dest, int(40*p)))
+            circos_p.set_class_ribbons(ribbons)
+            
+
+        irm.plots.circos.write(circos_p, circos_filename)
+        
+        
+
 
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
@@ -659,6 +722,7 @@ pipeline_run([data_retina_adj_bin,
               #plot_hypers, 
               plot_latents_ld_truth, 
               plot_params, 
-              create_latents_ld_truth
+              create_latents_ld_truth, 
+              plot_circos_latent
           ], multiprocess=2)
                         
