@@ -704,6 +704,15 @@ class ExponentialDistancePoisson(object):
         A vector of data for this component, and the hypers
         
         """
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        def exp_dist(x, lamb):
+            return np.exp(-x / lamb)
+        rate = ss['rate_scale'] * exp_dist(d, ss['mu'])
+        return rate
+        
 
 class LogisticDistancePoisson(object):
     """

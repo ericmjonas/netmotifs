@@ -48,6 +48,7 @@ class CircosPlot(object):
         self.labels_config = {'label_size' : '40p'}
         self.links = None
         self.class_ribbons = []
+        self.plots = []
 
     def set_entity_labels(self, labels, **kargs):
         assert len(labels) == len(self.init_assign_vect)
@@ -71,7 +72,37 @@ class CircosPlot(object):
         """
         self.class_ribbons.append((ribbons, color))
 
-    
+    def add_plot(self, plot_type, config, data, otherconfig=None):
+        """
+        The assumption at the moment is that the data map 
+        1:1 with the entity positions
+        """
+        if plot_type == 'scatter':
+            default = {'glyph' : 'rectangle', 
+                       'glyph_size' : 8, 
+                       'color' : 'red', 
+                       'stroke_color' : 'dred', 
+                       'stroke_thickness' : 1}
+
+            default.update(config)
+            config = default
+
+        elif plot_type == 'heatmap':
+            default = {
+                       'stroke_color' : 'black', 
+                       'stroke_thickness' : 1}
+
+            default.update(config)
+            config = default
+
+        else:
+            raise Exception("I don't know this plot type %s" % plot_type)
+
+        if otherconfig == None:
+            otherconfig = {}
+
+        self.plots.append((plot_type, config, data, otherconfig))
+        
 def write(config, outfilename, tempdir=None):
     """
     tempdir : where we put the intermediate outputs
@@ -144,14 +175,24 @@ def write(config, outfilename, tempdir=None):
             fid.write(ribbons_str)
             fid.close()
         
+        # write the plots
+        for plot_i, (plot_type, plot_config, plot_data, 
+                     extra_config) in enumerate(config.plots):
+            fid = open("plot.%d.txt" % plot_i, 'w')
+            
+            for entity_i, entity_val in enumerate(plot_data):
+                chrom_id, chrom_pos = config.id_to_chrom_pos[entity_i]
+                fid.write("c%d %d %d %f\n" % (chrom_id, chrom_pos, chrom_pos+1, entity_val))
 
+            fid.close()
         # now write the config
 
         conf_template = Template(read_template("circos_conf.template"))
         conf_str = conf_template.render(has_labels = (config.labels != None), 
                                         has_links = (config.links != None), 
                                         ribbons = config.class_ribbons, 
-                                        labels_config = config.labels_config)
+                                        labels_config = config.labels_config, 
+                                        plots = config.plots)
         
         fid = open("circos.conf", 'w')
         fid.write(conf_str)

@@ -650,7 +650,7 @@ def plot_params(exp_results, (plot_params_filename,)):
     
     f.savefig(plot_params_filename)
 
-CIRCOS_DIST_THRESHOLDS = [20, 50, 100]
+CIRCOS_DIST_THRESHOLDS = [10, 20, 50, 90]
 
 @transform(get_results, suffix(".samples"), 
            [(".circos.%02d.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
@@ -676,7 +676,7 @@ def plot_circos_latent(exp_results,
     dist_matrix = d['dist_matrix']
     orig_data = pickle.load(open(d['infile']))
     cell_types = d['types'][:len(conn)]
-
+    
     type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
 
     chains = [c for c in chains if type(c['scores']) != int]
@@ -690,6 +690,9 @@ def plot_circos_latent(exp_results,
     sample_latent = best_chain['state']
     cell_assignment = np.array(sample_latent['domains']['d1']['assignment'])
 
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+    print "Pos_vec=", pos_vec
     model_name = data['relations']['R1']['model']
     for fi, circos_filename in enumerate(out_filenames):
         circos_p = irm.plots.circos.CircosPlot(cell_assignment)
@@ -704,11 +707,35 @@ def plot_circos_latent(exp_results,
             links = []
             for (src, dest), p in v.iteritems():
                 print src, dest, p 
-                if p > thold and src != dest:
+                if p > thold:
                     ribbons.append((src, dest, int(40*p)))
             circos_p.set_class_ribbons(ribbons)
+            pos_min = 40
+            pos_max = 120
+            pos_r_min = 1.05
+            pos_r_max = 1.25
+            circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
+                                          'r1' : '%fr' % pos_r_max, 
+                                          'min' : pos_min, 
+                                          'max' : pos_max, 
+                                          'glyph' : 'circle', 
+                                          'color' : 'black',
+                                          'stroke_thickness' : 0
+                                          }, 
+                              pos_vec[:, 0], 
+                              {'backgrounds' : [('background', {'color': 'vvlgrey', 
+                                                                'y0' : pos_min, 
+                                                                'y1' : pos_max})],  
+                               'axes': [('axis', {'color' : 'grey', 
+                                                  'thickness' : 1, 
+                                                  'spacing' : '0.05r'})]})
             
-
+            circos_p.add_plot('heatmap', {'r0' : '1.0r', 
+                                            'r1' : '1.05r', 
+                                            'min' : 0, 
+                                            'max' : 72}, 
+                              cell_types)
+                                            
         irm.plots.circos.write(circos_p, circos_filename)
         
         

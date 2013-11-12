@@ -61,6 +61,31 @@ flat=yes
 
 </links>
 
+<plots>
+{% for plot_type, pc, plot_data, otherconfigs in plots %}
+<plot>
+show = yes
+type = {{plot_type}}
+file = plot.{{loop.index-1}}.txt
+{% for pc_name, pc_val in pc.iteritems() %}
+{{pc_name}} ={{pc_val}}{% endfor %}
+
+{% for otherconfigname, otherconfig_vals in otherconfigs.iteritems() %}
+<{{otherconfigname}}>
+{% for otherconfigval_name, vals in otherconfig_vals %}
+<{{otherconfigval_name}}>
+{% for k, v in vals.iteritems()%}
+{{k}} = {{v}}
+{% endfor %}
+</{{otherconfigval_name}}>
+{% endfor%} 
+
+</{{otherconfigname}}>
+{% endfor %}
+
+</plot>
+{% endfor %}
+</plots>
 
 ################################################################
 # The remaining content is standard and required. It is imported 

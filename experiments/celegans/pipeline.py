@@ -1038,8 +1038,8 @@ def plot_best_latent(exp_results,
 
 CIRCOS_DIST_THRESHOLDS = [0.01, 0.5, 0.9]
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%d.elec.png" % d, 
-             ".circos.%d.chem.png" % d) for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+           [(".circos.%d.png" % d, 
+             ) for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_best_circos(exp_results, 
                      out_filenames):
     print "Plotting best latent", exp_results
@@ -1081,12 +1081,14 @@ def plot_best_circos(exp_results,
 
     cell_assignment = sample_latent['domains']['d1']['assignment']
 
-
+    model_name = data['relations']['R1']['model']
     for fi, circos_filenames in enumerate(out_filenames):
-        for relation, filename in zip(['R1', 'R2'], circos_filenames):
-            model_name = data['relations'][relation]['model']
 
-            circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+
+        for relation, color in [('R1', 'red_a5'), 
+                                ('R2', 'blue_a5')]:
+
 
             circos_p.set_entity_labels(canonical_neuron_ordering)
 
@@ -1105,9 +1107,50 @@ def plot_best_circos(exp_results,
                         print src, dest, p, pix
 
                         ribbons.append((src, dest, pix))
-                circos_p.set_class_ribbons(ribbons)
+                circos_p.add_class_ribbons(ribbons, color)
+            elif model_name == "ExponentialDistancePoisson" or model_name == "LogisticDistancePoisson":
+                v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+                                                   sample_latent['relations'][relation]['ss'], 
+                                                   sample_latent['relations'][relation]['hps'], 
+                                                   model_name)
+                thold = 0.01
+                ribbons = []
+                links = []
+                for (src, dest), rate in v.iteritems():
+                    if rate > thold :
+                        pix = int(120*rate)
+                        print src, dest, rate, pix
 
-            irm.plots.circos.write(circos_p, filename)
+                        ribbons.append((src, dest, pix))
+                circos_p.add_class_ribbons(ribbons, color)
+            role = np.zeros(len(canonical_neuron_ordering))
+            role[neurons['role'] == 'M']= 1
+            role[neurons['role'] == 'S']= 2
+
+            circos_p.add_plot('scatter', {'r0' : '1.05r', 
+                                          'r1' : '1.25r', 
+                                          'min' : 0, 
+                                          'max' : 1.0, 
+                                          'glyph_size' : 20, 
+                                          'glyph' : 'circle', 
+                                          'color' : 'black',
+                                          'stroke_thickness' : 0}, 
+                              neurons['soma_pos'],
+                              {'backgrounds' : [('background', {'color': 'vvlgrey', 
+                                                                'y0' : 0.0, 
+                                                                'y1' : 1.0})],  
+                               'axes': [('axis', {'color' : 'grey', 
+                                                  'thickness' : 1, 
+                                                  'spacing' : '0.05r'})]})
+
+                            
+            circos_p.add_plot('heatmap', {'r0' : '1.0r', 
+                                          'r1' : '1.05r', 
+                                          'min' : 0, 
+                                          'max' : 2}, 
+                              role)
+
+        irm.plots.circos.write(circos_p, circos_filenames[0])
 
 
 pipeline_run([create_inits, get_results, plot_scores_z, 

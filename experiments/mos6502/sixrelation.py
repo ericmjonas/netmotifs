@@ -126,3 +126,6 @@ for dataset, model in [('xysregs', 'ldfl'),
     all_r_f.savefig("sixrelation.%s.%s.all.latents.pdf" % (dataset, model))
 
 
+    circos_p = irm.plots.circos.CircosPlot(assign)
+    irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.png" % (dataset, model))
+

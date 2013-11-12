@@ -77,3 +77,36 @@ def test_both():
     cp.set_class_ribbons([(0, 4, 2), (7, 3, 4)])
                  
     circos.write(cp, 'both.100.png', tempdir='plots')
+
+def test_scatter_plot():
+    # all one
+    av = np.arange(100, dtype=np.int32) % 10
+    cp = circos.CircosPlot(av)
+    data_points = av
+    
+    cp.add_plot('scatter', {'r0' : '1.1r', 
+                            'r1' : '1.2r', 
+                            'min' : 0, 
+                            'max' : 10}, 
+                data_points, 
+                {'backgrounds' : [('background', {'color': 'vvlgreen', 
+                                                  'y0' : 4, 
+                                                  'y1' : 8})]}
+                )
+    
+    circos.write(cp, 'plots.scatter.png', tempdir='plots')
+
+def test_heatmap_plot():
+    # all one
+    av = np.arange(100, dtype=np.int32) % 10
+    cp = circos.CircosPlot(av)
+    data_points = av
+    
+    cp.add_plot('heatmap', {'r0' : '1.1r', 
+                            'r1' : '1.2r', 
+                            'min' : 0, 
+                            'max' : 10}, 
+                data_points, 
+                )
+    
+    circos.write(cp, 'plots.heatmap.png', tempdir='plots')
