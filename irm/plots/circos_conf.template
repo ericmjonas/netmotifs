@@ -8,7 +8,7 @@ karyotype = karyotype.txt
 default = 0.005r
 </spacing>
 
-radius    = 0.8r
+radius    = {{ideogram_radius}}
 thickness = 40p
 fill      = yes
 
@@ -68,7 +68,7 @@ show = yes
 type = {{plot_type}}
 file = plot.{{loop.index-1}}.txt
 {% for pc_name, pc_val in pc.iteritems() %}
-{{pc_name}} ={{pc_val}}{% endfor %}
+{{pc_name}} = {{pc_val}}{% endfor %}
 
 {% for otherconfigname, otherconfig_vals in otherconfigs.iteritems() %}
 <{{otherconfigname}}>

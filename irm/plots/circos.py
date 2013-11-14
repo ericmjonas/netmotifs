@@ -30,7 +30,7 @@ class CircosPlot(object):
     2. group id: controls which order it is plotted in 
     """
 
-    def __init__(self, init_assign_vect):
+    def __init__(self, init_assign_vect, ideogram_radius="0.8r"):
         self.init_assign_vect = init_assign_vect
 
 
@@ -49,6 +49,8 @@ class CircosPlot(object):
         self.links = None
         self.class_ribbons = []
         self.plots = []
+
+        self.ideogram_radius = ideogram_radius
 
     def set_entity_labels(self, labels, **kargs):
         assert len(labels) == len(self.init_assign_vect)
@@ -94,6 +96,25 @@ class CircosPlot(object):
 
             default.update(config)
             config = default
+
+        elif plot_type == 'text':
+            default = {'color' : 'black', 
+                       'label_size' : '20p', 
+                       'label_font' : 'condensed', 
+            }
+
+            default.update(config)
+            config = default
+
+        elif plot_type == 'line':
+            default = {
+                       'color' : 'black', 
+                       'stroke_color' : 'black', 
+                       'stroke_thickness' : 1}
+
+            default.update(config)
+            config = default
+
 
         else:
             raise Exception("I don't know this plot type %s" % plot_type)
@@ -182,7 +203,7 @@ def write(config, outfilename, tempdir=None):
             
             for entity_i, entity_val in enumerate(plot_data):
                 chrom_id, chrom_pos = config.id_to_chrom_pos[entity_i]
-                fid.write("c%d %d %d %f\n" % (chrom_id, chrom_pos, chrom_pos+1, entity_val))
+                fid.write("c%d %d %d %s\n" % (chrom_id, chrom_pos, chrom_pos+1, entity_val))
 
             fid.close()
         # now write the config
@@ -192,7 +213,8 @@ def write(config, outfilename, tempdir=None):
                                         has_links = (config.links != None), 
                                         ribbons = config.class_ribbons, 
                                         labels_config = config.labels_config, 
-                                        plots = config.plots)
+                                        plots = config.plots, 
+                                        ideogram_radius=config.ideogram_radius)
         
         fid = open("circos.conf", 'w')
         fid.write(conf_str)

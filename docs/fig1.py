@@ -5,6 +5,7 @@ import irm
 def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
 
+np.random.seed(0)
 
 SIDE_N = 5
 
@@ -39,7 +40,7 @@ class_conn = {(0, 1) : (1.0, 0.8),
 
 
 nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(SIDE_N, 
-                                                                     class_conn, JITTER=0.3, rand_conn_prob=0.01)
+                                                                     class_conn, JITTER=0.3, default_param=0.01)
 
 
 
@@ -68,7 +69,7 @@ c_class = nodes_with_class['class']
 ai = np.argsort(c_class).flatten()
 c_sorted = connectivity[ai, :]
 c_sorted = c_sorted[:, ai]
-f.savefig("f1.raw.pdf")
+f.savefig("source.f1.raw.pdf")
 
 f2 = pylab.figure()
 ax = f2.add_subplot(1, 1, 1)
@@ -79,10 +80,64 @@ ax.imshow(c_sorted, interpolation='nearest', cmap=pylab.cm.Greys)
 for d in di:
     ax.axhline(d+0.5)
     ax.axvline(d+0.5)
-f2.savefig("f1.sorted.pdf")
+f2.savefig("source.f1.sorted.pdf")
+
+# hilariously construct suffstats and hps by hand
+hps = {'mu_hp' : 1.0, 
+       'lambda_hp' : 1.0, 
+       'p_max' : 0.9, 
+       'p_min' : 0.0001}
+ss = {}
+for c1 in range(4):
+    for c2 in range(4):
+        c = (c1, c2)
+        if c in class_conn:
+            mu = class_conn[c][0]
+            lamb = class_conn[c][0]/8
+        else:
+            mu = 0.0001
+            lamb = 0.0001
+
+        ss[c] = {'mu' : mu, 'lambda' : lamb}
+
 
 f3 = pylab.figure()
 irm.plot.plot_t1t1_params(f3, conn_and_dist, nodes_with_class['class'], 
-                          None, None, model=None, MAX_DIST=4)
-f3.savefig("f1.latent.pdf")
+                          ss, hps, model="LogisticDistance", MAX_DIST=3.5)
+f3.savefig("source.f1.latent.pdf")
+
+DISTS = [0.1, 1.0, 2.5]
+for dist_i, dist_threshold in enumerate(DISTS):
+    circos_p = irm.plots.circos.CircosPlot(c_class)
+
+    v = irm.irmio.latent_distance_eval(dist_threshold, 
+                                       ss, hps, 'LogisticDistance')
+
+    thold = 0.5
+    ribbons = []
+    links = []
+    pairs_plotted = set()
+
+    ribbons = []
+    for (src, dest) in v.keys():
+        p1 = v[(src, dest)]
+        p2 = v[(dest, src)]
+        p = max(p1, p2)
+        if (src, dest) in pairs_plotted or (dest, src) in pairs_plotted:
+            pass
+        else:
+            if p > thold :
+                pix = int(10*p)
+                print src, dest, p, pix
+
+                ribbons.append((src, dest, pix))
+
+        pairs_plotted.add((src, dest))
+
+    circos_p.add_class_ribbons(ribbons)
+
+    irm.plots.circos.write(circos_p, "source.f1.circos.%d.png" % dist_i)
+
+
+
 

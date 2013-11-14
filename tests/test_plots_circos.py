@@ -110,3 +110,24 @@ def test_heatmap_plot():
                 )
     
     circos.write(cp, 'plots.heatmap.png', tempdir='plots')
+
+def test_glyph_plot():
+    # all one
+    av = np.arange(300, dtype=np.int32) % 10
+    cp = circos.CircosPlot(av)
+    data_points = ["C" for d in av] 
+    for i in range(0, 300, 7):
+        data_points[i]= 'A'
+    for i in range(0, 300, 4):
+        data_points[i]= 'L'
+    
+    cp.add_plot('text', {'r0' : '1.05r', 
+                         'r1' : '1.10r', 
+                         'label_size' : '20p', 
+                         'label_font' : 'glyph', 
+                         'label_rotate' : 'yes', 
+                     }, 
+                
+                data_points)
+    
+    circos.write(cp, 'plots.glyphs.png', tempdir='plots')
