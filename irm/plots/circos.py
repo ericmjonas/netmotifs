@@ -30,9 +30,11 @@ class CircosPlot(object):
     2. group id: controls which order it is plotted in 
     """
 
-    def __init__(self, init_assign_vect, ideogram_radius="0.8r"):
+    def __init__(self, init_assign_vect, ideogram_radius="0.8r", 
+                 ideogram_thickness="40p", 
+                 karyotype_colors=None):
         self.init_assign_vect = init_assign_vect
-
+        self.karyotype_colors = karyotype_colors
 
         # compute chromosomes
         self.chromosome_ids_ordered = sorted(np.unique(init_assign_vect))
@@ -51,6 +53,7 @@ class CircosPlot(object):
         self.plots = []
 
         self.ideogram_radius = ideogram_radius
+        self.ideogram_thickness = ideogram_thickness
 
     def set_entity_labels(self, labels, **kargs):
         assert len(labels) == len(self.init_assign_vect)
@@ -146,7 +149,8 @@ def write(config, outfilename, tempdir=None):
             chl.append({'name' : 'c%d' % chromosome_id, 
                        'label' : 'c%d' % chromosome_id, 
                        'entities' : c})
-        karyotype_str = karyotype_template.render(chromosomes = chl)
+        karyotype_str = karyotype_template.render(chromosomes = chl, 
+                                                  colors = config.karyotype_colors)
         fid = open('karyotype.txt', 'w')
         fid.write(karyotype_str)
         fid.close()
@@ -214,7 +218,8 @@ def write(config, outfilename, tempdir=None):
                                         ribbons = config.class_ribbons, 
                                         labels_config = config.labels_config, 
                                         plots = config.plots, 
-                                        ideogram_radius=config.ideogram_radius)
+                                        ideogram_radius=config.ideogram_radius, 
+                                        ideogram_thickness = config.ideogram_thickness)
         
         fid = open("circos.conf", 'w')
         fid.write(conf_str)

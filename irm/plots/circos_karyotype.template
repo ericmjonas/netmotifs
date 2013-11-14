@@ -1,3 +1,3 @@
 {% for chr in chromosomes %}
-chr - {{chr['name']}} {{chr['label']}} 0 {{chr['entities'] | length}} grey
+chr - {{chr['name']}} {{chr['label']}} 0 {{chr['entities'] | length}} {%if colors == None %}grey{%else%}{{colors[loop.index0]}}{%endif%}
 {% endfor %}

@@ -7,7 +7,7 @@ def dist(a, b):
 
 np.random.seed(0)
 
-SIDE_N = 5
+SIDE_N = 6
 
 # class_conn = {(0, 1) : ('d', 1.0, 0.7), 
 #               (1, 2) : ('d', 2.0, 0.8), 
@@ -32,11 +32,13 @@ SIDE_N = 5
 
 
 
-class_conn = {(0, 1) : (1.0, 0.8), 
+class_conn = {(0, 1) : (0.7, 0.8), 
               (1, 2) : (2.0, 0.6), 
-              (3, 2) : (0.7, 0.9), 
+              #(3, 2) : (0.7, 0.9), 
               (2, 1) : (0.7, 0.8), 
-              (0, 3) : (1.7, 0.7)}
+              (0, 3) : (1.7, 0.7), 
+              (3, 4) : (2.4, 0.8), 
+              (4, 0) : (1.0, 0.3)}
 
 
 nodes_with_class, connectivity = irm.data.generate.c_class_neighbors(SIDE_N, 
@@ -65,7 +67,12 @@ c_r = c_r[:, ai]
 
 ax.imshow(c_r, interpolation='nearest', cmap=pylab.cm.Greys)
 
+ax.set_xticks([])
+ax.set_yticks([])
+
 c_class = nodes_with_class['class']
+CLASS_N = len(np.unique(c_class))
+
 ai = np.argsort(c_class).flatten()
 c_sorted = connectivity[ai, :]
 c_sorted = c_sorted[:, ai]
@@ -80,6 +87,8 @@ ax.imshow(c_sorted, interpolation='nearest', cmap=pylab.cm.Greys)
 for d in di:
     ax.axhline(d+0.5)
     ax.axvline(d+0.5)
+ax.set_xticks([])
+ax.set_yticks([])
 f2.savefig("source.f1.sorted.pdf")
 
 # hilariously construct suffstats and hps by hand
@@ -88,12 +97,12 @@ hps = {'mu_hp' : 1.0,
        'p_max' : 0.9, 
        'p_min' : 0.0001}
 ss = {}
-for c1 in range(4):
-    for c2 in range(4):
+for c1 in range(CLASS_N):
+    for c2 in range(CLASS_N):
         c = (c1, c2)
         if c in class_conn:
             mu = class_conn[c][0]
-            lamb = class_conn[c][0]/8
+            lamb = class_conn[c][0]/4
         else:
             mu = 0.0001
             lamb = 0.0001
@@ -108,12 +117,13 @@ f3.savefig("source.f1.latent.pdf")
 
 DISTS = [0.1, 1.0, 2.5]
 for dist_i, dist_threshold in enumerate(DISTS):
-    circos_p = irm.plots.circos.CircosPlot(c_class)
+    circos_p = irm.plots.circos.CircosPlot(c_class, "0.5r", "70p", 
+                                           ['red', 'green', 'blue', 'yellow', 'purple'])
 
     v = irm.irmio.latent_distance_eval(dist_threshold, 
                                        ss, hps, 'LogisticDistance')
 
-    thold = 0.5
+    thold = 0.3
     ribbons = []
     links = []
     pairs_plotted = set()
@@ -136,7 +146,7 @@ for dist_i, dist_threshold in enumerate(DISTS):
 
     circos_p.add_class_ribbons(ribbons)
 
-    irm.plots.circos.write(circos_p, "source.f1.circos.%d.png" % dist_i)
+    irm.plots.circos.write(circos_p, "source.f1.circos.%d.svg" % dist_i)
 
 
 

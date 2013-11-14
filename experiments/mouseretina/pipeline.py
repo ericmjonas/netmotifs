@@ -650,10 +650,11 @@ def plot_params(exp_results, (plot_params_filename,)):
     
     f.savefig(plot_params_filename)
 
-CIRCOS_DIST_THRESHOLDS = [10, 20, 50, 90]
+CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%02d.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+           [(".circos.%02d.svg" % d, 
+             ".circos.%02d.small.svg" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
 
@@ -694,7 +695,7 @@ def plot_circos_latent(exp_results,
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
     print "Pos_vec=", pos_vec
     model_name = data['relations']['R1']['model']
-    for fi, circos_filename in enumerate(out_filenames):
+    for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
         circos_p = irm.plots.circos.CircosPlot(cell_assignment)
 
         if model_name == "LogisticDistance":
@@ -736,9 +737,25 @@ def plot_circos_latent(exp_results,
                                             'max' : 72}, 
                               cell_types)
                                             
-        irm.plots.circos.write(circos_p, circos_filename)
+        irm.plots.circos.write(circos_p, circos_filename_main)
         
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r")
         
+        if model_name == "LogisticDistance":
+            v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+                                               sample_latent['relations']['R1']['ss'], 
+                                               sample_latent['relations']['R1']['hps'], 
+                                               model_name)
+            thold = 0.50 
+            ribbons = []
+            links = []
+            for (src, dest), p in v.iteritems():
+                print src, dest, p 
+                if p > thold:
+                    ribbons.append((src, dest, int(40*p)))
+            circos_p.set_class_ribbons(ribbons)
+                                            
+        irm.plots.circos.write(circos_p, circos_filename_small)
 
 
 pipeline_run([data_retina_adj_bin, 

@@ -42,7 +42,6 @@ for dataset, model in [('xysregs', 'ldfl'),
     df['cluster'] = sample['domains']['d1']['assignment']
     for pin in ['gate', 'c1', 'c2']:
         df = df.join(wiredf['name'], on=[pin], rsuffix='.%s'% pin)
-    print df.head()
 
     fid = open("sixrelation.%s.%s.output.html" % (dataset, model), 'w')
 
@@ -95,6 +94,89 @@ for dataset, model in [('xysregs', 'ldfl'),
 
             circos_p.add_class_ribbons(ribbons, color)
 
+            def conv(s):
+                out = []
+                for n in s:
+                    a = 'A'
+                    if n == 'cclk':
+                        a = 'C'
+                    elif n == 'vss':
+                        a = 'O'
+                    # elif n in ['x%d' % d for d in range(8)]:
+                    #     a = 'I'
+                    # elif n in ['y%d' % d for d in range(8)]:
+                    #     a = 'I'
+                    # elif n in ['s%d' % d for d in range(8)]:
+                    #     a = 'I'
+                    elif type(n) == str and (('not' in n) or ('~' in n)):
+                        a = 'I'
+                    out.append(a)
 
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.svg" % (dataset, model, fi, relation))
+
+
+                return out
+
+            def clean(x):
+                out = []
+                for y in x:
+                    if type(y) == float:
+                        out.append('_')
+                    elif '#' in y:
+                        out.append("n%s" % y[1:] )
+                    else:
+                        out.append(y)
+                return out
+
+            # # add pin glyphs for 'vss' and 'clk'
+            # circos_p.add_plot('text', {'r0' : '1.05r', 
+            #                            'r1' : '1.10r', 
+            #                            'label_size' : '20p', 
+            #                            'label_font' : 'glyph', 
+            #                            'label_rotate' : 'yes', 
+            #                        }, 
+            #                   conv(df['name.c2']))
+
+            # circos_p.add_plot('text', {'r0' : '1.10r', 
+            #                            'r1' : '1.15r', 
+            #                            'label_size' : '20p', 
+            #                            'label_font' : 'glyph', 
+            #                            'label_rotate' : 'yes', 
+            #                        }, 
+            #                   conv(df['name.c1']))
+
+            # circos_p.add_plot('text', {'r0' : '1.15r', 
+            #                            'r1' : '1.20r', 
+            #                            'label_size' : '20p', 
+            #                            'label_font' : 'glyph', 
+            #                            'label_rotate' : 'yes', 
+            #                        }, 
+            #                   conv(df['name.gate']))
+
+            circos_p.add_plot('text', {'r0' : '1.05r', 
+                                       'r1' : '1.15r', 
+                                       'label_font' : 'condensed', 
+                                       'label_size' : '20p', 
+                                       'label_rotate' : 'yes', 
+                                   }, 
+                              clean(df['name.c1']))
+
+
+            circos_p.add_plot('text', {'r0' : '1.15r', 
+                                       'r1' : '1.25r', 
+                                       'label_font' : 'condensed', 
+                                       'label_size' : '20p', 
+                                       'label_rotate' : 'yes', 
+                                   }, 
+                              clean(df['name.c2']))
+
+
+            circos_p.add_plot('text', {'r0' : '1.25r', 
+                                       'r1' : '1.35r', 
+                                       'label_font' : 'condensed', 
+                                       'label_size' : '20p', 
+                                       'label_rotate' : 'yes', 
+                                   }, 
+                              clean(df['name.gate']))
+
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.png" % (dataset, model, fi, relation))
 
