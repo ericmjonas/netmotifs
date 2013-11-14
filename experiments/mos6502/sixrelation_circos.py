@@ -180,3 +180,10 @@ for dataset, model in [('xysregs', 'ldfl'),
 
             irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.png" % (dataset, model, fi, relation))
 
+
+            # now the tiny plots
+        
+            circos_p = irm.plots.circos.CircosPlot(assign, ideogram_radius="0.4r", 
+                                                   ideogram_thickness="60p")
+            circos_p.add_class_ribbons(ribbons, color)
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.tiny.png" % (dataset, model, fi, relation))

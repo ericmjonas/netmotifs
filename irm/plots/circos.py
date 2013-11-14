@@ -32,7 +32,8 @@ class CircosPlot(object):
 
     def __init__(self, init_assign_vect, ideogram_radius="0.8r", 
                  ideogram_thickness="40p", 
-                 karyotype_colors=None):
+                 karyotype_colors=None, 
+                 custom_color_map = None):
         self.init_assign_vect = init_assign_vect
         self.karyotype_colors = karyotype_colors
 
@@ -54,6 +55,7 @@ class CircosPlot(object):
 
         self.ideogram_radius = ideogram_radius
         self.ideogram_thickness = ideogram_thickness
+        self.custom_color_map = custom_color_map
 
     def set_entity_labels(self, labels, **kargs):
         assert len(labels) == len(self.init_assign_vect)
@@ -219,7 +221,8 @@ def write(config, outfilename, tempdir=None):
                                         labels_config = config.labels_config, 
                                         plots = config.plots, 
                                         ideogram_radius=config.ideogram_radius, 
-                                        ideogram_thickness = config.ideogram_thickness)
+                                        ideogram_thickness = config.ideogram_thickness, 
+                                        custom_color_map = config.custom_color_map)
         
         fid = open("circos.conf", 'w')
         fid.write(conf_str)

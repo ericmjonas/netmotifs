@@ -131,3 +131,15 @@ def test_glyph_plot():
                 data_points)
     
     circos.write(cp, 'plots.glyphs.png', tempdir='plots')
+
+def test_custom_colors():
+    # all one
+    av = np.arange(100, dtype=np.int32) % 10
+    
+    custom_color_map = {'mycolor%d' % d : (255, d * 20 , 0) for d in range(10)}
+
+    cp = circos.CircosPlot(av, 
+                           karyotype_colors = ['mycolor%d' % d for d in range(10)], 
+                           custom_color_map = custom_color_map)
+
+    circos.write(cp, 'custom.colors.png', tempdir='plots')

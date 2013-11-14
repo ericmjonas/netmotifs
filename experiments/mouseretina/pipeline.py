@@ -5,6 +5,7 @@ import copy
 import os, glob
 import time
 from matplotlib import pylab
+import matplotlib
 
 import matplotlib.gridspec as gridspec
 
@@ -653,8 +654,8 @@ def plot_params(exp_results, (plot_params_filename,)):
 CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%02d.svg" % d, 
-             ".circos.%02d.small.svg" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+           [(".circos.%02d.png" % d, 
+             ".circos.%02d.small.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
 
@@ -696,7 +697,23 @@ def plot_circos_latent(exp_results,
     print "Pos_vec=", pos_vec
     model_name = data['relations']['R1']['model']
     for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
-        circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+        CLASS_N = len(np.unique(cell_assignment))
+        
+
+        class_ids = sorted(np.unique(cell_assignment))
+
+        custom_color_map = {}
+        for c_i, c_v in enumerate(class_ids):
+            c = np.array(pylab.cm.Set1(float(c_i) / CLASS_N)[:3])*255
+            custom_color_map['ccolor%d' % c_v]  = c.astype(int)
+
+        colors = np.linspace(0, 360, CLASS_N)
+        color_str = ['ccolor%d' % int(d) for d in class_ids]
+        print "custom_color_map=", custom_color_map
+
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
+                                               karyotype_colors = color_str, 
+                                               custom_color_map = custom_color_map)
 
         if model_name == "LogisticDistance":
             v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
@@ -713,8 +730,8 @@ def plot_circos_latent(exp_results,
             circos_p.set_class_ribbons(ribbons)
             pos_min = 40
             pos_max = 120
-            pos_r_min = 1.05
-            pos_r_max = 1.25
+            pos_r_min = 1.10
+            pos_r_max = 1.30
             circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
                                           'r1' : '%fr' % pos_r_max, 
                                           'min' : pos_min, 
@@ -731,15 +748,17 @@ def plot_circos_latent(exp_results,
                                                   'thickness' : 1, 
                                                   'spacing' : '0.05r'})]})
             
-            circos_p.add_plot('heatmap', {'r0' : '1.0r', 
-                                            'r1' : '1.05r', 
+            circos_p.add_plot('heatmap', {'r0' : '1.05r', 
+                                            'r1' : '1.10r', 
                                             'min' : 0, 
                                             'max' : 72}, 
                               cell_types)
                                             
         irm.plots.circos.write(circos_p, circos_filename_main)
         
-        circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r")
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r", 
+                                               karyotype_colors = color_str, 
+                                               custom_color_map = custom_color_map)
         
         if model_name == "LogisticDistance":
             v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
@@ -757,6 +776,64 @@ def plot_circos_latent(exp_results,
                                             
         irm.plots.circos.write(circos_p, circos_filename_small)
 
+@transform(get_results, suffix(".samples"), 
+           ".somapos.pdf")
+def plot_clustered_somapos(exp_results, 
+                           out_filename):
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
+
+    dist_matrix = d['dist_matrix']
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = d['types'][:len(conn)]
+    
+    type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    chain_pos = 0
+
+    best_chain_i = chains_sorted_order[chain_pos]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
+    cell_assignment = np.array(sample_latent['domains']['d1']['assignment'])
+
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+    print "Pos_vec=", pos_vec
+
+    f = pylab.figure(figsize=(12, 8))
+    ax = f.add_subplot(1, 1, 1)
+
+    CLASS_N = len(np.unique(cell_assignment))
+    colors = np.linspace(0, 1.0, CLASS_N)
+
+    ca = irm.util.canonicalize_assignment(cell_assignment)
+    # build up the color rgb
+    cell_colors = np.zeros((len(ca), 3))
+    for ci, c in enumerate(ca):
+        cell_colors[ci] = pylab.cm.Set1(float(c) / CLASS_N)[:3]
+    ax.scatter(pos_vec[:, 1], pos_vec[:, 2], edgecolor='none', 
+               c = cell_colors)
+    ax.set_ylim(0, 85)
+    ax.set_xlim(0, 115)
+    f.savefig(out_filename)
 
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
@@ -767,6 +844,7 @@ pipeline_run([data_retina_adj_bin,
               plot_latents_ld_truth, 
               plot_params, 
               create_latents_ld_truth, 
-              plot_circos_latent
+              plot_circos_latent, 
+              plot_clustered_somapos,
           ], multiprocess=2)
                         

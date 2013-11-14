@@ -1,5 +1,6 @@
 # circos.conf
 
+
 karyotype = karyotype.txt
 
 <ideogram>
@@ -109,4 +110,10 @@ file = plot.{{loop.index-1}}.txt
 <<include etc/housekeeping.conf>>
 
 
-
+{% if custom_color_map == None %} 
+{% else %}
+<colors>
+{% for n, v in custom_color_map.iteritems() %} 
+{{n}}={{v[0]}},{{v[1]}},{{v[2]}}{%endfor %}
+</colors>
+{% endif %}
