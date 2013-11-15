@@ -6,7 +6,7 @@ karyotype = karyotype.txt
 <ideogram>
 
 <spacing>
-default = 0.005r
+default = 0.01r
 </spacing>
 
 radius    = {{ideogram_radius}}

@@ -143,3 +143,4 @@ def test_custom_colors():
                            custom_color_map = custom_color_map)
 
     circos.write(cp, 'custom.colors.png', tempdir='plots')
+

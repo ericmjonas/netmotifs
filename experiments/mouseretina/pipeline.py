@@ -712,6 +712,7 @@ def plot_circos_latent(exp_results,
         print "custom_color_map=", custom_color_map
 
         circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
+                                               ideogram_radius="0.7r", 
                                                karyotype_colors = color_str, 
                                                custom_color_map = custom_color_map)
 
@@ -730,8 +731,9 @@ def plot_circos_latent(exp_results,
             circos_p.set_class_ribbons(ribbons)
             pos_min = 40
             pos_max = 120
-            pos_r_min = 1.10
-            pos_r_max = 1.30
+            pos_r_min = 1.00
+            pos_r_max = pos_r_min + 0.25
+
             circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
                                           'r1' : '%fr' % pos_r_max, 
                                           'min' : pos_min, 
@@ -748,15 +750,48 @@ def plot_circos_latent(exp_results,
                                                   'thickness' : 1, 
                                                   'spacing' : '0.05r'})]})
             
-            circos_p.add_plot('heatmap', {'r0' : '1.05r', 
-                                            'r1' : '1.10r', 
-                                            'min' : 0, 
-                                            'max' : 72}, 
-                              cell_types)
+            # circos_p.add_plot('heatmap', {'r0' : '1.05r', 
+            #                                 'r1' : '1.10r', 
+            #                                 'min' : 0, 
+            #                                 'max' : 72}, 
+            #                   cell_types)
+            type_color_map = {'gc' : 0, 
+                              'ac' : 1, 
+                              'bc' : 2, 
+                              'other' : 3}
+
+            TYPE_N = np.max(cell_types) + 1
+
+            type_lut = []
+            for i in range(TYPE_N):
+                if (i < 70):
+                    d = type_metadata_df.loc[i+1]['desig']
+                else:
+                    d = "  "
+                type_lut.append(type_color_map.get(d[:2], 3))
+
+            circos_p.add_plot('heatmap', {'r0' : '1.25r', 
+                                          'r1' : '1.28r', 
+                                          'min' : 0, 
+                                          'max' : 3, 
+                                          'color': "red,blue,green,white"}, 
+                              [type_lut[i] for i in cell_types])
+            
+            # circos_p.add_plot('scatter', {'r0' : '1.01r', 
+            #                               'r1' : '1.10r', 
+            #                               'min' : 0, 
+            #                               'max' : 3, 
+            #                               'gliph' : 'square', 
+            #                               'color' : 'black', 
+            #                               'stroke_thickness' : 0}, 
+            #                   [type_lut[i] for i in cell_types])
+
+                            
                                             
         irm.plots.circos.write(circos_p, circos_filename_main)
         
         circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r", 
+                                               ideogram_thickness="80p", 
                                                karyotype_colors = color_str, 
                                                custom_color_map = custom_color_map)
         
@@ -830,9 +865,12 @@ def plot_clustered_somapos(exp_results,
     for ci, c in enumerate(ca):
         cell_colors[ci] = pylab.cm.Set1(float(c) / CLASS_N)[:3]
     ax.scatter(pos_vec[:, 1], pos_vec[:, 2], edgecolor='none', 
-               c = cell_colors)
+               c = cell_colors, s=60)
     ax.set_ylim(0, 85)
-    ax.set_xlim(0, 115)
+    ax.set_xlim(5, 115)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
     f.savefig(out_filename)
 
 pipeline_run([data_retina_adj_bin, 
