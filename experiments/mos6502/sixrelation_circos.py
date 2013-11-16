@@ -178,7 +178,7 @@ for dataset, model in [('xysregs', 'ldfl'),
                                    }, 
                               clean(df['name.gate']))
 
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.png" % (dataset, model, fi, relation))
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.pdf" % (dataset, model, fi, relation))
 
 
             # now the tiny plots
@@ -186,4 +186,4 @@ for dataset, model in [('xysregs', 'ldfl'),
             circos_p = irm.plots.circos.CircosPlot(assign, ideogram_radius="0.4r", 
                                                    ideogram_thickness="60p")
             circos_p.add_class_ribbons(ribbons, color)
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.tiny.png" % (dataset, model, fi, relation))
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.tiny.pdf" % (dataset, model, fi, relation))

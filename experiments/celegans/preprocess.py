@@ -166,4 +166,4 @@ def preprocess(infile, outfile):
 
 
 
-pipeline_run([read_data, preprocess, plot_adjmat, plot_classmat])
+pipeline_run([read_data, preprocess])

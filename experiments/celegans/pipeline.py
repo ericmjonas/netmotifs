@@ -36,7 +36,13 @@ EXPERIMENTS = [
     #('celegans.2r.sdb.00', 'fixed_100_200', 'anneal_slow_400'),  
     #('celegans.2r.ndfw.00', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.edp.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.edp.01', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.edp.02', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.edp.03', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ldp.00', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ldp.01', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ldp.02', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.ldp.03', 'fixed_100_200', 'anneal_slow_400'),  
     #('celegans.2r.ldp.00', 'fixed_10_100', 'anneal_slow_20'),  
     #('celegans.2r.edp.00', 'fixed_10_100', 'anneal_slow_20'),  
 
@@ -63,8 +69,13 @@ LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
 LDFL_HPS = [(0.2, 0.4, 0.01, 1.0, 1.0)] # , (0.1, 0.1, 0.5, 0.001),
 NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
 SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
-EDP_HPS = [(0.1, 1.0), (1.0, 1.0), (0.1, 2.0)]
-LDP_HPS = [(1.0, 1.0, 0.01, 2.0)]
+EDP_HPS = [(0.1, 1.0, 1.0), (0.1, 1.0, 2.0), (0.1, 1.0, 4.0), (0.1, 1.0, 8.0)]
+
+LDP_HPS = [(1.0, 1.0, 0.01, 2.0, 1.0), 
+           (1.0, 1.0, 0.01, 2.0, 2.0), 
+           (1.0, 1.0, 0.01, 2.0, 4.0), 
+           (1.0, 1.0, 0.01, 2.0, 8.0), 
+       ]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
 default_anneal = irm.runner.default_kernel_anneal()
@@ -389,14 +400,15 @@ def create_latents_2r_paramed(infile,
                              dtype=[('link', np.int32), 
                                     ('distance', np.float32)])
 
-        chem_conn['link'] =  conn_matrix['chemical'] 
+        scale = EDP_HPS[hp_i][2]
+        chem_conn['link'] =  conn_matrix['chemical'] * scale
         chem_conn['distance'] = dist_matrix
 
         elec_conn = np.zeros((NEURON_N, NEURON_N), 
                              dtype=[('link', np.int32), 
                                     ('distance', np.float32)])
 
-        elec_conn['link'] =  conn_matrix['electrical']
+        elec_conn['link'] =  conn_matrix['electrical'] * scale
         elec_conn['distance'] = dist_matrix
 
 
@@ -413,14 +425,15 @@ def create_latents_2r_paramed(infile,
                              dtype=[('link', np.int32), 
                                     ('distance', np.float32)])
 
-        chem_conn['link'] =  conn_matrix['chemical'] 
+        scale = LDP_HPS[hp_i][4]
+        chem_conn['link'] =  conn_matrix['chemical'] * scale
         chem_conn['distance'] = dist_matrix
 
         elec_conn = np.zeros((NEURON_N, NEURON_N), 
                              dtype=[('link', np.int32), 
                                     ('distance', np.float32)])
 
-        elec_conn['link'] =  conn_matrix['electrical']
+        elec_conn['link'] =  conn_matrix['electrical'] * scale
         elec_conn['distance'] = dist_matrix
 
 
@@ -1036,7 +1049,7 @@ def plot_best_latent(exp_results,
                 f_latent.savefig(pp, format='pdf')
         pp.close()
 
-CIRCOS_DIST_THRESHOLDS = [0.01, 0.5, 0.9]
+CIRCOS_DIST_THRESHOLDS = [0.01, 0.1, 0.25, 0.5, 0.9]
 @transform(get_results, suffix(".samples"), 
            [(".circos.%d.png" % d, 
              ) for d in range(len(CIRCOS_DIST_THRESHOLDS))])
@@ -1113,12 +1126,15 @@ def plot_best_circos(exp_results,
                                                    sample_latent['relations'][relation]['ss'], 
                                                    sample_latent['relations'][relation]['hps'], 
                                                    model_name)
-                thold = 0.01
+                rate_scale = {'R1' : 1.0, 
+                              'R2' : 1.0}
+                thold = 1.0
                 ribbons = []
                 links = []
                 for (src, dest), rate in v.iteritems():
-                    if rate > thold :
-                        pix = int(120*rate)
+                    scaled_rate = rate * rate_scale[relation]
+                    if scaled_rate > thold:
+                        pix = int(10*scaled_rate)
                         print src, dest, rate, pix
 
                         ribbons.append((src, dest, pix))
@@ -1126,9 +1142,9 @@ def plot_best_circos(exp_results,
             role = np.zeros(len(canonical_neuron_ordering))
             role[neurons['role'] == 'M']= 1
             role[neurons['role'] == 'S']= 2
-
+            
             circos_p.add_plot('scatter', {'r0' : '1.05r', 
-                                          'r1' : '1.25r', 
+                                          'r1' : '1.20r', 
                                           'min' : 0, 
                                           'max' : 1.0, 
                                           'glyph_size' : 20, 
@@ -1147,8 +1163,13 @@ def plot_best_circos(exp_results,
             circos_p.add_plot('heatmap', {'r0' : '1.0r', 
                                           'r1' : '1.05r', 
                                           'min' : 0, 
-                                          'max' : 2}, 
+                                          'max' : 2, 
+                                          'color' : "grey,blue,green"}, 
                               role)
+            circos_p.add_plot('text', {'r0' : '1.20r', 
+                                       'r1' : '1.30r'}, 
+                              neurons['class'])
+                                       
 
         irm.plots.circos.write(circos_p, circos_filenames[0])
 

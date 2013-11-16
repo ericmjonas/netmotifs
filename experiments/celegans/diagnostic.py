@@ -160,14 +160,14 @@ def plot_classmat(infile, (all_out, big_out)):
 
 @files("data.processed.pickle", ['data.all.dist.pdf', 'data.med.dist.pdf', 'data.big.dist.pdf'])
 def plot_conn_dist(infile, (all_out, med_out, big_out)):
-    d = pickle.load(open(infile))
+    origdata = pickle.load(open(infile))
 
-    conn_matrix = d['conn_matrix']
-    n = d['neurons']
+    n = origdata['neurons']
     MAX_DIST = 1.0
     bins = np.linspace(0, MAX_DIST, 20)
 
     for class_size, outfile in [(2, all_out), (4, med_out),  (6, big_out)]:
+        conn_matrix = origdata['conn_matrix']
         sizes = n.groupby('class').size()
         large_classes = sizes[sizes >= class_size].index
         which = n['class'].apply(lambda x : x in large_classes)

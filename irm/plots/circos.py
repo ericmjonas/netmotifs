@@ -6,6 +6,9 @@ import tempfile
 import shutil
 
 SRC_DIR = os.path.dirname(__file__)
+INKSCAPE_BIN = "/Applications/Inkscape.app/Contents/Resources/bin/inkscape"
+
+
 def read_template(x):
     f = os.path.join(SRC_DIR, x)
     return open(f, 'r').read()
@@ -234,6 +237,9 @@ def write(config, outfilename, tempdir=None):
             shutil.copyfile("circos.png", outfilename)
         elif "svg" in outfilename:
             shutil.copyfile("circos.svg", outfilename)
+        # elif "pdf" in outfilename: # NOTE THIS PRODUCES REALLY SHITTY PDFS
+        #     subprocess.call([INKSCAPE_BIN, "-z", "-D", "--file=circos.svg", 
+        #                      "--export-pdf=%s" % outfilename])
         else:
             raise Exception("unknown output file type %s" % outfilename)
         

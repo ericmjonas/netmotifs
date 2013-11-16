@@ -15,6 +15,18 @@ def test_simple():
     cp = circos.CircosPlot(av)
     
     circos.write(cp, 'many.png', tempdir='plots')
+
+# def test_simple_pdf():
+#     # all one
+#     av = np.zeros(100, dtype=np.int32)
+#     cp = circos.CircosPlot(av)
+    
+#     circos.write(cp, 'allone.pdf', tempdir='plots')
+
+#     av = np.arange(100, dtype=np.int32) % 10
+#     cp = circos.CircosPlot(av)
+    
+#     circos.write(cp, 'many.pdf', tempdir='plots')
     
 def test_labels():
     av = np.arange(100, dtype=np.int32) % 10

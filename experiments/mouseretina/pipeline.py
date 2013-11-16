@@ -654,8 +654,8 @@ def plot_params(exp_results, (plot_params_filename,)):
 CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%02d.png" % d, 
-             ".circos.%02d.small.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+           [(".circos.%02d.pdf" % d, 
+             ".circos.%02d.small.pdf" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
 
