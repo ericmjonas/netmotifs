@@ -5,6 +5,7 @@ import copy
 import os, glob
 import time
 from matplotlib import pylab
+import pandas
 
 import irm
 import irm.data
@@ -15,26 +16,13 @@ def dist(a, b):
 
 import cloud
 
-BUCKET_BASE="srm/experiments/mixing"
+BUCKET_BASE="srm/experiments/regirmfail"
 
 
-EXPERIMENTS = [('trivial', 'fixed_4_10', 'default200'), 
-               ('trivial', 'fixed_4_10', 'default200seq'), 
-               ('trivial_count', 'fixed_4_10', 'default200'), 
-               ('trivial_count', 'fixed_4_10', 'default200seq'), 
-               ('trivial_mixed', 'fixed_4_10', 'default200'), 
-               ('trivial_bump', 'fixed_4_10', 'default200'), 
-               ('con_sparse', 'fixed_10_40', 'default200'), 
-               ('con_sparse', 'fixed_10_40', 'default200seq'), 
-               ('con_sparse', 'fixed_10_40', 'default200seq'), 
-               ('con_sparse', 'fixed_10_40', 'default_anneal'), 
-               # ('connmat0', 'fixed_10_40', 'default20'), 
-               #('connmat0', 'fixed_10_40', 'default200'), 
-               #('connmat0', 'fixed_10_40', 'nc_contmh_200'), 
-               #('connmat0', 'fixed_10_40', 'default_anneal'),
-               # ('connmat0', 'fixed_10_100', 'default200'), 
-               #('connmat0', 'fixed_10_40', 'pt200'),
-               # ('connmat0', 'fixed_10_40', 'default20_m100'), 
+EXPERIMENTS = [('trivial', 'fixed_4_10', 'default50'), 
+               ('trivial', 'fixed_4_10', 'default_anneal_400'), 
+               ('class_compare', 'fixed_10_40', 'default_anneal_400'),
+               ('class_compare_big', 'fixed_10_40', 'default_anneal_400')
            ]
 
 INIT_CONFIGS = {'fixed_4_10' : {'N' : 4, 
@@ -49,75 +37,41 @@ INIT_CONFIGS = {'fixed_4_10' : {'N' : 4,
                 
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
-nonconj_m100 = copy.deepcopy(default_nonconj)
-nonconj_m100[0][1]['M'] = 100
 default_anneal = irm.runner.default_kernel_anneal()
 
 
 KERNEL_CONFIGS = {'default50' : {'ITERS' : 50, 
-                                 'kernels' : default_nonconj},
-                  'default20_m100' : {'ITERS' : 20, 
-                                      'kernels' : nonconj_m100},
-                  'default200' : {'ITERS' : 200, 
-                                  'kernels' : default_nonconj},
-                  'default200seq' : {'ITERS' : 200, 
-                                     'init' : 'sequential', 
-                                     'kernels' : default_nonconj},
-                  'default1000' : {'ITERS' : 1000, 
-                                  'kernels' : default_nonconj},
-                  'nc_contmh_200' : {'ITERS' : 200, 
-                                  'kernels' : irm.runner.kernel_nonconj_contmh_config()},
-                  'pt200' : {'ITERS' : 200, 
-                             'kernels' : [('parallel_tempering', 
-                                           {'temps' : [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0], 
-                                            'subkernels' : default_nonconj})]}, 
-                  'default_anneal' : {'ITERS' : 200, 
-                                      'kernels' : default_anneal}}
+                                 'kernels' : default_nonconj}, 
+                  'default_anneal_400' : {'ITERS' : 400, 
+                                          'kernels' : default_anneal}, 
+              }
+
 pickle.dump(default_nonconj, open('kernel.config', 'w'))
 
 def dataset_connectivity_matrix_params():
-    datasets = {'connmat0' : {'seeds' : range(2), 
-                              'side_n' : [5, 10], 
-                              'class_n' : [5, 10], 
-                              'nonzero_frac' : [0.1, 0.2, 0.5], 
-                              'jitter' : [0.001, 0.01, 0.1], 
-                              'models' : ['ld', 'lind'], 
-                              'truth' : ['distblock']}, 
-                # 'con_sparse' : {'seeds' : range(2), 
-                #                 'side_n' : [10], 
-                #                 'class_n' : [10], 
-                #                 'nonzero_frac' : [0.1, 0.2], 
-                #                 'jitter' : [0.001], 
-                #                 'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
-                #                 'truth' : ['distblock', 'mixedblock', 'bumpblock']}, 
+    datasets = {
                 'trivial' : {'seeds' : range(1), 
                              'side_n' : [4], 
                              'class_n' : [2], 
                              'nonzero_frac' : [1.0], 
                              'jitter' : [0.001], 
-                             'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
+                             'models' : ['bb', 'ld'], 
                              'truth': ['distblock']},
-                'trivial_count' : {'seeds' : range(2), 
-                                   'side_n' : [4], 
-                                   'class_n' : [4], 
+                'class_compare' : {'seeds' : range(5), 
+                                   'side_n' : [8], 
+                                   'class_n' : [1, 2, 4, 8, 16], 
                                    'nonzero_frac' : [1.0], 
                                    'jitter' : [0.001], 
-                                   'models' : ['expdp'], 
-                             'truth': ['distblock_count']},
-                'trivial_mixed' : {'seeds' : range(1), 
-                                   'side_n' : [4], 
-                                   'class_n' : [4], 
-                                   'nonzero_frac' : [1.0], 
-                                   'jitter' : [0.001], 
-                                   'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
-                                   'truth': ['mixedblock']},
-                'trivial_bump' : {'seeds' : range(1), 
-                                   'side_n' : [4], 
-                                   'class_n' : [4], 
-                                   'nonzero_frac' : [1.0], 
-                                   'jitter' : [0.001], 
-                                   'models' : ['ld', 'lind', 'sd', 'ndfw', 'sdb'], 
-                                   'truth': ['bumpblock']},
+                                   'models' : ['bb', 'ld'], 
+                                   'truth': ['distblock']}, 
+                'class_compare_big' : {'seeds' : range(5), 
+                                       'side_n' : [16], 
+                                       'class_n' : [1, 2, 4, 8], 
+                                       'nonzero_frac' : [1.0], 
+                                       'jitter' : [0.001], 
+                                       'models' : ['bb', 'ld'], 
+                                       'truth': ['distblock']}
+
     }
     
     for dataset_name, ds in datasets.iteritems():
@@ -268,6 +222,13 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
                'lambda_hp' : 1.0, 
                'p_min' : 0.1, 
                'p_max' : 0.9}
+
+    elif model == 'bb':
+        model_name= "BetaBernoulli"
+        conn_and_dist = conn_and_dist['link'] # we should prob do this smarter
+        HPS = {'alpha' : 1.0, 
+               'beta' : 1.0}
+
     elif model == 'lind':
         model_name= "LinearDistance"
 
@@ -473,13 +434,15 @@ def parse_filename(fn):
      class_n = int(s[4])
      nonzero_frac = float(s[5] + '.' + s[6])
      jitter = float(s[7] + '.' + s[8])
+     seed = int(s[9])
      return {'dataset_name' : dataset_name, 
              'model' : model, 
              'truth' : truth, 
              'side_n' : side_n, 
              'class_n' : class_n, 
              'nonzero_frac' : nonzero_frac, 
-             'jitter' : jitter}
+             'jitter' : jitter, 
+             'seed' : seed}
 
 
 @transform(get_results, suffix(".samples"), [".latent.pdf"])
@@ -501,7 +464,7 @@ def plot_latent(exp_results, (plot_latent_filename, )):
 
     chains = [c for c in chains if type(c['scores']) != int]
     CHAINN = len(chains)
-
+    print "CHAINN =", CHAINN
     f = pylab.figure(figsize= (12, 8))
     ax_purity_control = f.add_subplot(2, 2, 1)
     ax_z = f.add_subplot(2, 2, 2)
@@ -550,7 +513,45 @@ def plot_latent(exp_results, (plot_latent_filename, )):
 
     f.savefig(plot_latent_filename)
     
+@merge(get_results, "merge.pickle")
+def merge_results(exp_results, merge_filename):
+    print "EXP_RESULTS files are", exp_results
+    results = []
+    for exp_result in exp_results:
+        sample_d = pickle.load(open(exp_result))
+        chains = sample_d['chains']
 
+        exp = sample_d['exp']
+        data_filename = exp['data_filename']
+        data = pickle.load(open(data_filename))
+        data_basename, _ = os.path.splitext(data_filename)
+        meta = pickle.load(open(data_basename + ".meta"))
+
+
+        nodes_with_class = meta['nodes']
+        conn_and_dist = meta['conn_and_dist']
+
+        true_assignvect = nodes_with_class['class']
+        params = parse_filename(exp_result)
+
+        chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+
+        for ci, di in enumerate(chains_sorted_order): 
+            d = chains[di] 
+            sample_latent = d['state']
+
+            a = np.array(sample_latent['domains']['d1']['assignment'])
+
+            result = {'chain_pos' : ci, 
+                      'chain_id' : di, 
+                      'assign' : a, 
+                      'score' : d['scores'][-1], 
+                      'true_assign' : true_assignvect}
+            result.update(params)
+            results.append(result)
+    df = pandas.DataFrame(results)
+    pickle.dump(df, open(merge_filename, 'w'))
+            
 pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
-              get_results, plot_latent], multiprocess=3)
+              get_results, plot_latent, merge_results], multiprocess=3)
                         
