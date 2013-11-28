@@ -6,6 +6,7 @@ import os, glob
 import time
 from matplotlib import pylab
 import pandas
+import rand
 
 import irm
 import irm.data
@@ -22,6 +23,8 @@ BUCKET_BASE="srm/experiments/regirmfail"
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default50'), 
                ('trivial', 'fixed_4_10', 'default_anneal_400'), 
                ('class_compare', 'fixed_10_40', 'default_anneal_400'),
+               ('class_compare_gen', 'fixed_10_40', 'default_anneal_400'),
+               ('class_compare_frac', 'fixed_10_40', 'default_anneal_400'),
                ('class_compare_big', 'fixed_10_40', 'default_anneal_400')
            ]
 
@@ -64,6 +67,20 @@ def dataset_connectivity_matrix_params():
                                    'jitter' : [0.001], 
                                    'models' : ['bb', 'ld'], 
                                    'truth': ['distblock']}, 
+                'class_compare_frac' : {'seeds' : range(5), 
+                                   'side_n' : [8], 
+                                   'class_n' : [1, 2, 4, 8, 16], 
+                                   'nonzero_frac' : [0.1, 0.2, 0.5, 1.0], 
+                                   'jitter' : [0.001], 
+                                   'models' : ['bb', 'ld'], 
+                                   'truth': ['distblock']}, 
+                'class_compare_gen' : {'seeds' : range(5), 
+                                       'side_n' : [8], 
+                                       'class_n' : [1, 2, 4, 8, 16], 
+                                       'nonzero_frac' : [1.0], 
+                                       'jitter' : [0.001], 
+                                       'models' : ['bb', 'ld'], 
+                                       'truth': ['distblock', 'mixedblock', 'bumpblock']}, 
                 'class_compare_big' : {'seeds' : range(5), 
                                        'side_n' : [16], 
                                        'class_n' : [1, 2, 4, 8], 
@@ -173,7 +190,7 @@ def dataset_connectivity_matrix(infile, (data_filename, latent_filename,
         obsmodel = irm.observations.Bernoulli()
 
         nodes_with_class, connectivity = generate.c_mixed_dist_block(side_n, 
-                                                                    conn_config,
+                                                                     conn_config,
                                                                      JITTER=jitter, 
                                                                      obsmodel=obsmodel)
     elif truth_gen == 'bumpblock':
@@ -515,11 +532,11 @@ def plot_latent(exp_results, (plot_latent_filename, )):
     
 @merge(get_results, "merge.pickle")
 def merge_results(exp_results, merge_filename):
-    print "EXP_RESULTS files are", exp_results
     results = []
     for exp_result in exp_results:
         sample_d = pickle.load(open(exp_result))
         chains = sample_d['chains']
+        chains = [c for c in chains if type(c['scores']) != int]
 
         exp = sample_d['exp']
         data_filename = exp['data_filename']
@@ -533,8 +550,8 @@ def merge_results(exp_results, merge_filename):
 
         true_assignvect = nodes_with_class['class']
         params = parse_filename(exp_result)
-
-        chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+        scores = [d['scores'][-1] for d in chains]
+        chains_sorted_order = np.argsort(scores)[::-1]
 
         for ci, di in enumerate(chains_sorted_order): 
             d = chains[di] 
@@ -551,7 +568,133 @@ def merge_results(exp_results, merge_filename):
             results.append(result)
     df = pandas.DataFrame(results)
     pickle.dump(df, open(merge_filename, 'w'))
-            
-pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
-              get_results, plot_latent, merge_results], multiprocess=3)
-                        
+
+PLOT_DATASETS = ['class_compare', 'class_compare_big']
+@files(merge_results, [('%s.rand.pdf' % c, '%s.ari.pdf' % c) for c in PLOT_DATASETS])
+def plot_results(infile, outfiles):
+    df = pickle.load(open(infile, 'r'))
+    
+    df['ari'] = df.apply(lambda row: rand.compute_adj_rand_index(row['true_assign'], 
+                                                                 irm.util.canonicalize_assignment(row['assign'])), axis=1)
+    df['empirical_class_n'] = df.apply(lambda row : len(np.unique(row['assign'])), axis=1)
+
+    for plot_files, dataset_name in zip(outfiles, PLOT_DATASETS):
+        
+        df_cc = df[df['dataset_name'] == dataset_name]
+
+        a = df_cc.groupby(['dataset_name', 'jitter', 'model', 'nonzero_frac', 'class_n', 
+                           'side_n', 'seed', 'truth']).apply(lambda group: group.sort_index(by='score', ascending=False).head(1))
+        colors = {'bb' : 'b', 
+                   'ld' : 'r'}
+        f = pylab.figure(figsize=(4, 3))
+        ax = f.add_subplot(1, 1, 1)
+
+        for g_idx, g in a.groupby(['model']):
+            print g_idx
+            ax.scatter(g.index.get_level_values('class_n'), g['empirical_class_n'], c=colors[g_idx],
+                          edgecolor='none')
+        ax.plot([1, 16], [1, 16], c='k')
+        ax.set_xlabel("true class number")
+        ax.set_ylabel("estimated class number")
+        ax.set_xticks([1, 2, 4, 8, 16])
+        f.tight_layout()
+        f.savefig(plot_files[0])
+
+
+        colors = {'bb' : 'b', 
+                   'ld' : 'r'}
+        offsets = {'bb' : 0.0, 
+                   'ld' : 1.0}
+        f = pylab.figure(figsize=(4, 3))
+        ax = f.add_subplot(1, 1, 1)
+        CLASS_SPACE = 2.5
+        WIDTH = 0.8
+
+        N = 0
+        for g_idx, g in a.groupby(['model']):
+            h =  g.groupby(['class_n']).mean()
+            herr = g.groupby(['class_n']).std()
+            N= len(h)
+            ax.bar(np.arange(N)*CLASS_SPACE + offsets[g_idx], h['ari'], width=WIDTH, 
+                    color=colors[g_idx])
+            ax.errorbar(np.arange(N)*CLASS_SPACE + offsets[g_idx] + WIDTH/2, 
+                        h['ari'], yerr= herr['ari'], capsize=0,elinewidth=4,ecolor='k', linewidth=0)
+        #ax.plot([1, 16], [1, 1], c='k')
+        ax.set_xlabel("true class number")
+        ax.set_ylabel("adjusted rand index")
+        ax.set_ylim(0, 1.0)
+        ax.set_xticks(np.arange(N)*CLASS_SPACE + 1)
+        ax.set_xticklabels([1, 2, 4, 8, 16])
+        f.tight_layout()
+        f.savefig(plot_files[1])
+
+@files(merge_results, ['manygen.rand.pdf', 'manygen.ari.pdf'])
+def plot_results_many_gen(infile, outfiles):
+    df = pickle.load(open(infile, 'r'))
+    
+    df['ari'] = df.apply(lambda row: rand.compute_adj_rand_index(row['true_assign'], 
+                                                                 irm.util.canonicalize_assignment(row['assign'])), axis=1)
+    df['empirical_class_n'] = df.apply(lambda row : len(np.unique(row['assign'])), axis=1)
+
+    df_cc = df[(df['dataset_name'] == 'class_compare_gen') & (df['model'] == 'ld')]
+
+    a = df_cc.groupby(['dataset_name', 'jitter', 'nonzero_frac', 'class_n', 
+                       'side_n', 'seed', 'truth']).apply(lambda group: group.sort_index(by='score', ascending=False).head(1))
+
+    colors = {'distblock' : 'b', 
+              'mixedblock' : 'r', 
+              'bumpblock' : 'g'}
+    f = pylab.figure(figsize=(4, 3))
+    ax = f.add_subplot(1, 1, 1)
+
+    for g_i, (g_idx, g) in enumerate(a.groupby(['truth'])):
+        ax.scatter(g.index.get_level_values('class_n') + 0.3*g_i, 
+                   g['empirical_class_n'], c=colors[g_idx],
+                   edgecolor='none')
+    ax.plot([1, 16], [1, 16], c='k')
+    ax.set_xlabel("true class number")
+    ax.set_ylabel("estimated class number")
+    ax.set_xticks([1, 2, 4, 8, 16])
+    f.tight_layout()
+    f.savefig(outfiles[0])
+
+
+    colors = {'distblock' : 'b', 
+              'mixedblock' : 'r', 
+              'bumpblock' : 'g'}
+
+    offsets = {'distblock' : 0.0,
+               'mixedblock' : 1.0, 
+               'bumpblock' : 2.0}
+
+    f = pylab.figure(figsize=(4, 3))
+    ax = f.add_subplot(1, 1, 1)
+    CLASS_SPACE = 3.5
+    WIDTH = 0.8
+
+    N = 0
+    for g_idx, g in a.groupby(['truth']):
+        h =  g.groupby(['class_n']).mean()
+        herr = g.groupby(['class_n']).std()
+        N= len(h)
+        print "g_idx", g_idx, h['ari']
+        ax.bar(np.arange(N)*CLASS_SPACE + offsets[g_idx], h['ari'], width=WIDTH, 
+               color=colors[g_idx])
+        ax.errorbar(np.arange(N)*CLASS_SPACE + offsets[g_idx] + WIDTH/2, 
+                    h['ari'], yerr= herr['ari'], 
+                    capsize=0,elinewidth=4,ecolor='k', linewidth=0)
+
+    ax.set_xlabel("true class number")
+    ax.set_ylabel("adjusted rand index")
+    ax.set_ylim(0, 1.0)
+    ax.set_xticks(np.arange(N)*CLASS_SPACE + 1)
+    ax.set_xticklabels([1, 2, 4, 8, 16])
+    f.tight_layout()
+    f.savefig(outfiles[1])
+
+if __name__ == "__main__":
+    pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
+                  get_results, plot_latent, merge_results, 
+                  plot_results, plot_results_many_gen
+              ], multiprocess=3)
+

@@ -6,6 +6,7 @@ import os, glob
 import time
 from matplotlib import pylab
 import matplotlib
+import pandas
 
 import matplotlib.gridspec as gridspec
 
@@ -654,8 +655,9 @@ def plot_params(exp_results, (plot_params_filename,)):
 CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%02d.pdf" % d, 
-             ".circos.%02d.small.pdf" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+           [(".circos.%02d.png" % d, 
+             ".circos.%02d.small.png" % d, 
+             ".circos.%02d.colors.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
 
@@ -696,7 +698,9 @@ def plot_circos_latent(exp_results,
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
     print "Pos_vec=", pos_vec
     model_name = data['relations']['R1']['model']
-    for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
+
+    TGT_CMAP = pylab.cm.Spectral
+    for fi, (circos_filename_main, circos_filename_small, color_legend_filename) in enumerate(out_filenames):
         CLASS_N = len(np.unique(cell_assignment))
         
 
@@ -709,10 +713,17 @@ def plot_circos_latent(exp_results,
 
         colors = np.linspace(0, 360, CLASS_N)
         color_str = ['ccolor%d' % int(d) for d in class_ids]
-        print "custom_color_map=", custom_color_map
+
+        # add extra colors
+        true_color_list = []
+        for i in range(77):
+            c = np.array(TGT_CMAP(float(i)/77)[:3])*255
+            cn = 'true_color_%d' % i
+            custom_color_map[cn] = c.astype(int)
+            true_color_list.append(cn)
 
         circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
-                                               ideogram_radius="0.7r", 
+                                               ideogram_radius="0.7r",
                                                karyotype_colors = color_str, 
                                                custom_color_map = custom_color_map)
 
@@ -725,7 +736,6 @@ def plot_circos_latent(exp_results,
             ribbons = []
             links = []
             for (src, dest), p in v.iteritems():
-                print src, dest, p 
                 if p > thold:
                     ribbons.append((src, dest, int(40*p)))
             circos_p.set_class_ribbons(ribbons)
@@ -750,32 +760,58 @@ def plot_circos_latent(exp_results,
                                                   'thickness' : 1, 
                                                   'spacing' : '0.05r'})]})
             
-            # circos_p.add_plot('heatmap', {'r0' : '1.05r', 
-            #                                 'r1' : '1.10r', 
-            #                                 'min' : 0, 
-            #                                 'max' : 72}, 
-            #                   cell_types)
+            circos_p.add_plot('heatmap', {'r0' : '1.34r', 
+                                            'r1' : '1.37r', 
+                                            'min' : 0, 
+                                            'max' : 72, 
+                                          'stroke_thickness' : 0, 
+                                          'color' : ",".join(true_color_list) }, 
+                              cell_types)
+
+            # this is potentially fun: get the ranges for each type
+            TYPE_N = np.max(cell_types) + 1
+
+            df2 = pandas.DataFrame(index=np.arange(1, TYPE_N))
+            df2['des'] = type_metadata_df.apply(lambda x: x['desig'][:2], axis=1)
+            df2 = df2.fillna('other')
+            df2['id'] = df2.index.values.astype(int)
+            gc_mean_i = df2.groupby('des').mean().astype(int)
+            gc_min_i = df2.groupby('des').min().astype(int)
+            gc_max_i = df2.groupby('des').max().astype(int)
+
+
+            f_color_legend = pylab.figure()
+            ax_color_legend = f_color_legend.add_subplot(1, 1, 1)
+
+            x = np.zeros((TYPE_N, 20))
+            for i in range(10):
+                x[:, i] = np.arange(TYPE_N)
+            for n in ['gc', 'ac', 'bc', 'other']:
+                x[gc_min_i.ix[n]:gc_max_i.ix[n]+1, 10:] = gc_mean_i.ix[n]
+                ax_color_legend.plot([10, 20], [gc_max_i.ix[n], gc_max_i.ix[n]])
+            ax_color_legend.imshow(x, cmap=TGT_CMAP, interpolation='nearest')
+            ax_color_legend.axvline(10, c='k')
+            ax_color_legend.set_xticks([])
+            f_color_legend.savefig(color_legend_filename)
+            print "TYPE_N=", TYPE_N
             type_color_map = {'gc' : 0, 
                               'ac' : 1, 
                               'bc' : 2, 
                               'other' : 3}
 
-            TYPE_N = np.max(cell_types) + 1
-
-            type_lut = []
-            for i in range(TYPE_N):
-                if (i < 70):
-                    d = type_metadata_df.loc[i+1]['desig']
-                else:
-                    d = "  "
-                type_lut.append(type_color_map.get(d[:2], 3))
-
-            circos_p.add_plot('heatmap', {'r0' : '1.25r', 
-                                          'r1' : '1.28r', 
+            # pick colors
+            colors = [true_color_list[gc_mean_i.ix['gc']], 
+                      true_color_list[gc_mean_i.ix['ac']], 
+                      true_color_list[gc_mean_i.ix['bc']], 
+                      true_color_list[gc_mean_i.ix['other']]]
+                      
+            circos_p.add_plot('heatmap', {'r0' : '1.28r', 
+                                          'r1' : '1.34r', 
                                           'min' : 0, 
                                           'max' : 3, 
-                                          'color': "red,blue,green,white"}, 
-                              [type_lut[i] for i in cell_types])
+                                          'stroke_thickness' :0, 
+                                          'color': ",".join(colors)}, 
+                              [type_color_map[df2.ix[i]['des']] for i in cell_types])
             
             # circos_p.add_plot('scatter', {'r0' : '1.01r', 
             #                               'r1' : '1.10r', 
@@ -804,7 +840,6 @@ def plot_circos_latent(exp_results,
             ribbons = []
             links = []
             for (src, dest), p in v.iteritems():
-                print src, dest, p 
                 if p > thold:
                     ribbons.append((src, dest, int(40*p)))
             circos_p.set_class_ribbons(ribbons)
@@ -826,7 +861,6 @@ def plot_clustered_somapos(exp_results,
     meta = pickle.load(open(data_basename + ".meta"))
 
     meta_infile = meta['infile']
-    print "meta_infile=", meta_infile
 
     d = pickle.load(open(meta_infile, 'r'))
     conn = d['dist_matrix']['link']
@@ -851,7 +885,6 @@ def plot_clustered_somapos(exp_results,
 
     soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
-    print "Pos_vec=", pos_vec
 
     f = pylab.figure(figsize=(12, 8))
     ax = f.add_subplot(1, 1, 1)

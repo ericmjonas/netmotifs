@@ -94,7 +94,8 @@ def plot_t1t1_latent(ax, adj_matrix, assign_vect, cmap=None, norm=None):
     return ai
 
 
-def plot_t1t1_latent_count(ax, adj_matrix, assign_vect, size_scale=1.0):
+def plot_t1t1_latent_count(ax, adj_matrix, assign_vect, size_scale=1.0, 
+                           color='k', alpha=1.0):
     """
     Plot a latent with the assign vect for count data 
 
@@ -123,7 +124,7 @@ def plot_t1t1_latent_count(ax, adj_matrix, assign_vect, size_scale=1.0):
                 s_y.append(r)
                 s_s.append(s_conn[r, c])
 
-    ax.scatter(s_x, s_y, s=s_s, c='k', edgecolor='none')
+    ax.scatter(s_x, s_y, s=s_s, c=color, edgecolor='none', alpha=alpha)
 
     x_line_offset = 0.5
     y_line_offset = 0.4

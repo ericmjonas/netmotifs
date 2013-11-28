@@ -70,7 +70,8 @@ def c_class_neighbors(SIDE_N, class_connectivity,
     return nodes, observations
 
 def c_mixed_dist_block(SIDE_N, class_connectivity, 
-                      JITTER = 0.0, rand_conn_prob = 0.01):
+                       JITTER = 0.0, rand_conn_prob = 0.01, 
+                       obsmodel = None):
 
     """
     Mixed membership 
@@ -100,13 +101,13 @@ def c_mixed_dist_block(SIDE_N, class_connectivity,
             
         return rand_conn_prob
 
-    connectivity = synth.connect(nodes, node_pred)
+    connectivity = synth.connect(nodes, node_pred, obsmodel)
 
     return nodes, connectivity
 
 def c_bump_dist_block(SIDE_N, class_connectivity, 
                       JITTER = 0.0, rand_conn_prob = 0.01, 
-                      p_min = 0.01):
+                      p_min = 0.01, obsmodel=None):
 
     """
     Mixed membership 
@@ -134,6 +135,6 @@ def c_bump_dist_block(SIDE_N, class_connectivity,
                 return util.norm_dist_bump(d, mu, width, prob, p_min)             
         return rand_conn_prob
 
-    connectivity = synth.connect(nodes, node_pred)
+    connectivity = synth.connect(nodes, node_pred, obsmodel)
 
     return nodes, connectivity

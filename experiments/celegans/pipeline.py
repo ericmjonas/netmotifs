@@ -957,7 +957,7 @@ def plot_clusters_pretty_figure(purity, metadata_df, no, thold=0.9,
 #FIXME other metrics: *n grouping
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.latent.pdf" % d, )  for d in range(1)])
+           [(".%d.latent.pdf" % d, "%d.latentboth.pdf" % d)  for d in range(1)])
 def plot_best_latent(exp_results, 
                      out_filenames):
     print "Plotting best latent", exp_results
@@ -997,7 +997,7 @@ def plot_best_latent(exp_results,
     CHAINN = len(chains)
     chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
 
-    for chain_pos, (latent_fname, ) in enumerate(out_filenames):
+    for chain_pos, (latent_fname, latent_both_fname) in enumerate(out_filenames):
         print "plotting chain", chain_pos
 
         best_chain_i = chains_sorted_order[chain_pos]
@@ -1048,7 +1048,37 @@ def plot_best_latent(exp_results,
                                           MAX_DIST=1.0, model=model)
                 f_latent.savefig(pp, format='pdf')
         pp.close()
+        pp = PdfPages(latent_both_fname)
 
+
+        f2 = pylab.figure(figsize=(4, 4))
+        f3 = pylab.figure(figsize=(4, 4))
+        ax_both = f2.add_subplot(1, 1, 1)
+        ax_raw = f3.add_subplot(1, 1, 1)
+        if 'oisson' in model:
+            ai = irm.plot.plot_t1t1_latent_count(ax_both, r1_data/4.0, a, 
+                                                 color='red', 
+                                                 alpha=0.7)
+            irm.plot.plot_t1t1_latent_count(ax_both, r2_data/4.0, a, 
+                                            color='blue', alpha=0.7)
+ 
+            ai = irm.plot.plot_t1t1_latent_count(ax_raw, r1_data/4.0, 
+                                                 np.zeros(len(a)), 
+                                                 color='red', 
+                                                 alpha=0.7)
+            irm.plot.plot_t1t1_latent_count(ax_raw, r2_data/4.0, 
+                                            np.zeros(len(a)), 
+
+                                            color='blue', alpha=0.7)
+           
+        f2.tight_layout()
+        f2.savefig(pp, format='pdf')
+        
+        f3.tight_layout()
+        f3.savefig(pp, format='pdf')
+        
+        pp.close()
+        
 CIRCOS_DIST_THRESHOLDS = [0.01, 0.1, 0.25, 0.5, 0.9]
 @transform(get_results, suffix(".samples"), 
            [(".circos.%d.png" % d, 
@@ -1097,7 +1127,8 @@ def plot_best_circos(exp_results,
     model_name = data['relations']['R1']['model']
     for fi, circos_filenames in enumerate(out_filenames):
 
-        circos_p = irm.plots.circos.CircosPlot(cell_assignment)
+        circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
+                                               ideogram_radius="0.7r")
 
         for relation, color in [('R1', 'red_a5'), 
                                 ('R2', 'blue_a5')]:
@@ -1126,8 +1157,8 @@ def plot_best_circos(exp_results,
                                                    sample_latent['relations'][relation]['ss'], 
                                                    sample_latent['relations'][relation]['hps'], 
                                                    model_name)
-                rate_scale = {'R1' : 1.0, 
-                              'R2' : 1.0}
+                rate_scale = {'R1' : 0.2, 
+                              'R2' : 0.2}
                 thold = 1.0
                 ribbons = []
                 links = []
@@ -1143,8 +1174,8 @@ def plot_best_circos(exp_results,
             role[neurons['role'] == 'M']= 1
             role[neurons['role'] == 'S']= 2
             
-            circos_p.add_plot('scatter', {'r0' : '1.05r', 
-                                          'r1' : '1.20r', 
+            circos_p.add_plot('scatter', {'r0' : '1.00r', 
+                                          'r1' : '1.15r', 
                                           'min' : 0, 
                                           'max' : 1.0, 
                                           'glyph_size' : 20, 
@@ -1160,14 +1191,24 @@ def plot_best_circos(exp_results,
                                                   'spacing' : '0.05r'})]})
 
                             
-            circos_p.add_plot('heatmap', {'r0' : '1.0r', 
-                                          'r1' : '1.05r', 
+            circos_p.add_plot('heatmap', {'r0' : '1.15r', 
+                                          'r1' : '1.20r', 
                                           'min' : 0, 
                                           'max' : 2, 
+                                          'stroke_thickness' : 0, 
                                           'color' : "grey,blue,green"}, 
                               role)
-            circos_p.add_plot('text', {'r0' : '1.20r', 
-                                       'r1' : '1.30r'}, 
+            circos_p.add_plot('text', {'r0' : '1.21r', 
+                                       'r1' : '1.50r', 
+                                       'label_size' : '30p', 
+                                       'show_links' : 'yes', 
+                                       'label_snuggle' : 'yes', 
+                                       'max_snuggle_distance' : '1r', 
+                                       'snuggle_tolerance': '0.25r',
+                                       'snuggle_sampling': 2, 
+                                       'snuggle_link_overlap_test' : 'yes', 
+                                       'snuggle_link_overlap_tolerance' : '2p', 
+                                       'snuggle_refine' : 'yes'}, 
                               neurons['class'])
                                        
 
