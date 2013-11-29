@@ -1304,7 +1304,7 @@ struct NormalDistanceFixedWidth {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float mu = ss->mu; 
         float p = ss->p; 
-        if((p >= 1.0) || (p < 0.0) || mu < 0.0) { 
+        if((p >= 1.0) || (p <= 0.0) || mu <= 0.0) { 
             return -std::numeric_limits<float>::infinity();
         }
 
