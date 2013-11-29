@@ -1247,6 +1247,10 @@ struct NormalDistanceFixedWidth {
             
             boost::math::beta_distribution<> beta_dist(p_alpha, p_beta);
             float p = quantile(beta_dist, r2); 
+            if (p < 0.0001) 
+                p = 0.0001; 
+            if (p > 0.9999)
+                p = 0.9999; 
             
             return std::make_pair(mu, p); 
 
