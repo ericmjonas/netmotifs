@@ -42,10 +42,12 @@ EXPERIMENTS = [('mos6502.all.decode.bb', 'fixed_20_200', 'anneal_slow_400'),
                ('mos6502.typed.xysregs.bb', 'fixed_2_40', 'debug'), 
                ('mos6502.typed.xysregs.ld', 'fixed_2_40', 'debug'), 
                ('mos6502.typed.xysregs.ldfl', 'fixed_2_40', 'debug'), 
+               ('mos6502.typed.xysregs.ndfw', 'fixed_2_40', 'debug'), 
 
                ('mos6502.typed.xysregs.bb', 'fixed_100_200', 'anneal_slow_400'), 
                ('mos6502.typed.xysregs.ld', 'fixed_100_200', 'anneal_slow_400'), 
                ('mos6502.typed.xysregs.ldfl', 'fixed_100_200', 'anneal_slow_400'), 
+               ('mos6502.typed.xysregs.ndfw', 'fixed_100_200', 'anneal_slow_400'), 
 
                ('mos6502.typed.decode.bb', 'fixed_100_200', 'anneal_slow_400'), 
                ('mos6502.typed.decode.ld', 'fixed_100_200', 'anneal_slow_400'), 
@@ -111,6 +113,26 @@ def grid_logistic_distance_fixed_lambda_hypers():
     return res
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistanceFixedLambda'] = grid_logistic_distance_fixed_lambda_hypers()
+
+def grid_normal_distance_fixed_width_hypers():
+    p_mins = np.array([0.001])
+    mus = irm.util.logspace(10, 100, 10)
+    widths = irm.util.logspace(10, 100, 10)
+    alphabetas = [0.1, 1.0, 2.0]
+    hps = []
+    for p_min in p_mins:
+        for mu in mus:
+            for width in widths:
+                for a in alphabetas:
+                    for b in alphabetas:
+                        hps.append({'mu_hp' : mu, 
+                                    'p_min' : p_min, 
+                                    'width' : width, 
+                                    'p_alpha' : a,
+                                    'p_beta' : b})
+    return hps
+
+slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistanceFixedLambda'] = grid_normal_distance_fixed_width_hypers()
 
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 
@@ -319,6 +341,48 @@ def create_latents_ldfl_typed(infile,
     pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
 
 
+@transform(data_mos6502_region_typed, suffix(".data.pickle"), [".ndfw.data", ".ndfw.latent", ".ndfw.meta"])
+def create_latents_ndfw_typed(infile, 
+                            (data_filename, latent_filename, meta_filename)):
+
+    d = pickle.load(open(infile, 'r'))
+    conn = d['dist_matrix']
+    region_infile = pickle.load(open(d['infile'], 'r'))
+    pre_region_file = pickle.load(open(region_infile['infile'], 'r'))
+    
+    pin_pairs = pre_region_file['pin_pairs']
+    N = conn.shape[0]
+    relation_data = []
+
+    for pin_pair in pin_pairs:
+        cm = np.zeros((N, N), dtype=[('link', np.uint8), 
+                                     ('distance', np.float32)])
+        cm['distance'] = conn['distance']
+        cm['link']= conn["%s_%s" % pin_pair]
+        relation_data.append(cm)
+
+    model_name= "NormalDistanceFixedWidth"
+    
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(relation_data[0], 
+                                                        model_name, 
+                                                        extra_conn = relation_data[1:])
+
+    HPS = {'mu_hp' : 100., 
+           'p_min' : 0.0001, 
+           'width' : 100., 
+           'p_alpha' : 1.0, 
+           'p_beta' : 1.0}
+
+    for rel_name in irm_latent['relations']:
+        irm_latent['relations'][rel_name]['hps'] = HPS
+
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile}, open(meta_filename, 'w'))
+
+
 @transform(data_mos6502_region_count, suffix(".data.pickle"), [".edp.data", ".edp.latent", ".edp.meta"])
 def create_latents_edp(infile, 
                       (data_filename, latent_filename, meta_filename)):
@@ -392,7 +456,9 @@ def init_generator():
             
 
 @follows(create_latents_ld, create_latents_bb, create_latents_edp, 
-         create_latents_bb_typed, create_latents_ld_typed, create_latents_ldfl_typed)
+         create_latents_bb_typed, create_latents_ld_typed, 
+         create_latents_ldfl_typed, 
+         create_latents_ndfw_typed)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
     basename, _ = os.path.splitext(data_filename)

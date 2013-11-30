@@ -595,6 +595,14 @@ class NormalDistanceFixedWidth(object):
         
         """
 
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        prob =  np.exp(-0.5 * (d - ss['mu'])**2/hps['width']**2) * ss['p'] + hps['p_min']
+
+        return prob
+
 class SquareDistanceBump(object):
     """
     Just a placeholder

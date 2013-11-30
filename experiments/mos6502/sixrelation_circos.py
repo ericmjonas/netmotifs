@@ -8,6 +8,7 @@ CIRCOS_DIST_THRESHOLDS = [20, 50, 100, 200, 500]
 
 for dataset, model in [('xysregs', 'ldfl'), 
                        ('xysregs', 'ld'), 
+                       ('xysregs', 'ndfw'), 
                        #('xysregs', 'bb'), 
                        #('decode', 'ldfl'), 
                        #('decode', 'ld'), 

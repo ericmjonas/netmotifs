@@ -252,6 +252,15 @@ def type_metadata(xlsx_file, output_file):
                     'certainty' : certainty})
     df = pandas.DataFrame(res)
     df = df.set_index(df['id'])
+
+    # the following preprocessing information was acquired from
+    # page 1 of the s1
+    df['coarse'] = df['desig'].apply(lambda x: "other")
+    df['coarse'][(df['id'] <=12)] = "gc"
+    df['coarse'][(df['id'] > 12) & (df['id'] <= 24)] = "nac"
+    df['coarse'][(df['id'] > 24) & (df['id'] <= 57)] = "mwac"
+    df['coarse'][(df['id'] > 58) & (df['id'] <= 71)] = "bc"
+    
     del df['id']
                     
     pickle.dump({'type_metadata' : df}, 

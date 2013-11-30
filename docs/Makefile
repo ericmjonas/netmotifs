@@ -1,10 +1,10 @@
 
 
 
-all: getbib techreport.pdf
+all: getbib paper.pdf
 
 clean:
-	rm techreport.pdf
+	rm paper.pdf
 
 BIBHOME=${HOME}/Documents/
 getbib:
@@ -15,6 +15,11 @@ techreport.pdf: techreport.tex
 	pdflatex techreport.tex
 	biber techreport
 	pdflatex techreport.tex
+
+paper.pdf: paper.tex 	
+	pdflatex paper.tex
+	biber paper
+	pdflatex paper.tex
 
 dropbox:
 	cp -r * ~/Dropbox/jonaskording-connectomics 

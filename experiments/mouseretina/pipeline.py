@@ -7,6 +7,7 @@ import time
 from matplotlib import pylab
 import matplotlib
 import pandas
+import colorbrewer
 
 import matplotlib.gridspec as gridspec
 
@@ -699,7 +700,48 @@ def plot_circos_latent(exp_results,
     print "Pos_vec=", pos_vec
     model_name = data['relations']['R1']['model']
 
-    TGT_CMAP = pylab.cm.Spectral
+    # this is potentially fun: get the ranges for each type
+    TYPE_N = np.max(cell_types) + 1
+
+    df2 = pandas.DataFrame(index=np.arange(1, TYPE_N))
+    df2['des'] = type_metadata_df['coarse']
+    df2 = df2.fillna('other')
+    df2['id'] = df2.index.values.astype(int)
+    gc_mean_i = df2.groupby('des').mean().astype(int)
+    gc_min_i = df2.groupby('des').min().astype(int)
+    gc_max_i = df2.groupby('des').max().astype(int)
+
+
+
+    # create the color map
+    # P = np.array([0, gc_max_i.ix['gc'], 
+    #               gc_max_i.ix['ac'], 
+    #               gc_max_i.ix['bc'], 
+    #               TYPE_N], dtype=float)/TYPE_N
+
+    # cdict = {'green': ((P[0], 0.0, 0.0),
+    #                 (P[1], 1.0, 1.0),
+    #                 (P[2], 1.0, 1.0), 
+    #                 (P[3], 1.0, 1.0), 
+    #                 (P[4], 1.0, 1.0)),
+    #        'blue': ((P[0], 0.0, 0.0),
+    #                 (P[1], 0.0, 0.0),
+    #                 (P[2], 1.0, 1.0), 
+    #                 (P[3], 1.0, 1.0), 
+    #                 (P[4], 1.0, 1.0)),
+    #         'red': ((P[0], 0.0, 0.0),
+    #                 (P[1], 0.0, 0.0),
+    #                 (P[2], 0.0, 0.0), 
+    #                 (P[3], 1.0, 1.0), 
+    #                 (P[4], 1.0, 1.0))}
+    # my_cmap = matplotlib.colors.LinearSegmentedColormap('my_colormap',cdict,256)
+
+    TGT_CMAP = pylab.cm.gist_heat
+    coarse_colors = {'other' : [210, 210, 210]}
+    for n_i, n in enumerate(['gc', 'nac', 'mwac', 'bc']):
+        coarse_colors[n] = colorbrewer.Set1[4][n_i]
+
+    
     for fi, (circos_filename_main, circos_filename_small, color_legend_filename) in enumerate(out_filenames):
         CLASS_N = len(np.unique(cell_assignment))
         
@@ -714,16 +756,20 @@ def plot_circos_latent(exp_results,
         colors = np.linspace(0, 360, CLASS_N)
         color_str = ['ccolor%d' % int(d) for d in class_ids]
 
-        # add extra colors
-        true_color_list = []
-        for i in range(77):
-            c = np.array(TGT_CMAP(float(i)/77)[:3])*255
-            cn = 'true_color_%d' % i
-            custom_color_map[cn] = c.astype(int)
-            true_color_list.append(cn)
+        # # add extra colors
+        # true_color_list = []
+        # for i in range(77):
+        #     c = np.array(TGT_CMAP(float(i)/77)[:3])*255
+        #     cn = 'true_color_%d' % i
+        #     custom_color_map[cn] = c.astype(int)
+        #     true_color_list.append(cn)
+        
+        for n, v in coarse_colors.iteritems():
+            custom_color_map['true_coarse_%s' % n] = v
 
         circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
                                                ideogram_radius="0.7r",
+                                               ideogram_thickness="50p", 
                                                karyotype_colors = color_str, 
                                                custom_color_map = custom_color_map)
 
@@ -760,24 +806,13 @@ def plot_circos_latent(exp_results,
                                                   'thickness' : 1, 
                                                   'spacing' : '0.05r'})]})
             
-            circos_p.add_plot('heatmap', {'r0' : '1.34r', 
-                                            'r1' : '1.37r', 
-                                            'min' : 0, 
-                                            'max' : 72, 
-                                          'stroke_thickness' : 0, 
-                                          'color' : ",".join(true_color_list) }, 
-                              cell_types)
-
-            # this is potentially fun: get the ranges for each type
-            TYPE_N = np.max(cell_types) + 1
-
-            df2 = pandas.DataFrame(index=np.arange(1, TYPE_N))
-            df2['des'] = type_metadata_df.apply(lambda x: x['desig'][:2], axis=1)
-            df2 = df2.fillna('other')
-            df2['id'] = df2.index.values.astype(int)
-            gc_mean_i = df2.groupby('des').mean().astype(int)
-            gc_min_i = df2.groupby('des').min().astype(int)
-            gc_max_i = df2.groupby('des').max().astype(int)
+            # circos_p.add_plot('heatmap', {'r0' : '1.34r', 
+            #                                 'r1' : '1.37r', 
+            #                                 'min' : 0, 
+            #                                 'max' : 72, 
+            #                               'stroke_thickness' : 0, 
+            #                               'color' : ",".join(true_color_list) }, 
+            #                   cell_types)
 
 
             f_color_legend = pylab.figure()
@@ -786,7 +821,8 @@ def plot_circos_latent(exp_results,
             x = np.zeros((TYPE_N, 20))
             for i in range(10):
                 x[:, i] = np.arange(TYPE_N)
-            for n in ['gc', 'ac', 'bc', 'other']:
+            for n in ['gc', 'nac', 'mwac', 'bc', 'other']:
+                print gc_min_i
                 x[gc_min_i.ix[n]:gc_max_i.ix[n]+1, 10:] = gc_mean_i.ix[n]
                 ax_color_legend.plot([10, 20], [gc_max_i.ix[n], gc_max_i.ix[n]])
             ax_color_legend.imshow(x, cmap=TGT_CMAP, interpolation='nearest')
@@ -795,21 +831,19 @@ def plot_circos_latent(exp_results,
             f_color_legend.savefig(color_legend_filename)
             print "TYPE_N=", TYPE_N
             type_color_map = {'gc' : 0, 
-                              'ac' : 1, 
-                              'bc' : 2, 
-                              'other' : 3}
+                              'nac' : 1, 
+                              'mwac' : 2, 
+                              'bc' : 3, 
+                              'other' : 4}
 
             # pick colors
-            colors = [true_color_list[gc_mean_i.ix['gc']], 
-                      true_color_list[gc_mean_i.ix['ac']], 
-                      true_color_list[gc_mean_i.ix['bc']], 
-                      true_color_list[gc_mean_i.ix['other']]]
+            colors = ['true_coarse_%s' % s for s in ['gc', 'nac', 'mwac', 'bc', 'other']]
                       
             circos_p.add_plot('heatmap', {'r0' : '1.28r', 
                                           'r1' : '1.34r', 
                                           'min' : 0, 
-                                          'max' : 3, 
-                                          'stroke_thickness' :0, 
+                                          'max' : 4, 
+                                          'stroke_thickness' :0,
                                           'color': ",".join(colors)}, 
                               [type_color_map[df2.ix[i]['des']] for i in cell_types])
             

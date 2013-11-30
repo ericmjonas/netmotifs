@@ -7,6 +7,7 @@ import irm
 for dataset, model in [('xysregs', 'ldfl'), 
                        ('xysregs', 'ld'), 
                        ('xysregs', 'bb'), 
+                       ('xysregs', 'ndfw'), 
                        ('decode', 'ldfl'), 
                        ('decode', 'ld'), 
                        ('lower', 'ldfl'), 
