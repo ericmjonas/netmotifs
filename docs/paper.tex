@@ -1,0 +1,246 @@
+\documentclass{article}
+\usepackage[english,american]{babel}
+\usepackage[disable]{todonotes}
+\usepackage{subfiles}
+\usepackage{grffile}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{subcaption}
+\usepackage{multicol}
+\usepackage[citestyle=authoryear,url=false,hyperref=auto,isbn=false]{biblatex}
+
+
+\title{Discovering cell type motifs in connectomics data}
+\author{Eric Jonas \\ Konrad Kording}
+
+\begin{document}
+\maketitle
+
+\listoftodos
+
+\begin{abstract}
+New techniques produce massive data about neural connectivity, necessitating new analysis methods to discover underlying structure. There is strong evidence for microcircuitry, where the probability of connections depends on the type of pre- and post-synaptic neuron and their distance. Here we thus developed a nonparametric Bayesian technique that identifies type and circuitry motifs from the connection data. We show that the approach recovers known neuron types in the retina, reveals interesting structure in the nervous system of c. elegans, and automatically discovers the structure of microprocessors. Our approach is a first step towards condensing connectomics data into meaningful, human readable structure.
+\end{abstract}
+
+\section{Introduction}
+Emerging techniques (cite Lichtman, Zador, Denk etc) promise to quantify the location of each neuron within a volume of interest, along with its connections to all other neurons. Far exceeding the capacity of neuroanatomists to trace small circuits, this leads to enormous datasets that quantify aspects of the nervous system. The rise of high-throughput sequencing techniques necessitated the development of novel computational methods to understand genomic structure, ushering in an era of bioinformatics as an independent discipline (cite). 
+
+
+
+
+The brain consists of multiple kinds of neurons, each of which is hypothesized to have a specific role in the overall computation. Neuron types differ in many ways, e.g. chemical or morphological, but they also differ in the way they connect to one another. In fact, the idea of well defined local connectivity motifs has been prominent in many areas, ranging from sensory (e.g. retina, cite) via processing (e.g. neocortex) to movement (e.g. spinal cord) (cites). Indeed, such motifs also exists in human-made computing circuits. It remains an important challenge to develop algorithms  to use anatomical data, e.g. connectomics, to back out underlying connectivity motifs.  
+
+The discovery of structure is a crucial aspect of network science. Early approaches focused on global graph properties, such as the types of scaling present in the network (cite Strogatz scale-free stuff).  While this approach leads to an understanding of global network, more recent work aims at identifying repeat patterns, or “motifs” in networks. A motif is a set of nodes with conserved relations that appears multiple times in a network, for example a set of three nodes that are each connected to one another. When it comes to neuroscience, we might expect that a motif consists of the kinds of cells that jointly make up a microcircuit along with their distance and cell-type dependent connectivity. The same motif should then appear in multiple locations in the nervous system. Combining motif-discovery ideas with specific knowledge about the kinds of motifs in the nervous system promises better structure discovery.
+
+The discovery of structure in probabilistic graphs is a crucial aspect in machine learning. Commonly used algorithms include spectral methods (cite), community-based-detection methods (cite), and stochastic block models (cite). While these approaches powerfully incorporate the probabilistic nature of neural connections (cite) they do not generally consider the known fact that the probability of connections between neurons depends on distance. Combining such probabilistic models with a spatial component to model distance promises to improve the detection of microcircuitry from neural data.
+
+Here we describe a Bayesian non-parametric model that can discover circuit structure automatically from connectomics data: both the cell types and their spatial patterns of interconnection. We apply it to three computing systems: the mouse retina connectome (cite), the c. elegans connectome (cite), and a ``connectome'' of a classical microprocessor. In all cases, we discover cell-type to cell-type connectivity that depends on spatial distance and these connectivity functions depend on the two involved cell types. Comparing the cell types discovered by the algorithms with those obtained by anatomists based on orthogonal information reveals a high degree of agreement. We present a scalable approach to infer microcircuitry from connectivity data.
+
+\begin{figure}
+  \centering 
+  \caption{This is the pedagogy figure where we explain what is is that the model does }
+\end{figure}
+
+\section{Results}
+We use a Bayesian structure discovery approach that is based on assumptions about the way positions and cell types affect the probability of connections between cells,  a so-called generative model. The probability of connections between pairs of neurons decreases with distance, but how high the baseline probability of connection is and how quickly it decays with distance depends on the two cell-types. We combine annealing with Markov Chain Monte Carlo to perform simultaneously joint posterior inference over the structure, parameters, and hyperparameters of the model. This procedure yields a division of all neurons into cell-types along with the distance and type dependent connectivity probabilities. These results can then be compared with the results of previous anatomical studies that have used other aspects of neurons, such as chemical properties and cell-morphology to divide neurons into types.
+
+Before we can use a probabilistic model to analyze real data we first need to assess if the model works properly. We thus started out by simulating data for which we know the correct structure and comparing the estimated structure based on the algorithm (see methods) with the one we used for simulation. We find that the model does a good job of recovering the structure we used to generate the data (Fig 1A). Indeed, it does far better than a simpler and well established model (stochastic block) that assumes that there is no distance dependence to the connectivity. The model converges relatively quickly, which is enabled by xxx cool tricks we used to speed it up. It appears that the model behaves the way it should and allows application to large datasets.
+
+\begin{figure}
+  \centering 
+  \caption{This is the synthetic data figure where we show that our model works with synthetic data across a variety of topologies and geometries}
+\end{figure}
+
+\subsubsection{Mouse Retina}
+The retina of the mouse (cite) is an example where we should expect to have connectivity patterns that are well approximated by our generative model. It is known that there are multiple classes of cells that can be grouped into ganglion cells that transmit information to the rest of the brain, bipolar cells that connect between different cells, and amacrine cells that feed into the ganglion cells (cite some review). Recent research (cite) has produced a large dataset containing both the types of cells from orthogonal approaches, and also the connectivity matrix between all reconstructed cells. We want to know to which level we can classify neurons into types based on this connectivity only.
+
+The algorithm took 8 hours to converge to a locally optimal solution, dividing neurons into a set of cell types (Fig 2a). For each pair of neurons there is a specific distance dependent connection probability (Fig 2b), which is well approximated by the model fit. Moreover, each type of cell is rather isotropically distributed across space (Fig 2c) as should be expected for true cell types. The algorithm is thus able to extract meaningful structure from the data.
+
+Comparing the results of the algorithm to other information sources allows evaluating the quality of the type determination. We find that the types tend to reflect the known laminar distribution in the retina (Fig 2a, outer ring), which is exciting as the algorithm did not actually use this type of information. Moreover, we can compare the results from our algorithm with cell-type determinations by professional anatomists, who distinguish between 71 types of neurons. The algorithm yields a separation of neurons into a smaller number of types that are, however, highly correlated with those of the anatomists. 
+
+Our types closely reflect the (human-determined) segmentation of cells into retinal ganglion, narrow amacrine, medium/wide amacrine, and bipolar cells (Figure 2a, outermost ring). [TODO: Do we actually assign any of the unknown cells correctly? are types 72-79 “differet” or simply unknown?]
+
+
+
+
+
+\begin{figure}
+  \centering 
+  \caption{Mouse retina data}
+\end{figure}
+
+\subsection{C. elegans}
+
+The roundworm Caenorhabditis elegans is a model system in developmental neuroscience, with the location and connectivity of each of 302 neurons deterministically known. This incredible cross-organism consistency led to early mapping of the c. elegans chemical and electrical (gap junction) connectome. Unlike the retina, only the motor neurons in c. elegans exhibit regular distribution in space, as they follow the body axis. Most interneurons are concentrated in various ganglia that project throughout the entire animal, and the sensory neurons are primarily located in the animal head. 
+
+Using both the chemical and electrical connectivity (see methods), we determined the underlying clusters explained by connectivity and distance (fig ba). A superficial inspection of the results shows clustering into groups consisting roughly homogeneously of motor neurons, sensory neurons, and interneurons. Closer examination reveals agreement with the classifications originally outlined by Brenner in 1986. 
+[create structure that mirrors the mouse retina paragraphs] 
+[start paragraph with summary sentence] Motorneuron types AS, DA, and VA, all exclusively postsynaptic, are clustered together, as are motorneuron types VD and DD. VC, DB, and VB also mostly share a cluster. Various head motor neurons, including classes SMD, RMD, and RIM are clustered together. Interneurons with known anatomically-distinct connectivity patterns, such as RIA (2 cells) or AVA (2 cells) are clustered into pure groups. The algorithm even correctly places the single-cell class DVB in a distinct group. Note our clustering does not perfectly recover known groupings -- several combinations of head and sensory neurons are combined, and a difficult-to-explain group of 2 VD, 2 VB, a VA, and a DD neuron are grouped together. [algorithm recovers surprising structure based merely on connectivity even though only 278 cells and not spatially homogeneous] 
+
+
+
+
+
+
+
+
+\begin{figure}
+  \centering 
+  \caption{C elegans data}
+\end{figure}
+
+\subsection{Microprocessor}
+To show the applicability of our method to other connectome-style datasets, we obtained the spatial location and interconnectivity of a classic microprocessor, the MOS Technology 6502 used in the original Apple II, Atari, and Commodore 64 (cite datasource). We identified a region of the processor with complex but known structure containing the primary general-purpose registers X, Y, and S (figure). 
+
+Our algorithm identifies areas of spatial homogeneity 
+[mirror structure] 
+
+
+\begin{figure}
+  \centering 
+  \caption{Microprocessor data}
+\end{figure}
+
+
+\section{Discussion}
+We have presented a machine learning technique that allows cell types and connectivity structure to be discovered using only spatial and connectivity data. We have shown its applicability to a newly published connectomics dataset from the mouse retina, the classical connectivity of the worm c elegans, and the connectivity of a historical man-made microprocessor. We have found that spatial connectivity alone is sufficient to discover interesting motifs that were known to exist in the systems based on decades of previous research which had utilized extensive additional information. “
+
+For probabilistic models like ours, no known solution exists to exactly find the most probable parsing of the neurons into cell-types and connectivity patterns [homogenize these two wordings across the paper]. We employ a collection of Markov-chain Monte carlo techniques [reference methods] but while different initializations converge to similar ultimate values, we can never realistically obtain the global optimum. There are a broad range of techniques that may offer better approximations to the global optimum (cite) and future work could adapt them to the problem we addressed here. 
+
+Our inference becomes slower as the amount of data increases. Our algorithm required 10xxx hours for 1000 neurons and would therefore take months for 10,000 neurons, which would not be acceptable. Various new techniques promise to allow similar calculations to take less time and scale to larger datasets (cites). 
+
+
+*Fixed and hand selected likelihood link functions We picked the sigmoid. Should be estimated, Our small collection of parametric forms for spatial functions are obviously not exhaustive
+
+*We do not use other sources of information that are totally there in the datasets. Cell morphology could be used. Laminar organization.
+
+*Larger datasets will generally allow algorithms to distinguish more distinct types (cite supplemental data) and more data should algorithms to get closer to the results from anatomy. Moreover, in general, for such problems precision increases with the size of the dataset and the 9xxx cells that we have are not sufficient to statistically distinguish all the cell types known in anatomy (71xxx). Still, using only connectivity it is possible to meaningfully divide neurons into classes. 
+
+[ how this changes things]
+There exist a range of previous approaches to the discovery of microcircuitry [coherence of language] (cites). These generally involve a great deal of manual labor and ad-hoc determination of what constitutes a “type” of cell -- to this day there are disagreements in the literature as to the “true” types in the mammalian retina. Much as phylogenomics has changed our understanding of animal ontologies, modern large scale data will allow the efficient unbiased discovery of structure. The sheer amount of available data demands the introduction of algorithmic approaches. 
+
+
+*A new way of phenotyping, combining spatial motif ideas with clustering ideas
+
+*Novel data analysis techniques are required to lead us into the big data age. Our approach is orthogonal to all others (because in high d everything is orthogonal).
+
+Ultimately, we will need to combine information across different sources into a joint understanding of neural function. Distinct cell types differ in morphology, connectivity, transcriptomics, relation to behavior or stimuli and many other ways. Algorithms based on each type information can then be combined to synthesize all the available information from one experiment or even across experiments into a joint model of brain function.
+
+
+\section{Methods}
+\section{Methods Summary}
+
+% this should clearly describe the inputs
+
+% the outputs 
+
+% the model 
+
+
+We assume as input a collection of connectivity matrices between
+cells, as well as a distance function $d(e_i, e_j)$. We assume there
+exist an unknown number of latent (unobserved) cell types, $k$, $k \in
+\{1, 2, 3, \dots\}$, and that each cell $e_i$ belongs to a single cell
+type, $c_i = k$. The observed connectivity between two cells $R(e_i,
+e_j)$ then only depends on their latent type and their distance
+through a link function $f(c_i, c_j, d(e_i, e_j))$ If $c_i=m$ and
+$c_j=n$ then there exists a latent-class-specific set of parameters
+$\eta_{mn}$ which parametrizes $f$, as well as a set of global hyper parameters $\theta$. 
+
+We then jointly compute the maximum a posteriroi estimate of the class
+assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and the
+global model hyperparameters $\theta$ :
+
+\begin{equation}
+  \P(\vec{c}, \eta, \theta) \propto \prod_{i, j} P() \prod_{m, n} P(\eta_{mn} | \theta)  P(\theta) P(c | \alpha) p(\alpha) 
+\end{equation}
+
+
+% Methods section 3000 words
+% methods summary does not appear in the online text
+% methods section can have no figures or tables [grrr]
+% todo describe multiple independent relations? 
+
+\subsection{Probabilistic Model}
+
+Our model is a extension of  infinite stochastic block models \cite{Kemp, other guys} to incorporate spatial constraints. 
+
+Prior on cluster assignment. While dirichlet process is inconsistent, we deemed this to ultimately be inconsequential for this study. 
+
+
+Priors on gridded hyperparameter space. 
+
+
+\subsection{Inference} 
+We perform posterior inference via Markov-chain Monte Carlo (MCMC),
+annealing on the global likelihood during the traditional burn-in
+phase. MCMC transition kernels for different parts of the state space
+can be chained together to construct a kernel whose ergodic
+distribution is the target ergodic distribution over the entire state space. 
+
+Our first transition kernel (``structural'') performs gibbs sampling 
+of the assignment vector $p(\vec{c} | \eta, \theta, \alpha)$. 
+The lack of conjugacy in our likelihood model makes an explicit 
+evaluation of the conditional assignment probabilities impossible, 
+motivating us to use an auxiliary variable method \autocite{Neal}
+in which a collection of ephemeral clusters are explicitly represented
+for the duration of the Gibbs scan. 
+
+We then employ a transition kernel to update the per-component
+parameter values $\eta_{mn}$. Conditioned on the assignment vector
+$\vec{c}$ and the model hyperparameters $\theta, \alpha$ the 
+individual $\eta_{mn}$ are indepednent. We slice sample \autocite{neal}
+each component's parameters, choosing the slice width as a function
+of the global hyperparameter range. 
+
+The global hyper-parameters, both $\alpha$ and $\theta$, are allowed
+to take on a discrete set of possible values. As $\theta$ is often a
+tuple of possible values, we explore the cartesian product of all
+possible values. We then Gibbs sample, which is always possible in a 
+small, finite discrete state space. 
+
+We chain these three kernels together, and then globally
+anneal on the likelihood from a temperature of $T=64$ down to 
+$T=1$ over 300 iterations unless otherwise indicated, and
+then run the chain for another $100$ iterations. 
+
+To pick the MAP, we run up to $100$ simultaneous chains in parallel, 
+iniitalized from different random initial points in the statespace, 
+and then pick the chain with the highest log likelihood. Early experiments
+attempted to use the full ensemble of chains as an estimate
+of the posterior but were abandoned due to the difficulty of
+summarizing the posterior over such a complex state space, whcih is
+an ongoing area of research in the probabilistic modeling community \autocite{}. 
+
+
+\subsection{Validation}
+Posterior enumeration tests
+extensive synthetic data
+Show results in suplementary figures
+
+\subsection {Mouse Retina}
+Dense serial electron microscopy of a $VOLUMNE$ in the mouse
+retina by \autocite{Helmstaedter2013} yielded a listing of places where
+neurons come into contact. There were $number$ cells originally, whcih
+were refined through various classification schemes. We selected the
+$950$ for which the location of the soma could be reconstruted from
+the provided cell plots (soma locations were not provided by the
+study's authors in machine-readble form).
+
+The authors were unable to disambiguate actual ``synapses'' in the
+full data set, but were able to measure the points of contact between
+cells. Thus we don't have ``real'' synapses. We also don't have directionality. 
+
+\subsection{C. elegans}
+Where do we get the data
+what cells
+
+
+\subsection{Microprocessor}
+
+
+\end{document}
+
