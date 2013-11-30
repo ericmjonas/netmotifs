@@ -166,12 +166,16 @@ global model hyperparameters $\theta$ :
 
 \subsection{Probabilistic Model}
 
-Our model is a extension of  infinite stochastic block models \cite{Kemp, other guys} to incorporate spatial constraints. 
+Our model is a extension of infinite stochastic block models
+\cite{Kemp, other guys} to incorporate spatial constraints.
 
-Prior on cluster assignment. While dirichlet process is inconsistent, we deemed this to ultimately be inconsequential for this study. 
+We describe three link functions, ``Logistic-distance'', 
 
+Prior on cluster assignment. While dirichlet process is inconsistent,
+we deemed this to ultimately be inconsequential for this study.
 
 Priors on gridded hyperparameter space. 
+
 
 
 \subsection{Inference} 
@@ -207,36 +211,47 @@ anneal on the likelihood from a temperature of $T=64$ down to
 $T=1$ over 300 iterations unless otherwise indicated, and
 then run the chain for another $100$ iterations. 
 
-To pick the MAP, we run up to $100$ simultaneous chains in parallel, 
-iniitalized from different random initial points in the statespace, 
-and then pick the chain with the highest log likelihood. Early experiments
-attempted to use the full ensemble of chains as an estimate
-of the posterior but were abandoned due to the difficulty of
-summarizing the posterior over such a complex state space, whcih is
-an ongoing area of research in the probabilistic modeling community \autocite{}. 
+To pick the MAP, we run up to $100$ simultaneous chains in parallel,
+iniitalized from different random initial points in the statespace,
+and then pick the chain with the highest log likelihood. Early
+experiments attempted to use the full ensemble of chains as an
+estimate of the posterior but were abandoned due to the difficulty of
+summarizing the posterior over such a complex state space, whcih is an
+ongoing area of research in the probabilistic modeling community
+\autocite{}.
 
 
 \subsection{Validation}
-Posterior enumeration tests
-extensive synthetic data
-Show results in suplementary figures
+
 
 \subsection {Mouse Retina}
-Dense serial electron microscopy of a $VOLUMNE$ in the mouse
-retina by \autocite{Helmstaedter2013} yielded a listing of places where
-neurons come into contact. There were $number$ cells originally, whcih
-were refined through various classification schemes. We selected the
-$950$ for which the location of the soma could be reconstruted from
-the provided cell plots (soma locations were not provided by the
-study's authors in machine-readble form).
-
-The authors were unable to disambiguate actual ``synapses'' in the
-full data set, but were able to measure the points of contact between
-cells. Thus we don't have ``real'' synapses. We also don't have directionality. 
+Dense serial electron microscopy of a $VOLUMNE$ in the mouse retina by
+\autocite{Helmstaedter2013} yielded a listing of places where neurons
+come into contact. There were $number$ cells originally, and selected
+the $950$ for which the location of the soma could be reconstruted
+from the provided cell plots (soma locations were not provided by the
+study's authors in machine-readble form). Ultimately
+this left a matrix between the total synapse-like contact area between
+all pairs of 950 cells. Area was thresholded at $0.5\mum$, determined
+by hand, to yield a 950 $\times$ 950 entry matrix that served as input
+to our algorithm. We measured the distance between cells using
+the reconstructed soma centers, and used the Logistic-Distance
+spatial relation. Hyperprior distributions are shown in \ref{supplemental}. 
 
 \subsection{C. elegans}
-Where do we get the data
-what cells
+
+We obtained the connectome of c. elegans from \autocite, and isolated
+the 279 nonpharyngeal neurons, with a total of 6393 chemical synapses
+and 890 gap junctions originally cleaned up in \autocite{Chen2006}. A
+cell's position was its distance along the anterior-posterior axis
+normalzed between zero and one. We used both networks, the chemical
+network as a directed graph and the electrical network as undirected
+graph. We use the synapse counts with the logistic-distance poisson
+likelihood, scaling the counts by a factor of 4 to compensate for 
+the Poisson's underdispersion. 
+
+
+
 
 
 \subsection{Microprocessor}
