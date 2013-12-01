@@ -656,8 +656,8 @@ def plot_params(exp_results, (plot_params_filename,)):
 CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%02d.png" % d, 
-             ".circos.%02d.small.png" % d, 
+           [(".circos.%02d.svg" % d, 
+             ".circos.%02d.small.svg" % d, 
              ".circos.%02d.colors.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
@@ -740,7 +740,7 @@ def plot_circos_latent(exp_results,
     coarse_colors = {'other' : [210, 210, 210]}
     for n_i, n in enumerate(['gc', 'nac', 'mwac', 'bc']):
         coarse_colors[n] = colorbrewer.Set1[4][n_i]
-
+    print "THE COARSE COLORS ARE", coarse_colors
     
     for fi, (circos_filename_main, circos_filename_small, color_legend_filename) in enumerate(out_filenames):
         CLASS_N = len(np.unique(cell_assignment))
@@ -935,6 +935,8 @@ def plot_clustered_somapos(exp_results,
                c = cell_colors, s=60)
     ax.set_ylim(0, 85)
     ax.set_xlim(5, 115)
+    ax.set_aspect(1.0)
+    ax.plot([10, 20], [3, 3], linewidth=10, c='k')
     ax.set_xticks([])
     ax.set_yticks([])
 
