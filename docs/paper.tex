@@ -1,25 +1,33 @@
-\documentclass{article}
+\documentclass{nature}
 \usepackage[english,american]{babel}
-\usepackage[disable]{todonotes}
 \usepackage{subfiles}
 \usepackage{grffile}
 \usepackage{booktabs}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fullpage}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{amsmath}
 \usepackage{subcaption}
 \usepackage{multicol}
 \usepackage[citestyle=authoryear,url=false,hyperref=auto,isbn=false]{biblatex}
+\addbibresource{connectomics motif.bib}
+\addbibresource{connectomics motif-relational models.bib}
+
+\DeclareGraphicsRule{.ai}{pdf}{.ai}{}
 
 
 \title{Discovering cell type motifs in connectomics data}
-\author{Eric Jonas \\ Konrad Kording}
+\author{Eric Jonas, Konrad Kording}
 
 \begin{document}
 \maketitle
 
-\listoftodos
+% \begin{affiliations}
+%   \item Something Something
+%   \item Something Something
+% \end{affiliations}
 
 \begin{abstract}
   New techniques produce massive data about neural connectivity,
@@ -36,7 +44,7 @@
   structure.
 \end{abstract}
 
-\section{Introduction}
+\section*{Introduction}
 Emerging techniques (cite Lichtman, Zador, Denk etc) promise to
 quantify the location of each neuron within a volume of interest,
 along with its connections to all other neurons. Far exceeding the
@@ -102,7 +110,9 @@ data.
 
 \begin{figure}
   \centering 
-  \caption{This is the pedagogy figure where we explain what is is that the model does }
+  \centerline{\includegraphics[width=8.5in]{overview.ai}}
+  \caption{This is the pedagogy figure where we explain what is is
+    that the model does. }
 \end{figure}
 
 \section{Results}
@@ -136,6 +146,7 @@ application to large datasets.
 
 \begin{figure}
   \centering 
+  \centerline{\includegraphics[width=8.5in]{synthetic.ai}}
   \caption{This is the synthetic data figure where we show that our model works with synthetic data across a variety of topologies and geometries}
 \end{figure}
 
@@ -183,6 +194,7 @@ or simply unknown?]
 
 \begin{figure}
   \centering 
+  \centerline{\includegraphics[width=8.5in]{mouseretina.ai}}
   \caption{Mouse retina data}
 \end{figure}
 
@@ -230,6 +242,7 @@ homogeneous]
 
 \begin{figure}
   \centering 
+  \centerline{\includegraphics[width=8.5in]{celegans.ai}}
   \caption{C elegans data}
 \end{figure}
 
@@ -248,6 +261,7 @@ Our algorithm identifies areas of spatial homogeneity
 
 \begin{figure}
   \centering 
+  \centerline{\includegraphics[width=8.5in]{mos6502.ai}}
   \caption{Microprocessor data}
 \end{figure}
 
@@ -397,12 +411,15 @@ graph. We use the synapse counts with the logistic-distance poisson
 likelihood, scaling the counts by a factor of 4 to compensate for 
 the Poisson's underdispersion. 
 
-
-
-
-
 \subsection{Microprocessor}
 
+\begin{addendum}
+ \item Put acknowledgements here.
+ \item[Competing Interests] The authors declare that they have no
+competing financial interests.
+ \item[Correspondence] Correspondence and requests for materials
+should be addressed to A.B.C.~(email: myaddress@nowhere.edu).
+\end{addendum}
 
 \end{document}
 

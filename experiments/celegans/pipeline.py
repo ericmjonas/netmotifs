@@ -1081,7 +1081,7 @@ def plot_best_latent(exp_results,
         
 CIRCOS_DIST_THRESHOLDS = [0.01, 0.1, 0.25, 0.5, 0.9]
 @transform(get_results, suffix(".samples"), 
-           [(".circos.%d.png" % d, 
+           [(".circos.%d.svg" % d, 
              ) for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_best_circos(exp_results, 
                      out_filenames):
@@ -1128,7 +1128,7 @@ def plot_best_circos(exp_results,
     for fi, circos_filenames in enumerate(out_filenames):
 
         circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
-                                               ideogram_radius="0.7r")
+                                               ideogram_radius="0.65r")
 
         for relation, color in [('R1', 'red_a5'), 
                                 ('R2', 'blue_a5')]:
@@ -1165,7 +1165,7 @@ def plot_best_circos(exp_results,
                 for (src, dest), rate in v.iteritems():
                     scaled_rate = rate * rate_scale[relation]
                     if scaled_rate > thold:
-                        pix = int(10*scaled_rate)
+                        pix = int(5*scaled_rate)
                         print src, dest, rate, pix
 
                         ribbons.append((src, dest, pix))
@@ -1175,10 +1175,10 @@ def plot_best_circos(exp_results,
             role[neurons['role'] == 'S']= 2
             
             circos_p.add_plot('scatter', {'r0' : '1.00r', 
-                                          'r1' : '1.15r', 
+                                          'r1' : '1.25r', 
                                           'min' : 0, 
                                           'max' : 1.0, 
-                                          'glyph_size' : 20, 
+                                          'glyph_size' : 16, 
                                           'glyph' : 'circle', 
                                           'color' : 'black',
                                           'stroke_thickness' : 0}, 
@@ -1188,20 +1188,20 @@ def plot_best_circos(exp_results,
                                                                 'y1' : 1.0})],  
                                'axes': [('axis', {'color' : 'grey', 
                                                   'thickness' : 1, 
-                                                  'spacing' : '0.05r'})]})
+                                                  'spacing' : '0.25r'})]})
 
                             
-            circos_p.add_plot('heatmap', {'r0' : '1.15r', 
-                                          'r1' : '1.20r', 
+            circos_p.add_plot('heatmap', {'r0' : '1.27r', 
+                                          'r1' : '1.33r', 
                                           'min' : 0, 
                                           'max' : 2, 
                                           'stroke_thickness' : 0, 
-                                          'color' : "grey,blue,green"}, 
+                                          'color' : "grey,lyellow,lgreen"}, 
                               role)
-            circos_p.add_plot('text', {'r0' : '1.21r', 
+            circos_p.add_plot('text', {'r0' : '1.34r', 
                                        'r1' : '1.50r', 
-                                       'label_size' : '30p', 
-                                       'show_links' : 'yes', 
+                                       'label_size' : '20p', 
+                                       'show_links' : 'no', 
                                        'label_snuggle' : 'yes', 
                                        'max_snuggle_distance' : '1r', 
                                        'snuggle_tolerance': '0.25r',

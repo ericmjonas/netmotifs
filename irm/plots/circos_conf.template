@@ -55,7 +55,7 @@ color        = {{ribbon_color}}
 ribbon = yes
 thickness    = 8
 file         = ribbons.{{loop.index-1}}.txt 
-flat=yes
+flat = yes
 </link>
 {% endfor %}
 

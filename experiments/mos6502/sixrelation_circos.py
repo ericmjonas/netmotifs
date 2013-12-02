@@ -7,8 +7,8 @@ import irm
 CIRCOS_DIST_THRESHOLDS = [20, 50, 100, 200, 500]
 
 for dataset, model in [('xysregs', 'ldfl'), 
-                       ('xysregs', 'ld'), 
-                       ('xysregs', 'ndfw'), 
+                       #('xysregs', 'ld'), 
+                       #('xysregs', 'ndfw'), 
                        #('xysregs', 'bb'), 
                        #('decode', 'ldfl'), 
                        #('decode', 'ld'), 
@@ -40,7 +40,9 @@ for dataset, model in [('xysregs', 'ldfl'),
 
     df = x['subdf']
     print x['region']
-    df['cluster'] = sample['domains']['d1']['assignment']
+    assign = np.array(sample['domains']['d1']['assignment'])
+
+    df['cluster'] = assign
     for pin in ['gate', 'c1', 'c2']:
         df = df.join(wiredf['name'], on=[pin], rsuffix='.%s'% pin)
 
@@ -51,8 +53,35 @@ for dataset, model in [('xysregs', 'ldfl'),
 
     model_name = data['relations']['R1']['model']
 
+    class_ids = np.unique(assign)
+    CLASS_N = len(class_ids)
 
-    assign = np.array(sample['domains']['d1']['assignment'])
+    custom_color_map = {}
+    custom_color_map_raw = {}
+    for c_i, c_v in enumerate(class_ids):
+        color = pylab.cm.Set1(float(c_i) / (CLASS_N+1))
+        c = np.array(color)[:3]*255
+        custom_color_map['ccolor%d' % c_v]  = c.astype(int)
+        custom_color_map_raw[c_v] = color
+
+    colors = np.linspace(0, 360, CLASS_N)
+    color_str = ['ccolor%d' % int(d) for d in class_ids]
+
+    f = pylab.figure(figsize=(16, 16))
+    ax = f.add_subplot(1, 1, 1)
+    for c_n, c in df.groupby('cluster'):
+        ax.scatter(c['x'], c['y'], c = custom_color_map_raw[c_n],
+                   edgecolor='none', s=90)
+    ax.set_xlim(1200, 3200)
+    ax.set_ylim(1000, 4500)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_aspect(1.0)
+    ax.plot([1400, 1400], [1100, 1200], linewidth=4, c='k')
+    f.savefig("sixrelation_circos.%s.%s.transistorpos.pdf" % (dataset, model))
+    
+
+    
     if "istance" not in model_name:
         continue
     for fi in range(len(CIRCOS_DIST_THRESHOLDS)):
@@ -64,7 +93,10 @@ for dataset, model in [('xysregs', 'ldfl'),
                                 ('R5', 'black_a5'), 
                                 ('R6', 'black_a5'), 
                             ]:
-            circos_p = irm.plots.circos.CircosPlot(assign)
+
+            circos_p = irm.plots.circos.CircosPlot(assign, 
+                                                   karyotype_colors=color_str,
+                                                   custom_color_map=custom_color_map)
 
 
             a = irm.util.canonicalize_assignment(assign)
@@ -179,12 +211,15 @@ for dataset, model in [('xysregs', 'ldfl'),
                                    }, 
                               clean(df['name.gate']))
 
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.pdf" % (dataset, model, fi, relation))
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.png" % (dataset, model, fi, relation))
 
 
             # now the tiny plots
         
             circos_p = irm.plots.circos.CircosPlot(assign, ideogram_radius="0.4r", 
-                                                   ideogram_thickness="60p")
+                                                   ideogram_thickness="60p", 
+                                                   karyotype_colors=color_str,
+                                                   custom_color_map=custom_color_map)
+
             circos_p.add_class_ribbons(ribbons, color)
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.tiny.pdf" % (dataset, model, fi, relation))
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.tiny.png" % (dataset, model, fi, relation))

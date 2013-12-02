@@ -657,8 +657,7 @@ CIRCOS_DIST_THRESHOLDS = [10, 20, 40, 60, 80]
 
 @transform(get_results, suffix(".samples"), 
            [(".circos.%02d.svg" % d, 
-             ".circos.%02d.small.svg" % d, 
-             ".circos.%02d.colors.png" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
+             ".circos.%02d.small.svg" % d)  for d in range(len(CIRCOS_DIST_THRESHOLDS))])
 def plot_circos_latent(exp_results, 
                        out_filenames):
 
@@ -742,7 +741,7 @@ def plot_circos_latent(exp_results,
         coarse_colors[n] = colorbrewer.Set1[4][n_i]
     print "THE COARSE COLORS ARE", coarse_colors
     
-    for fi, (circos_filename_main, circos_filename_small, color_legend_filename) in enumerate(out_filenames):
+    for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
         CLASS_N = len(np.unique(cell_assignment))
         
 
@@ -789,6 +788,7 @@ def plot_circos_latent(exp_results,
             pos_max = 120
             pos_r_min = 1.00
             pos_r_max = pos_r_min + 0.25
+            ten_um_frac = 10.0/(pos_max - pos_min)
 
             circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
                                           'r1' : '%fr' % pos_r_max, 
@@ -804,7 +804,7 @@ def plot_circos_latent(exp_results,
                                                                 'y1' : pos_max})],  
                                'axes': [('axis', {'color' : 'grey', 
                                                   'thickness' : 1, 
-                                                  'spacing' : '0.05r'})]})
+                                                  'spacing' : '%fr' % ten_um_frac})]})
             
             # circos_p.add_plot('heatmap', {'r0' : '1.34r', 
             #                                 'r1' : '1.37r', 
@@ -815,20 +815,20 @@ def plot_circos_latent(exp_results,
             #                   cell_types)
 
 
-            f_color_legend = pylab.figure()
-            ax_color_legend = f_color_legend.add_subplot(1, 1, 1)
+            # f_color_legend = pylab.figure()
+            # ax_color_legend = f_color_legend.add_subplot(1, 1, 1)
 
-            x = np.zeros((TYPE_N, 20))
-            for i in range(10):
-                x[:, i] = np.arange(TYPE_N)
-            for n in ['gc', 'nac', 'mwac', 'bc', 'other']:
-                print gc_min_i
-                x[gc_min_i.ix[n]:gc_max_i.ix[n]+1, 10:] = gc_mean_i.ix[n]
-                ax_color_legend.plot([10, 20], [gc_max_i.ix[n], gc_max_i.ix[n]])
-            ax_color_legend.imshow(x, cmap=TGT_CMAP, interpolation='nearest')
-            ax_color_legend.axvline(10, c='k')
-            ax_color_legend.set_xticks([])
-            f_color_legend.savefig(color_legend_filename)
+            # x = np.zeros((TYPE_N, 20))
+            # for i in range(10):
+            #     x[:, i] = np.arange(TYPE_N)
+            # for n in ['gc', 'nac', 'mwac', 'bc', 'other']:
+            #     print gc_min_i
+            #     x[gc_min_i.ix[n]:gc_max_i.ix[n]+1, 10:] = gc_mean_i.ix[n]
+            #     ax_color_legend.plot([10, 20], [gc_max_i.ix[n], gc_max_i.ix[n]])
+            # ax_color_legend.imshow(x, cmap=TGT_CMAP, interpolation='nearest')
+            # ax_color_legend.axvline(10, c='k')
+            # ax_color_legend.set_xticks([])
+            # f_color_legend.savefig(color_legend_filename)
             print "TYPE_N=", TYPE_N
             type_color_map = {'gc' : 0, 
                               'nac' : 1, 
@@ -936,7 +936,7 @@ def plot_clustered_somapos(exp_results,
     ax.set_ylim(0, 85)
     ax.set_xlim(5, 115)
     ax.set_aspect(1.0)
-    ax.plot([10, 20], [3, 3], linewidth=10, c='k')
+    ax.plot([10, 20], [3, 3], linewidth=5, c='k')
     ax.set_xticks([])
     ax.set_yticks([])
 

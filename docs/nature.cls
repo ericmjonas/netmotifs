@@ -38,16 +38,16 @@
 \typeout{ }
 
 \LoadClass[12pt]{article}
-\RequirePackage{cite}
+%\RequirePackage{cite}
 \RequirePackage{times}
 \RequirePackage{fullpage}
 \RequirePackage{ifthen}
 
 %% make labels in bibliobraphy be #.
-\renewcommand\@biblabel[1]{#1.}
+%\renewcommand\@biblabel[1]{#1.}
 
 %% make citations be superscripts, taken from citesupernumber.sty
-\def\@cite#1#2{$^{\mbox{\scriptsize #1\if@tempswa , #2\fi}}$}
+%\def\@cite#1#2{$^{\mbox{\scriptsize #1\if@tempswa , #2\fi}}$}
 
 %% Some style parameters
 \setlength{\parindent}{0.39in}
