@@ -4,7 +4,8 @@
 all: getbib paper.pdf
 
 clean:
-	rm paper.pdf
+	rm paper.pdf paper.bcf paper.blg paper.aux paper.bbl paper.log paper.out paper.run.xml 
+
 
 BIBHOME=${HOME}/Documents/
 getbib:
@@ -13,7 +14,7 @@ getbib:
 
 techreport.pdf: techreport.tex 	
 	pdflatex techreport.tex
-	biber techreport
+	bibtex8 techreport
 	pdflatex techreport.tex
 
 paper.pdf: paper.tex 	

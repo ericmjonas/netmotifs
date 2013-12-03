@@ -795,6 +795,7 @@ def plot_circos_latent(exp_results,
                                           'min' : pos_min, 
                                           'max' : pos_max, 
                                           'glyph' : 'circle', 
+                                          'glyph_size' : 10, 
                                           'color' : 'black',
                                           'stroke_thickness' : 0
                                           }, 
@@ -802,7 +803,7 @@ def plot_circos_latent(exp_results,
                               {'backgrounds' : [('background', {'color': 'vvlgrey', 
                                                                 'y0' : pos_min, 
                                                                 'y1' : pos_max})],  
-                               'axes': [('axis', {'color' : 'grey', 
+                               'axes': [('axis', {'color' : 'vgrey', 
                                                   'thickness' : 1, 
                                                   'spacing' : '%fr' % ten_um_frac})]})
             

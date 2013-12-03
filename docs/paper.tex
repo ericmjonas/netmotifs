@@ -1,5 +1,7 @@
-\documentclass{nature}
+%\documentclass{nature}
+\documentclass{article}
 \usepackage[english,american]{babel}
+\usepackage[backend=biber,style=nature]{biblatex}
 \usepackage{subfiles}
 \usepackage{grffile}
 \usepackage{booktabs}
@@ -11,7 +13,7 @@
 \usepackage{amsmath}
 \usepackage{subcaption}
 \usepackage{multicol}
-\usepackage[citestyle=authoryear,url=false,hyperref=auto,isbn=false]{biblatex}
+
 \addbibresource{connectomics motif.bib}
 \addbibresource{connectomics motif-relational models.bib}
 
@@ -110,9 +112,19 @@ data.
 
 \begin{figure}
   \centering 
-  \centerline{\includegraphics[width=8.5in]{overview.ai}}
-  \caption{This is the pedagogy figure where we explain what is is
-    that the model does. }
+    \centerline{\includegraphics[width=183mm]{overview.ai}}
+  \caption{An overview of our method. a. Input data is
+an adjacency matrix indicating whether cell $i$ (row)
+synapses on cell $j$ (column). The location of each cell in space is known. 
+b. Our algorithm discovers hidden cell types in this connectivity data
+by assuming all cells of a type share a distance-dependent connectivity 
+profile, c.), with cells of other types. This results in a clustering 
+of the cells by those hidden types. b.) shows the cell adjacency
+matrix with cells of the same type grouped together. d.) shows
+the learned probability of connection between our different types
+at various distances, illustrating short-range and long-range
+connectivtiy patterns.}
+
 \end{figure}
 
 \section{Results}
@@ -146,8 +158,16 @@ application to large datasets.
 
 \begin{figure}
   \centering 
-  \centerline{\includegraphics[width=8.5in]{synthetic.ai}}
-  \caption{This is the synthetic data figure where we show that our model works with synthetic data across a variety of topologies and geometries}
+  \centerline{\includegraphics{synthetic.ai}}
+  \caption{Correct recovery of true numbers of hidden classes
+in synthetic data. a.) Other models overcluster the number
+of classes as they fail to take distance into account, whereas
+our model finds close to the true number of classes. b.) ARI, a measure
+of ``correct clustering'', for
+different true class counts, between our model and a traditional
+nonparametric stochastic block model. c.) Multiple Markov chains iterateively
+converge towards a highly-probable solution. }
+
 \end{figure}
 
 \subsubsection{Mouse Retina}
@@ -190,12 +210,17 @@ or simply unknown?]
 
 
 
-
-
 \begin{figure}
   \centering 
-  \centerline{\includegraphics[width=8.5in]{mouseretina.ai}}
-  \caption{Mouse retina data}
+  \centerline{\includegraphics{mouseretina.ai}}
+  \caption{Discovering cell classes in the mouse retina connectome. 
+a.) Input adajacency data for 950 cells for which soma positions were known. b. clsutered adjacency matrix. c.) connectivity diagram showing our clusters, as
+well as the cell depth and known cell type of each cell. Our model agrees
+with the cell types traditionally identified by anatomists, and identifies 
+laminar-specific connectivity patterns. d.) Connectivity between our
+clusters as a function of distance -- the cluster consisting primarially of
+retinal ganglion cells (lower left-center) exhibits the expected near and
+far connectivity.}
 \end{figure}
 
 \subsection{C. elegans}
@@ -234,16 +259,14 @@ merely on connectivity even though only 278 cells and not spatially
 homogeneous]
 
 
-
-
-
-
-
-
 \begin{figure}
   \centering 
-  \centerline{\includegraphics[width=8.5in]{celegans.ai}}
-  \caption{C elegans data}
+  \centerline{\includegraphics{celegans.ai}}
+  \caption{Discovering cell classes in the \textit{c. elegans} connectome. a.) Initial cell connectivity matrix, red are (directional) chemical synapses, blue are
+electrical synapses. Point size is proportaionl to synapse count between those cells. b.) Clustered adjaceny matrix showing identified clusters. c.) Inter-cluster
+connectivity, showing the position of each cell along the body axis as well
+as the ``true'' cell type -- both coarse (motor, sensory, and interneuron) as well
+as fine (small text labels). }
 \end{figure}
 
 \subsection{Microprocessor}
@@ -261,17 +284,37 @@ Our algorithm identifies areas of spatial homogeneity
 
 \begin{figure}
   \centering 
-  \centerline{\includegraphics[width=8.5in]{mos6502.ai}}
+  \centerline{\includegraphics{mos6502.ai}}
   \caption{Microprocessor data}
 \end{figure}
 
 
 \section{Discussion}
-We have presented a machine learning technique that allows cell types and connectivity structure to be discovered using only spatial and connectivity data. We have shown its applicability to a newly published connectomics dataset from the mouse retina, the classical connectivity of the worm c elegans, and the connectivity of a historical man-made microprocessor. We have found that spatial connectivity alone is sufficient to discover interesting motifs that were known to exist in the systems based on decades of previous research which had utilized extensive additional information. “
+We have presented a machine learning technique that allows cell types
+and connectivity structure to be discovered using only spatial and
+connectivity data. We have shown its applicability to a newly
+published connectomics dataset from the mouse retina, the classical
+connectivity of the worm c elegans, and the connectivity of a
+historical man-made microprocessor. We have found that spatial
+connectivity alone is sufficient to discover interesting motifs that
+were known to exist in the systems based on decades of previous
+research which had utilized extensive additional information. “
 
-For probabilistic models like ours, no known solution exists to exactly find the most probable parsing of the neurons into cell-types and connectivity patterns [homogenize these two wordings across the paper]. We employ a collection of Markov-chain Monte carlo techniques [reference methods] but while different initializations converge to similar ultimate values, we can never realistically obtain the global optimum. There are a broad range of techniques that may offer better approximations to the global optimum (cite) and future work could adapt them to the problem we addressed here. 
+For probabilistic models like ours, no known solution exists to
+exactly find the most probable parsing of the neurons into cell-types
+and connectivity patterns [homogenize these two wordings across the
+paper]. We employ a collection of Markov-chain Monte carlo techniques
+[reference methods] but while different initializations converge to
+similar ultimate values, we can never realistically obtain the global
+optimum. There are a broad range of techniques that may offer better
+approximations to the global optimum (cite) and future work could
+adapt them to the problem we addressed here.
 
-Our inference becomes slower as the amount of data increases. Our algorithm required 10xxx hours for 1000 neurons and would therefore take months for 10,000 neurons, which would not be acceptable. Various new techniques promise to allow similar calculations to take less time and scale to larger datasets (cites). 
+Our inference becomes slower as the amount of data increases. Our
+algorithm required 10xxx hours for 1000 neurons and would therefore
+take months for 10,000 neurons, which would not be acceptable. Various
+new techniques promise to allow similar calculations to take less time
+and scale to larger datasets (cites).
 
 
 *Fixed and hand selected likelihood link functions We picked the sigmoid. Should be estimated, Our small collection of parametric forms for spatial functions are obviously not exhaustive
@@ -280,8 +323,15 @@ Our inference becomes slower as the amount of data increases. Our algorithm requ
 
 *Larger datasets will generally allow algorithms to distinguish more distinct types (cite supplemental data) and more data should algorithms to get closer to the results from anatomy. Moreover, in general, for such problems precision increases with the size of the dataset and the 9xxx cells that we have are not sufficient to statistically distinguish all the cell types known in anatomy (71xxx). Still, using only connectivity it is possible to meaningfully divide neurons into classes. 
 
-[ how this changes things]
-There exist a range of previous approaches to the discovery of microcircuitry [coherence of language] (cites). These generally involve a great deal of manual labor and ad-hoc determination of what constitutes a “type” of cell -- to this day there are disagreements in the literature as to the “true” types in the mammalian retina. Much as phylogenomics has changed our understanding of animal ontologies, modern large scale data will allow the efficient unbiased discovery of structure. The sheer amount of available data demands the introduction of algorithmic approaches. 
+[ how this changes things] There exist a range of previous approaches
+to the discovery of microcircuitry [coherence of language]
+(cites). These generally involve a great deal of manual labor and
+ad-hoc determination of what constitutes a “type” of cell -- to this
+day there are disagreements in the literature as to the “true” types
+in the mammalian retina. Much as phylogenomics has changed our
+understanding of animal ontologies, modern large scale data will allow
+the efficient unbiased discovery of structure. The sheer amount of
+available data demands the introduction of algorithmic approaches.
 
 
 *A new way of phenotyping, combining spatial motif ideas with clustering ideas
@@ -311,9 +361,9 @@ through a link function $f(c_i, c_j, d(e_i, e_j))$ If $c_i=m$ and
 $c_j=n$ then there exists a latent-class-specific set of parameters
 $\eta_{mn}$ which parametrizes $f$, as well as a set of global hyper parameters $\theta$. 
 
-We then jointly compute the maximum a posteriroi estimate of the class
-assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and the
-global model hyperparameters $\theta$ :
+We then jointly compute the maximum a posteriroi (MAP) estimate of the
+class assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and
+the global model hyperparameters $\theta$ :
 
 \begin{equation}
   \P(\vec{c}, \eta, \theta) \propto \prod_{i, j} P() \prod_{m, n} P(\eta_{mn} | \theta)  P(\theta) P(c | \alpha) p(\alpha) 
@@ -330,13 +380,28 @@ global model hyperparameters $\theta$ :
 Our model is a extension of infinite stochastic block models
 \cite{Kemp, other guys} to incorporate spatial constraints.
 
-We describe three link functions, ``Logistic-distance'', 
+We describe three link functions, ``Logistic-distance Bernoulli'',
+``logistic-distance fixed-lambda Bernoulli'', and ``logistid-Distance
+Poisson''. 
 
-Prior on cluster assignment. While dirichlet process is inconsistent,
-we deemed this to ultimately be inconsequential for this study.
+The ``logistic-distance Bernoulli'' model associates with each latent class 
+two parameters, $\mu_{mn}$ and $\lambda_{mn}$, and the probability that two
+cells $e_i$ and $e_j$ are connected is given by
+\begin{equation}
+p^* = \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda_{mn}}}\\
+p = p^* \cdot (p_{max} - p_{min}) + p_{min}
+\end{equation}
+where $p_{max}$ and $p_{min}$ are per-graph hyperparameters. Per-component parameters $\mu_{mn} \sim \exp(\mu | \mu^{hp})$ and $\lambda_{mn} \sim \exp(\lambda | \lambda^{hp})$. 
+Inference is performed on these hyperparameters as well, see TODO supplemental 
+for details. 
 
-Priors on gridded hyperparameter space. 
-
+We use a Dirichlet-process prior on cluster assignments, which allows
+the number of clusters to be determined automatically. In brief, the
+probability of a cell belonging to a cluster is proportional to the
+number of datapoints already in that cluster, $m_k$, such that $p(c_i
+= k) \propto \frac{m_k}{N + \alpha}$ and the probability of the cell
+belonging to a new cluster $k'$ is $p(c_i = k') \propto
+\frac{\alpha}{N + \alpha}$.
 
 
 \subsection{Inference} 
@@ -350,14 +415,14 @@ Our first transition kernel (``structural'') performs gibbs sampling
 of the assignment vector $p(\vec{c} | \eta, \theta, \alpha)$. 
 The lack of conjugacy in our likelihood model makes an explicit 
 evaluation of the conditional assignment probabilities impossible, 
-motivating us to use an auxiliary variable method \autocite{Neal}
+motivating us to use an auxiliary variable method \autocite{Neal2000}
 in which a collection of ephemeral clusters are explicitly represented
 for the duration of the Gibbs scan. 
 
 We then employ a transition kernel to update the per-component
 parameter values $\eta_{mn}$. Conditioned on the assignment vector
 $\vec{c}$ and the model hyperparameters $\theta, \alpha$ the 
-individual $\eta_{mn}$ are indepednent. We slice sample \autocite{neal}
+individual $\eta_{mn}$ are indepednent. We slice sample \autocite{NealSlice}
 each component's parameters, choosing the slice width as a function
 of the global hyperparameter range. 
 
@@ -413,13 +478,16 @@ the Poisson's underdispersion.
 
 \subsection{Microprocessor}
 
-\begin{addendum}
- \item Put acknowledgements here.
- \item[Competing Interests] The authors declare that they have no
-competing financial interests.
- \item[Correspondence] Correspondence and requests for materials
-should be addressed to A.B.C.~(email: myaddress@nowhere.edu).
-\end{addendum}
+% \begin{addendum}
+%  \item Put acknowledgements here.
+%  \item[Competing Interests] The authors declare that they have no
+% competing financial interests.
+%  \item[Correspondence] Correspondence and requests for materials
+% should be addressed to A.B.C.~(email: myaddress@nowhere.edu).
+% \end{addendum}
+
+
+\printbibliography
 
 \end{document}
 
