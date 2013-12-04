@@ -2,6 +2,7 @@
 \documentclass{article}
 \usepackage[english,american]{babel}
 \usepackage[backend=biber,style=nature]{biblatex}
+\usepackage{todonotes}
 \usepackage{subfiles}
 \usepackage{grffile}
 \usepackage{booktabs}
@@ -26,6 +27,11 @@
 \begin{document}
 \maketitle
 
+\todo{Citations}
+\todo{Log score plots for real data} 
+\todo{Fix vector notation}
+\todo{Get feedback on joint model score}
+\todo{Find other irm paper citation}
 % \begin{affiliations}
 %   \item Something Something
 %   \item Something Something
@@ -47,7 +53,7 @@
 \end{abstract}
 
 \section*{Introduction}
-Emerging techniques (cite Lichtman, Zador, Denk etc) promise to
+Emerging techniques \autocite{Lichtman, Zador, Denk} promise to
 quantify the location of each neuron within a volume of interest,
 along with its connections to all other neurons. Far exceeding the
 capacity of neuroanatomists to trace small circuits, this leads to
@@ -55,9 +61,7 @@ enormous datasets that quantify aspects of the nervous system. The
 rise of high-throughput sequencing techniques necessitated the
 development of novel computational methods to understand genomic
 structure, ushering in an era of bioinformatics as an independent
-discipline (cite).
-
-
+discipline \autocite{}.
 
 
 The brain consists of multiple kinds of neurons, each of which is
@@ -66,18 +70,18 @@ computation. Neuron types differ in many ways, e.g. chemical or
 morphological, but they also differ in the way they connect to one
 another. In fact, the idea of well defined local connectivity motifs
 has been prominent in many areas, ranging from sensory (e.g. retina,
-cite) via processing (e.g. neocortex) to movement (e.g. spinal cord)
-(cites). Indeed, such motifs also exists in human-made computing
+\autocite{} via processing (e.g. neocortex) to movement (e.g. spinal cord)
+\autocite{}. Indeed, such motifs also exists in human-made computing
 circuits. It remains an important challenge to develop algorithms to
 use anatomical data, e.g. connectomics, to back out underlying
 connectivity motifs.
 
 The discovery of structure is a crucial aspect of network
 science. Early approaches focused on global graph properties, such as
-the types of scaling present in the network (cite Strogatz scale-free
-stuff).  While this approach leads to an understanding of global
+the types of scaling present in the network \autocite {WattsStrogatz1998}
+.  While this approach leads to an understanding of global
 network, more recent work aims at identifying repeat patterns, or
-“motifs” in networks. A motif is a set of nodes with conserved
+“motifs” in networks. \todo{There's the Science2002 paper by Milo et. al. that explicitly looks at 'motifs'} A motif is a set of nodes with conserved
 relations that appears multiple times in a network, for example a set
 of three nodes that are each connected to one another. When it comes
 to neuroscience, we might expect that a motif consists of the kinds of
@@ -89,9 +93,9 @@ motifs in the nervous system promises better structure discovery.
 
 The discovery of structure in probabilistic graphs is a crucial aspect
 in machine learning. Commonly used algorithms include spectral methods
-(cite), community-based-detection methods (cite), and stochastic block
-models (cite). While these approaches powerfully incorporate the
-probabilistic nature of neural connections (cite) they do not
+\autocite{}, community-based-detection methods \autocite{}, and stochastic block
+models \autocite{NowickiSnijdders2001}. While these approaches powerfully incorporate the
+probabilistic nature of neural connections \autocite{} they do not
 generally consider the known fact that the probability of connections
 between neurons depends on distance. Combining such probabilistic
 models with a spatial component to model distance promises to improve
@@ -100,8 +104,8 @@ the detection of microcircuitry from neural data.
 Here we describe a Bayesian non-parametric model that can discover
 circuit structure automatically from connectomics data: both the cell
 types and their spatial patterns of interconnection. We apply it to
-three computing systems: the mouse retina connectome (cite), the
-c. elegans connectome (cite), and a ``connectome'' of a classical
+three computing systems: the mouse retina connectome \autocite{}, the
+c. elegans connectome \autocite{}, and a ``connectome'' of a classical
 microprocessor. In all cases, we discover cell-type to cell-type
 connectivity that depends on spatial distance and these connectivity
 functions depend on the two involved cell types. Comparing the cell
@@ -171,17 +175,17 @@ converge towards a highly-probable solution. }
 \end{figure}
 
 \subsubsection{Mouse Retina}
-The retina of the mouse (cite) is an example where we should expect to
-have connectivity patterns that are well approximated by our
-generative model. It is known that there are multiple classes of cells
-that can be grouped into ganglion cells that transmit information to
-the rest of the brain, bipolar cells that connect between different
-cells, and amacrine cells that feed into the ganglion cells (cite some
-review). Recent research (cite) has produced a large dataset
-containing both the types of cells from orthogonal approaches, and
-also the connectivity matrix between all reconstructed cells. We want
-to know to which level we can classify neurons into types based on
-this connectivity only.
+The retina of the mouse \autocite{Masland2001} is an example where we
+should expect to have connectivity patterns that are well approximated
+by our generative model. It is known that there are multiple classes
+of cells that can be grouped into ganglion cells that transmit
+information to the rest of the brain, bipolar cells that connect
+between different cells, and amacrine cells that feed into the
+ganglion cells (cite some review). Recent research \autocite{Helmstaedter2013} has
+produced a large dataset containing both the types of cells from
+orthogonal approaches, and also the connectivity matrix between all
+reconstructed cells. We want to know to which level we can classify
+neurons into types based on this connectivity only.
 
 The algorithm took 8 hours to converge to a locally optimal solution,
 dividing neurons into a set of cell types (Fig 2a). For each pair of
@@ -226,14 +230,15 @@ far connectivity.}
 \subsection{C. elegans}
 
 The roundworm Caenorhabditis elegans is a model system in
-developmental neuroscience, with the location and connectivity of each
-of 302 neurons deterministically known. This incredible cross-organism
-consistency led to early mapping of the c. elegans chemical and
-electrical (gap junction) connectome. Unlike the retina, only the
-motor neurons in c. elegans exhibit regular distribution in space, as
-they follow the body axis. Most interneurons are concentrated in
-various ganglia that project throughout the entire animal, and the
-sensory neurons are primarily located in the animal head.
+developmental neuroscience\autocite{White1986}, with the location and
+connectivity of each of 302 neurons deterministically known. This
+incredible cross-organism consistency led to early mapping of the
+c. elegans chemical and electrical (gap junction) connectome. Unlike
+the retina, only the motor neurons in c. elegans exhibit regular
+distribution in space, as they follow the body axis. Most interneurons
+are concentrated in various ganglia that project throughout the entire
+animal, and the sensory neurons are primarily located in the animal
+head.
 
 Using both the chemical and electrical connectivity (see methods), we
 determined the underlying clusters explained by connectivity and
@@ -262,11 +267,15 @@ homogeneous]
 \begin{figure}
   \centering 
   \centerline{\includegraphics{celegans.ai}}
-  \caption{Discovering cell classes in the \textit{c. elegans} connectome. a.) Initial cell connectivity matrix, red are (directional) chemical synapses, blue are
-electrical synapses. Point size is proportaionl to synapse count between those cells. b.) Clustered adjaceny matrix showing identified clusters. c.) Inter-cluster
-connectivity, showing the position of each cell along the body axis as well
-as the ``true'' cell type -- both coarse (motor, sensory, and interneuron) as well
-as fine (small text labels). }
+  \caption{Discovering cell classes in the \textit{c. elegans}
+    connectome. a.) Initial cell connectivity matrix, red are
+    (directional) chemical synapses, blue are electrical
+    synapses. Point size is proportaionl to synapse count between
+    those cells. b.) Clustered adjaceny matrix showing identified
+    clusters. c.) Inter-cluster connectivity, showing the position of
+    each cell along the body axis as well as the ``true'' cell type --
+    both coarse (motor, sensory, and interneuron) as well as fine
+    (small text labels). }
 \end{figure}
 
 \subsection{Microprocessor}
@@ -274,7 +283,7 @@ as fine (small text labels). }
 To show the applicability of our method to other connectome-style
 datasets, we obtained the spatial location and interconnectivity of a
 classic microprocessor, the MOS Technology 6502 used in the original
-Apple II, Atari, and Commodore 64 (cite datasource). We identified a
+Apple II, Atari, and Commodore 64 \autocite{datasource}. We identified a
 region of the processor with complex but known structure containing
 the primary general-purpose registers X, Y, and S (figure).
 
@@ -307,21 +316,31 @@ paper]. We employ a collection of Markov-chain Monte carlo techniques
 [reference methods] but while different initializations converge to
 similar ultimate values, we can never realistically obtain the global
 optimum. There are a broad range of techniques that may offer better
-approximations to the global optimum (cite) and future work could
+approximations to the global optimum \autocite{Wanga2012,FritzJonathan} and future work could
 adapt them to the problem we addressed here.
 
 Our inference becomes slower as the amount of data increases. Our
 algorithm required 10xxx hours for 1000 neurons and would therefore
 take months for 10,000 neurons, which would not be acceptable. Various
 new techniques promise to allow similar calculations to take less time
-and scale to larger datasets (cites).
+and scale to larger datasets \autocite{}.
 
 
-*Fixed and hand selected likelihood link functions We picked the sigmoid. Should be estimated, Our small collection of parametric forms for spatial functions are obviously not exhaustive
+*Fixed and hand selected likelihood link functions We picked the
+sigmoid. Should be estimated, Our small collection of parametric forms
+for spatial functions are obviously not exhaustive
 
-*We do not use other sources of information that are totally there in the datasets. Cell morphology could be used. Laminar organization.
+*We do not use other sources of information that are totally there in
+the datasets. Cell morphology could be used. Laminar organization.
 
-*Larger datasets will generally allow algorithms to distinguish more distinct types (cite supplemental data) and more data should algorithms to get closer to the results from anatomy. Moreover, in general, for such problems precision increases with the size of the dataset and the 9xxx cells that we have are not sufficient to statistically distinguish all the cell types known in anatomy (71xxx). Still, using only connectivity it is possible to meaningfully divide neurons into classes. 
+*Larger datasets will generally allow algorithms to distinguish more
+distinct types (cite supplemental data) and more data should
+algorithms to get closer to the results from anatomy. Moreover, in
+general, for such problems precision increases with the size of the
+dataset and the 9xxx cells that we have are not sufficient to
+statistically distinguish all the cell types known in anatomy
+(71xxx). Still, using only connectivity it is possible to meaningfully
+divide neurons into classes.
 
 [ how this changes things] There exist a range of previous approaches
 to the discovery of microcircuitry [coherence of language]
@@ -336,9 +355,17 @@ available data demands the introduction of algorithmic approaches.
 
 *A new way of phenotyping, combining spatial motif ideas with clustering ideas
 
-*Novel data analysis techniques are required to lead us into the big data age. Our approach is orthogonal to all others (because in high d everything is orthogonal).
+*Novel data analysis techniques are required to lead us into the big
+data age. Our approach is orthogonal to all others (because in high d
+everything is orthogonal).
 
-Ultimately, we will need to combine information across different sources into a joint understanding of neural function. Distinct cell types differ in morphology, connectivity, transcriptomics, relation to behavior or stimuli and many other ways. Algorithms based on each type information can then be combined to synthesize all the available information from one experiment or even across experiments into a joint model of brain function.
+Ultimately, we will need to combine information across different
+sources into a joint understanding of neural function. Distinct cell
+types differ in morphology, connectivity, transcriptomics, relation to
+behavior or stimuli and many other ways. Algorithms based on each type
+information can then be combined to synthesize all the available
+information from one experiment or even across experiments into a
+joint model of brain function.
 
 
 \section{Methods}
@@ -351,22 +378,25 @@ Ultimately, we will need to combine information across different sources into a 
 % the model 
 
 
-We assume as input a collection of connectivity matrices between
-cells, as well as a distance function $d(e_i, e_j)$. We assume there
-exist an unknown number of latent (unobserved) cell types, $k$, $k \in
-\{1, 2, 3, \dots\}$, and that each cell $e_i$ belongs to a single cell
-type, $c_i = k$. The observed connectivity between two cells $R(e_i,
-e_j)$ then only depends on their latent type and their distance
-through a link function $f(c_i, c_j, d(e_i, e_j))$ If $c_i=m$ and
-$c_j=n$ then there exists a latent-class-specific set of parameters
-$\eta_{mn}$ which parametrizes $f$, as well as a set of global hyper parameters $\theta$. 
+We assume as input a connectivity matrix $R$ defining the connections
+between cells, as well as a distance function $d(e_i, e_j)$
+representing a (physical) distance between adjacent cells. See the
+supplemental material for extension to multiple connectivity
+matrices. We assume there exist an unknown number of latent
+(unobserved) cell types, $k$, $k \in \{1, 2, 3, \dots\}$, and that
+each cell $e_i$ belongs to a single cell type, $c_i = k$. The observed
+connectivity between two cells $R(e_i, e_j)$ then only depends on
+their latent type and their distance through a link function $f(c_i,
+c_j, d(e_i, e_j))$ If $c_i=m$ and $c_j=n$ then there exists a
+latent-class-specific set of parameters $\eta_{mn}$ which parametrizes
+$f$, as well as a set of global hyper parameters $\theta$.
 
 We then jointly compute the maximum a posteriroi (MAP) estimate of the
 class assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and
 the global model hyperparameters $\theta$ :
 
 \begin{equation}
-  \P(\vec{c}, \eta, \theta) \propto \prod_{i, j} P() \prod_{m, n} P(\eta_{mn} | \theta)  P(\theta) P(c | \alpha) p(\alpha) 
+  p(\vec{c}, \eta, \theta | R ) \propto \prod_{i, j} p(R(e_i, e_j) | f(d(e_i, e_j) | \eta_{c_ic_j}), \theta) \prod_{m, n} p(\eta_{mn} | \theta)  p(\theta) p(\vec{c} | \alpha) p(\alpha) p(\theta)
 \end{equation}
 
 
@@ -378,7 +408,9 @@ the global model hyperparameters $\theta$ :
 \subsection{Probabilistic Model}
 
 Our model is a extension of infinite stochastic block models
-\cite{Kemp, other guys} to incorporate spatial constraints.
+\autocite{Kemp2006a, other guys} to incorporate spatial constraints.
+
+\todo{infinite subset relaitonal model has good reults}
 
 We describe three link functions, ``Logistic-distance Bernoulli'',
 ``logistic-distance fixed-lambda Bernoulli'', and ``logistid-Distance
@@ -387,10 +419,10 @@ Poisson''.
 The ``logistic-distance Bernoulli'' model associates with each latent class 
 two parameters, $\mu_{mn}$ and $\lambda_{mn}$, and the probability that two
 cells $e_i$ and $e_j$ are connected is given by
-\begin{equation}
-p^* = \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda_{mn}}}\\
-p = p^* \cdot (p_{max} - p_{min}) + p_{min}
-\end{equation}
+\begin{eqnarray}
+p^* &=& \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda_{mn}}}\\
+p &= & p^* \cdot (p_{max} - p_{min}) + p_{min}
+\end{eqnarray}
 where $p_{max}$ and $p_{min}$ are per-graph hyperparameters. Per-component parameters $\mu_{mn} \sim \exp(\mu | \mu^{hp})$ and $\lambda_{mn} \sim \exp(\lambda | \lambda^{hp})$. 
 Inference is performed on these hyperparameters as well, see TODO supplemental 
 for details. 
@@ -422,7 +454,7 @@ for the duration of the Gibbs scan.
 We then employ a transition kernel to update the per-component
 parameter values $\eta_{mn}$. Conditioned on the assignment vector
 $\vec{c}$ and the model hyperparameters $\theta, \alpha$ the 
-individual $\eta_{mn}$ are indepednent. We slice sample \autocite{NealSlice}
+individual $\eta_{mn}$ are indepednent. We slice sample \autocite{Neal2003}
 each component's parameters, choosing the slice width as a function
 of the global hyperparameter range. 
 
@@ -474,9 +506,18 @@ normalzed between zero and one. We used both networks, the chemical
 network as a directed graph and the electrical network as undirected
 graph. We use the synapse counts with the logistic-distance poisson
 likelihood, scaling the counts by a factor of 4 to compensate for 
-the Poisson's underdispersion. 
+the Poisson's overdispersion. 
 
 \subsection{Microprocessor}
+We extracted the connection graph for all transistors in the MOS6502
+\autocite{visual6502}. Each transistor has three terminals: an input
+G, a source, and a drain, labeled C1 and C2. We identified the region
+consisting of the three general-purpose registers X, Y, and S via
+visual inspection and focused our efforts there. We created a total of
+six connectivity matrices by examining possible terminal parings. One
+graph, for example, $R^{gc_1}(e_i, e_j)=1$ if transistor $e_j$ and $e_j$ are
+connected via pins $g$ and $c_1$. 
+\todo{How do we handle symmetry here?}
 
 % \begin{addendum}
 %  \item Put acknowledgements here.
@@ -485,7 +526,20 @@ the Poisson's underdispersion.
 %  \item[Correspondence] Correspondence and requests for materials
 % should be addressed to A.B.C.~(email: myaddress@nowhere.edu).
 % \end{addendum}
+\section{Supplemental}
+\subsection{Source code}
+\todo{Put up website}
 
+All source code and materials for running experiments can be
+obtained from the project website, at http://spatialrelation.github.io. 
+
+\subsection{Extension to multiple graphs}
+\todo{derivation of extension to multiple graphs}
+
+\subsection{Hyperprior grids}
+\todo{Plot hyperparameter Graphs}
+
+\todo{Explain Adjusted Rand Index} 
 
 \printbibliography
 
