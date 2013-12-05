@@ -32,7 +32,6 @@
 
 \todo{Citations}
 \todo{Log score plots for real data} 
-\todo{Find other irm paper citation}
 \todo{Hierarhcical structure?}
 % \begin{affiliations}
 %   \item Something Something
@@ -43,10 +42,10 @@
   New techniques produce massive data about neural connectivity,
   necessitating new analysis methods to discover underlying
   structure. There is strong evidence for microcircuitry, where the
-  probability of connections depends on the type of pre- and
-  post-synaptic neuron and their distance. Here we thus developed a
-  nonparametric Bayesian technique that identifies type and circuitry
-  motifs from the connection data. We show that the approach recovers
+  probability of connections depends on the types of pre- and
+  post-synaptic neurons and their distance. Here we developed a
+  nonparametric Bayesian technique that identifies neuron type and circuitry
+  patterns from the connection data. We show that the approach recovers
   known neuron types in the retina, reveals interesting structure in
   the nervous system of c. elegans, and automatically discovers the
   structure of microprocessors. Our approach is a first step towards
@@ -65,43 +64,47 @@ development of novel computational methods to understand genomic
 structure, ushering in an era of bioinformatics as an independent
 discipline \autocite{}.
 
-
 The brain consists of multiple kinds of neurons, each of which is
 hypothesized to have a specific role in the overall
 computation. Neuron types differ in many ways, e.g. chemical or
 morphological, but they also differ in the way they connect to one
-another. In fact, the idea of well defined local connectivity motifs
+another. In fact, the idea of well defined local connectivity patterns
 has been prominent in many areas, ranging from sensory (e.g. retina,
-\autocite{} via processing (e.g. neocortex) to movement (e.g. spinal cord)
-\autocite{}. Indeed, such motifs also exists in human-made computing
-circuits. It remains an important challenge to develop algorithms to
-use anatomical data, e.g. connectomics, to back out underlying
-connectivity motifs.
+\autocite{} via processing (e.g. neocortex) to movement (e.g. spinal
+cord) \autocite{}. Indeed, such repeated patterns also exists in
+human-made computing circuits. It remains an important challenge to
+develop algorithms to use anatomical data, e.g. connectomics, to back
+out underlying connectivity motifs.
 
 The discovery of structure is a crucial aspect of network
 science. Early approaches focused on global graph properties, such as
-the types of scaling present in the network \autocite {WattsStrogatz1998}
-.  While this approach leads to an understanding of global
-network, more recent work aims at identifying repeat patterns, or
-“motifs” in networks. \todo{There's the Science2002 paper by Milo et. al. that explicitly looks at 'motifs'} A motif is a set of nodes with conserved
-relations that appears multiple times in a network, for example a set
-of three nodes that are each connected to one another. When it comes
-to neuroscience, we might expect that a motif consists of the kinds of
-cells that jointly make up a microcircuit along with their distance
-and cell-type dependent connectivity. The same motif should then
-appear in multiple locations in the nervous system. Combining
-motif-discovery ideas with specific knowledge about the kinds of
-motifs in the nervous system promises better structure discovery.
+the types of scaling present in the network \autocite
+{WattsStrogatz1998} .  While this approach leads to an understanding
+of global network, more recent work aims at identifying small-scale
+repeat patterns, or “motifs” in networks. \todo{There's the
+  Science2002 paper by Milo et. al. that explicitly looks at 'motifs'}
+A motif is a set of nodes with conserved relations that appears
+multiple times in a network, for example a set of three nodes that are
+each connected to one another. 
+
+When it comes to neuroscience, we might
+expect that a motif consists of the kinds of cells that jointly make
+up a microcircuit along with their distance and cell-type dependent
+connectivity. The same motif should then appear in multiple locations
+in the nervous system. Combining motif-discovery ideas with specific
+knowledge about the kinds of motifs in the nervous system promises
+better structure discovery.
 
 The discovery of structure in probabilistic graphs is a crucial aspect
 in machine learning. Commonly used algorithms include spectral methods
-\autocite{}, community-based-detection methods \autocite{}, and stochastic block
-models \autocite{NowickiSnijdders2001}. While these approaches powerfully incorporate the
-probabilistic nature of neural connections \autocite{} they do not
-generally consider the known fact that the probability of connections
-between neurons depends on distance. Combining such probabilistic
-models with a spatial component to model distance promises to improve
-the detection of microcircuitry from neural data.
+\autocite{},   community-based-detection   methods  \autocite{},   and
+stochastic block  models \autocite{NowickiSnijdders2001}.  While these
+approaches powerfully  incorporate the probabilistic nature of neural
+connections \autocite{} they do not generally consider the known fact
+that  the  probability  of  connections  between  neurons  depends  on
+distance. Combining such probabilistic models with a spatial component
+to model distance promises to  improve the detection of microcircuitry
+from neural data.
 
 Here we describe a Bayesian non-parametric model that can discover
 circuit structure automatically from connectomics data: both the cell
@@ -215,7 +218,6 @@ assign any of the unknown cells correctly? are types 72-79 “differet”
 or simply unknown?]
 
 
-
 \begin{figure}
   \centering 
   \centerline{\includegraphics{mouseretina.ai}}
@@ -284,14 +286,20 @@ homogeneous]
 
 To show the applicability of our method to other connectome-style
 datasets, we obtained the spatial location and interconnectivity of a
-classic microprocessor, the MOS Technology 6502 used in the original
-Apple II, Atari, and Commodore 64 \autocite{datasource}. We identified a
-region of the processor with complex but known structure containing
-the primary general-purpose registers X, Y, and S (figure).
+transistors in a classic microprocessor, the MOS Technology 6502 (used
+in the Apple II) \autocite{datasource}. We identified a region of the
+processor with complex but known structure containing the primary
+general-purpose registers X, Y, and S (figure). Computer architects
+use common patterns of transistors when designing circuits, 
+with each transistor having a ``type'' in the circuit. 
 
-Our algorithm identifies areas of spatial homogeneity 
-[mirror structure] 
 
+Our algorithm identifies areas of spatial homogeneity that mirror the
+kown structure in the underlying architectural circuit, segementing
+transistor groups. One group contains the ``clocked'' transistors,
+one group with their source connected to ground, and one with their
+drain connected to ground. The repeat patterns of spatial connectivity
+are visible in figure~\ref{fig:microprocessor}a, 
 
 \begin{figure}
   \centering 
@@ -313,13 +321,13 @@ research which had utilized extensive additional information. “
 
 For probabilistic models like ours, no known solution exists to
 exactly find the most probable parsing of the neurons into cell-types
-and connectivity patterns [homogenize these two wordings across the
-paper]. We employ a collection of Markov-chain Monte carlo techniques
-[reference methods] but while different initializations converge to
-similar ultimate values, we can never realistically obtain the global
-optimum. There are a broad range of techniques that may offer better
-approximations to the global optimum \autocite{Wanga2012,FritzJonathan} and future work could
-adapt them to the problem we addressed here.
+and connectivity patterns . We employ a collection of Markov-chain
+Monte carlo techniques [reference methods] but while different
+initializations converge to similar ultimate values, we can never
+realistically obtain the global optimum. There are a broad range of
+techniques that may offer better approximations to the global optimum
+\autocite{Wanga2012,FritzJonathan} and future work could adapt them to
+the problem we addressed here.
 
 Our inference becomes slower as the amount of data increases. Our
 algorithm required 10xxx hours for 1000 neurons and would therefore
@@ -410,9 +418,9 @@ the global model hyperparameters $\theta$ :
 \subsection{Probabilistic Model}
 
 Our model is a extension of infinite stochastic block models
-\autocite{Kemp2006a, other guys} to incorporate spatial constraints.
+\autocite{Kemp2006a,Xu2006} to incorporate spatial constraints.
 
-\todo{infinite subset relaitonal model has good reults}
+\todo{infinite subset relaitonal model has good summaries}
 
 We describe three link functions, ``Logistic-distance Bernoulli'',
 ``logistic-distance fixed-lambda Bernoulli'', and ``logistid-Distance
@@ -536,10 +544,22 @@ All source code and materials for running experiments can be
 obtained from the project website, at http://spatialrelation.github.io. 
 
 \subsection{Extension to multiple graphs}
-\todo{derivation of extension to multiple graphs}
+The model can handle multiple graphs $R^q$ simultaneously with a shared clustering by simply considering the product of 
+\begin{equation}
+  p(\vec{c}, \{\eta^q\}, \{\theta^q\} | \{R^q\} ) \propto \prod_q \Bigg(\prod_{i, j} p(R^q(e_i, e_j) | f(d(e_i, e_j) | \eta^q_{c_ic_j}), \theta^q) \prod_{m, n} p(\eta^q_{mn} | \theta^q)  p(\theta^q) \Bigg) p(\vec{c} | \alpha) p(\alpha) 
+\end{equation}
+
+\subsection{Microprocessor Netlist annotation}
+\begin{figure}
+  \centering 
+    \centerline{\includegraphics[width=183mm]{mos6502/sixrelation.xysregs.ldfl.circos.4.R2.ai}}
+\end{figure}
 
 \subsection{Hyperprior grids}
-\todo{Plot hyperparameter Graphs}
+
+For the mouse retina Logistic-Distance Bernoulli model, we gridded $\mu^{hp}$ and $\lambda^{hp}$ into 40 $\log_{10}$-spaced points 1.0 and 80. $p_{min} \in [0.001, 0.005, 0.01]$ and $p_{max} \in [0.80, 0.90, 0.95, 0.99$.
+
+For the c. elegans data with the Logistic Distance poisson model, we gridded $\mu_{hp$ and $\lambda$ into 20 $\log_{10}$-spaced points bween 0.2 and 2.0, and the $ratescale^{hp}$ parameter into 20 $\log_{10}$-spaced points between 2.0 and 20.0. We globally set $rate_{min}=0.01$. 
 
 \todo{Explain Adjusted Rand Index} 
 

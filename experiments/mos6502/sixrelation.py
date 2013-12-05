@@ -47,7 +47,7 @@ for dataset, model in [('xysregs', 'ldfl'),
     fid = open("sixrelation.%s.%s.output.html" % (dataset, model), 'w')
 
     for c_n, c in df.groupby('cluster'):
-        fid.write(c.sort('name.gate').to_html())
+        fid.write(c.sort(['name.c1']).to_html())
 
 
     f = pylab.figure(figsize=(16, 16))

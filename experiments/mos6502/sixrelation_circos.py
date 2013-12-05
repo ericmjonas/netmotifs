@@ -7,7 +7,7 @@ import irm
 CIRCOS_DIST_THRESHOLDS = [20, 50, 100, 200, 500]
 
 for dataset, model in [('xysregs', 'ldfl'), 
-                       #('xysregs', 'ld'), 
+                       ('xysregs', 'ld'), 
                        #('xysregs', 'ndfw'), 
                        #('xysregs', 'bb'), 
                        #('decode', 'ldfl'), 
@@ -96,6 +96,7 @@ for dataset, model in [('xysregs', 'ldfl'),
 
             circos_p = irm.plots.circos.CircosPlot(assign, 
                                                    karyotype_colors=color_str,
+                                                   ideogram_radius="0.65r",
                                                    custom_color_map=custom_color_map)
 
 
@@ -190,6 +191,7 @@ for dataset, model in [('xysregs', 'ldfl'),
                                        'label_font' : 'condensed', 
                                        'label_size' : '20p', 
                                        'label_rotate' : 'yes', 
+                                       'label_snuggle' : 'no'
                                    }, 
                               clean(df['name.c1']))
 
@@ -199,19 +201,22 @@ for dataset, model in [('xysregs', 'ldfl'),
                                        'label_font' : 'condensed', 
                                        'label_size' : '20p', 
                                        'label_rotate' : 'yes', 
+                                       'label_snuggle' : 'no'
+
                                    }, 
                               clean(df['name.c2']))
 
 
             circos_p.add_plot('text', {'r0' : '1.25r', 
-                                       'r1' : '1.35r', 
+                                       'r1' : '1.55r', 
                                        'label_font' : 'condensed', 
                                        'label_size' : '20p', 
                                        'label_rotate' : 'yes', 
+                                       'label_snuggle' : 'no'
                                    }, 
                               clean(df['name.gate']))
 
-            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.png" % (dataset, model, fi, relation))
+            irm.plots.circos.write(circos_p, "sixrelation.%s.%s.circos.%d.%s.svg" % (dataset, model, fi, relation))
 
 
             # now the tiny plots
