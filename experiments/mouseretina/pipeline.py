@@ -592,6 +592,8 @@ def plot_best_cluster_latent(exp_results,
         util.plot_latent(sample_latent, dist_matrix, latent_fname, 
                          model = data['relations']['R1']['model'],
                          PLOT_MAX_DIST=150.0, MAX_CLASSES=20)
+
+
         
 @transform(get_results, suffix(".samples"), [".hypers.pdf"])
 def plot_hypers(exp_results, (plot_hypers_filename,)):
@@ -943,6 +945,204 @@ def plot_clustered_somapos(exp_results,
 
     f.savefig(out_filename)
 
+@transform(get_results, suffix(".samples"), 
+           ".truth_latent.pdf" )
+def plot_truth_latent(exp_results, 
+                      out_filename):
+
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
+    
+    dist_matrix = d['dist_matrix']
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = d['types'][:len(conn)]
+    
+    type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    chain_pos = 0
+
+    best_chain_i = chains_sorted_order[chain_pos]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
+    cell_assignment = np.array(sample_latent['domains']['d1']['assignment'])
+
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+    print "Pos_vec=", pos_vec
+    model_name = data['relations']['R1']['model']
+
+    # this is potentially fun: get the ranges for each type
+    TYPE_N = np.max(cell_types) + 1
+
+    df2 = pandas.DataFrame(index=np.arange(1, TYPE_N))
+    df2['des'] = type_metadata_df['coarse']
+    df2 = df2.fillna('other')
+    df2['id'] = df2.index.values.astype(int)
+    gc_mean_i = df2.groupby('des').mean().astype(int)
+    gc_min_i = df2.groupby('des').min().astype(int)
+    gc_max_i = df2.groupby('des').max().astype(int)
+
+    TGT_CMAP = pylab.cm.gist_heat
+    coarse_colors = {'other' : [210, 210, 210]}
+    for n_i, n in enumerate(['gc', 'nac', 'mwac', 'bc']):
+        coarse_colors[n] = colorbrewer.Set1[4][n_i]
+    print "THE COARSE COLORS ARE", coarse_colors
+
+    type_color_map = {'gc' : 0, 
+                      'nac' : 1, 
+                      'mwac' : 2, 
+                      'bc' : 3, 
+                      'other' : 4}
+
+    df = pandas.DataFrame({'cell_id' : cell_id_permutation, 
+                           'cell_type' : cell_types, 
+                           'cluster' : cell_assignment})
+
+    CLASS_N = len(np.unique(cell_assignment))
+    f = pylab.figure(figsize=(8, 11))
+    fid = open(out_filename + '.html', 'w')
+    for g_i, (group_name, group) in enumerate( df.groupby(['cluster'])):
+        ax = f.add_subplot(1, CLASS_N,  g_i+1)
+        CN = len(group)
+        for i in range(CN):
+            pylab.axhline(i, c='k', alpha=0.5)
+        ax.scatter(group['cell_type'], np.arange(CN))
+        ax.set_xlim(0, 80)
+
+        ax.set_xticks([])
+    
+        fid.write(group.to_html())
+    fid.close()
+
+    f.savefig(out_filename)
+
+
+    # for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
+    #     CLASS_N = len(np.unique(cell_assignment))
+        
+
+    #     class_ids = sorted(np.unique(cell_assignment))
+
+    #     custom_color_map = {}
+    #     for c_i, c_v in enumerate(class_ids):
+    #         c = np.array(pylab.cm.Set1(float(c_i) / CLASS_N)[:3])*255
+    #         custom_color_map['ccolor%d' % c_v]  = c.astype(int)
+
+    #     colors = np.linspace(0, 360, CLASS_N)
+    #     color_str = ['ccolor%d' % int(d) for d in class_ids]
+        
+    #     for n, v in coarse_colors.iteritems():
+    #         custom_color_map['true_coarse_%s' % n] = v
+
+    #     circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
+    #                                            ideogram_radius="0.7r",
+    #                                            ideogram_thickness="50p", 
+    #                                            karyotype_colors = color_str, 
+    #                                            custom_color_map = custom_color_map)
+
+    #     if model_name == "LogisticDistance":
+    #         v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+    #                                            sample_latent['relations']['R1']['ss'], 
+    #                                            sample_latent['relations']['R1']['hps'], 
+    #                                            model_name)
+    #         thold = 0.50 
+    #         ribbons = []
+    #         links = []
+    #         for (src, dest), p in v.iteritems():
+    #             if p > thold:
+    #                 ribbons.append((src, dest, int(40*p)))
+    #         circos_p.set_class_ribbons(ribbons)
+    #         pos_min = 40
+    #         pos_max = 120
+    #         pos_r_min = 1.00
+    #         pos_r_max = pos_r_min + 0.25
+    #         ten_um_frac = 10.0/(pos_max - pos_min)
+
+    #         circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
+    #                                       'r1' : '%fr' % pos_r_max, 
+    #                                       'min' : pos_min, 
+    #                                       'max' : pos_max, 
+    #                                       'glyph' : 'circle', 
+    #                                       'glyph_size' : 10, 
+    #                                       'color' : 'black',
+    #                                       'stroke_thickness' : 0
+    #                                       }, 
+    #                           pos_vec[:, 0], 
+    #                           {'backgrounds' : [('background', {'color': 'vvlgrey', 
+    #                                                             'y0' : pos_min, 
+    #                                                             'y1' : pos_max})],  
+    #                            'axes': [('axis', {'color' : 'vgrey', 
+    #                                               'thickness' : 1, 
+    #                                               'spacing' : '%fr' % ten_um_frac})]})
+            
+    #         print "TYPE_N=", TYPE_N
+    #         type_color_map = {'gc' : 0, 
+    #                           'nac' : 1, 
+    #                           'mwac' : 2, 
+    #                           'bc' : 3, 
+    #                           'other' : 4}
+
+    #         # pick colors
+    #         colors = ['true_coarse_%s' % s for s in ['gc', 'nac', 'mwac', 'bc', 'other']]
+                      
+    #         circos_p.add_plot('heatmap', {'r0' : '1.28r', 
+    #                                       'r1' : '1.34r', 
+    #                                       'min' : 0, 
+    #                                       'max' : 4, 
+    #                                       'stroke_thickness' :0,
+    #                                       'color': ",".join(colors)}, 
+    #                           [type_color_map[df2.ix[i]['des']] for i in cell_types])
+            
+    #         # circos_p.add_plot('scatter', {'r0' : '1.01r', 
+    #         #                               'r1' : '1.10r', 
+    #         #                               'min' : 0, 
+    #         #                               'max' : 3, 
+    #         #                               'gliph' : 'square', 
+    #         #                               'color' : 'black', 
+    #         #                               'stroke_thickness' : 0}, 
+    #         #                   [type_lut[i] for i in cell_types])
+
+                            
+                                            
+    #     irm.plots.circos.write(circos_p, circos_filename_main)
+        
+    #     circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r", 
+    #                                            ideogram_thickness="80p", 
+    #                                            karyotype_colors = color_str, 
+    #                                            custom_color_map = custom_color_map)
+        
+    #     if model_name == "LogisticDistance":
+    #         v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
+    #                                            sample_latent['relations']['R1']['ss'], 
+    #                                            sample_latent['relations']['R1']['hps'], 
+    #                                            model_name)
+    #         thold = 0.50 
+    #         ribbons = []
+    #         links = []
+    #         for (src, dest), p in v.iteritems():
+    #             if p > thold:
+    #                 ribbons.append((src, dest, int(40*p)))
+    #         circos_p.set_class_ribbons(ribbons)
+                                            
+    #     irm.plots.circos.write(circos_p, circos_filename_small)
+
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
               create_inits, 
@@ -954,5 +1154,6 @@ pipeline_run([data_retina_adj_bin,
               create_latents_ld_truth, 
               plot_circos_latent, 
               plot_clustered_somapos,
+              plot_truth_latent, 
           ], multiprocess=2)
                         
