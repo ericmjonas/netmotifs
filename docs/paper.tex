@@ -45,7 +45,7 @@
   probability of connections depends on the types of pre- and
   post-synaptic neurons and their distance. Here we developed a
   nonparametric Bayesian technique that identifies neuron type and circuitry
-  patterns from the connection data. We show that the approach recovers
+  patterns using only this connection data. We show that the approach recovers
   known neuron types in the retina, reveals interesting structure in
   the nervous system of c. elegans, and automatically discovers the
   structure of microprocessors. Our approach is a first step towards
@@ -58,8 +58,9 @@ Emerging techniques \autocite{Lichtman, Zador, Denk} promise to
 quantify the location of each neuron within a volume of interest,
 along with its connections to all other neurons. Far exceeding the
 capacity of neuroanatomists to trace small circuits, this leads to
-enormous datasets that quantify aspects of the nervous system. The
-rise of high-throughput sequencing techniques necessitated the
+enormous datasets that quantify aspects of the nervous system. The impact of
+this kind of high-throughput transition has been seen before -- 
+rise of sequencing techniques necessitated the
 development of novel computational methods to understand genomic
 structure, ushering in an era of bioinformatics as an independent
 discipline \autocite{}.
@@ -80,20 +81,8 @@ The discovery of structure is a crucial aspect of network
 science. Early approaches focused on global graph properties, such as
 the types of scaling present in the network \autocite
 {WattsStrogatz1998} .  While this approach leads to an understanding
-of global network, more recent work aims at identifying small-scale
-repeat patterns, or “motifs” in networks. \todo{There's the
-  Science2002 paper by Milo et. al. that explicitly looks at 'motifs'}
-A motif is a set of nodes with conserved relations that appears
-multiple times in a network, for example a set of three nodes that are
-each connected to one another. 
-
-When it comes to neuroscience, we might
-expect that a motif consists of the kinds of cells that jointly make
-up a microcircuit along with their distance and cell-type dependent
-connectivity. The same motif should then appear in multiple locations
-in the nervous system. Combining motif-discovery ideas with specific
-knowledge about the kinds of motifs in the nervous system promises
-better structure discovery.
+of global network, more recent work aims at identifying very small-scale
+repeat patterns, or “motifs” in networks\autocite{Milo2002}
 
 The discovery of structure in probabilistic graphs is a crucial aspect
 in machine learning. Commonly used algorithms include spectral methods
@@ -106,12 +95,20 @@ distance. Combining such probabilistic models with a spatial component
 to model distance promises to  improve the detection of microcircuitry
 from neural data.
 
+When it comes to neuroscience and other computing systems, we expect
+patterns of connectivity much more compelx than traditional motifs,
+exhibiting a strong spatial dependence arising from the complex
+genetic, chemical, and activity-based neural development process. 
+
+
 Here we describe a Bayesian non-parametric model that can discover
 circuit structure automatically from connectomics data: both the cell
 types and their spatial patterns of interconnection. We apply it to
 three computing systems: the mouse retina connectome \autocite{}, the
 c. elegans connectome \autocite{}, and a ``connectome'' of a classical
-microprocessor. In all cases, we discover cell-type to cell-type
+microprocessor. Note we do not explicitly consider cellular
+morphology, absolute position (cell layer), or any chemical or genetic
+information. Yet in all cases, we discover cell-type to cell-type
 connectivity that depends on spatial distance and these connectivity
 functions depend on the two involved cell types. Comparing the cell
 types discovered by the algorithms with those obtained by anatomists
@@ -145,12 +142,12 @@ decreases with distance, but how high the baseline probability of
 connection is and how quickly it decays with distance depends on the
 two cell-types. We combine annealing with Markov Chain Monte Carlo to
 perform simultaneously joint posterior inference over the structure,
-parameters, and hyperparameters of the model. This procedure yields a
-division of all neurons into cell-types along with the distance and
-type dependent connectivity probabilities. These results can then be
-compared with the results of previous anatomical studies that have
-used other aspects of neurons, such as chemical properties and
-cell-morphology to divide neurons into types.
+parameters, and hyperparameters of the model (see Methods). This
+procedure yields a division of all neurons into cell-types along with
+the distance and type dependent connectivity probabilities. These
+results can then be compared with the results of previous anatomical
+studies that have used other aspects of neurons, such as chemical
+properties and cell-morphology to divide neurons into types.
 
 Before we can use a probabilistic model to analyze real data we first
 need to assess if the model works properly. We thus started out by
@@ -239,10 +236,10 @@ connectivity of each of 302 neurons deterministically known. This
 incredible cross-organism consistency led to early mapping of the
 c. elegans chemical and electrical (gap junction) connectome. Unlike
 the retina, only the motor neurons in c. elegans exhibit regular
-distribution in space, as they follow the body axis. Most interneurons
-are concentrated in various ganglia that project throughout the entire
-animal, and the sensory neurons are primarily located in the animal
-head.
+distribution in space, being distributed along the body axis. Most
+interneurons are concentrated in various ganglia that project
+throughout the entire animal, and the sensory neurons are primarily
+located in a small number of very anteriior ganglia. 
 
 Using both the chemical and electrical connectivity (see methods), we
 determined the underlying clusters explained by connectivity and
@@ -250,22 +247,26 @@ distance (fig ba). A superficial inspection of the results shows
 clustering into groups consisting roughly homogeneously of motor
 neurons, sensory neurons, and interneurons. Closer examination reveals
 agreement with the classifications originally outlined by Brenner in
-1986.  [create structure that mirrors the mouse retina paragraphs]
+1986.  
 
-[start paragraph with summary sentence] Motorneuron types AS, DA, and
-VA, all exclusively postsynaptic, are clustered together, as are
-motorneuron types VD and DD. VC, DB, and VB also mostly share a
-cluster. Various head motor neurons, including classes SMD, RMD, and
-RIM are clustered together. Interneurons with known
+We identify cell types that reflect the known motor/non-motor neuron
+classes, even though this system lacks the strong repeat
+microcircuitry our model was designed for.  Motorneuron types AS, DA,
+and VA, all exclusively postsynaptic, are clustered together, as are
+motorneuron types VD and DD. Traditional types VC, DB, and VB also
+mostly share a cluster. Various head motor neurons, including types
+SMD, RMD, and RIM are clustered together. Interneurons with known
 anatomically-distinct connectivity patterns, such as RIA (2 cells) or
-AVA (2 cells) are clustered into pure groups. The algorithm even
-correctly places the single-cell class DVB in a distinct group. Note
-our clustering does not perfectly recover known groupings -- several
+AVA (2 cells) are clustered into pure types. The algorithm even
+correctly places the single-cell type DVB by itself. Note our
+clustering does not perfectly reflect known divisions -- several
 combinations of head and sensory neurons are combined, and a
 difficult-to-explain group of 2 VD, 2 VB, a VA, and a DD neuron are
-grouped together. [algorithm recovers surprising structure based
-merely on connectivity even though only 278 cells and not spatially
-homogeneous]
+grouped together. Our identified cell types thus reflect a
+``coarsening'' of known types, based entirely on connectivity and
+distance information, evne when the organism exhibits substantially
+less spatial regularity than the retina. 
+
 
 
 \begin{figure}
@@ -285,21 +286,28 @@ homogeneous]
 \subsection{Microprocessor}
 
 To show the applicability of our method to other connectome-style
-datasets, we obtained the spatial location and interconnectivity of a
-transistors in a classic microprocessor, the MOS Technology 6502 (used
-in the Apple II) \autocite{datasource}. We identified a region of the
-processor with complex but known structure containing the primary
-general-purpose registers X, Y, and S (figure). Computer architects
-use common patterns of transistors when designing circuits, 
-with each transistor having a ``type'' in the circuit. 
-
+datasets, we obtained the spatial location and interconnectivity of
+the transistors in a classic microprocessor, the MOS Technology 6502
+(used in the Apple II) \autocite{datasource}. Computer architects use
+common patterns of transistors when designing circuits, with each
+transistor having a ``type'' in the circuit. We identified a region of
+the processor with complex but known structure containing the primary
+8-bit registers X, Y, and S (figure).
 
 Our algorithm identifies areas of spatial homogeneity that mirror the
-kown structure in the underlying architectural circuit, segementing
-transistor groups. One group contains the ``clocked'' transistors,
-one group with their source connected to ground, and one with their
-drain connected to ground. The repeat patterns of spatial connectivity
-are visible in figure~\ref{fig:microprocessor}a, 
+known structure in the underlying architectural circuit, segementing
+transistor types recognizable to computer architects. Using the
+original schematics, we see that one identified type contains the
+``clocked'' transistors, which retain digital state. Two other types
+contain transistors with pins C1 or C2 connected to ground, mostly
+serving as inverters.  An additional identified type controls the
+behavior of the three registers of interest (X, Y, and S) with respect
+to the SB data bus, either allowing them to latch or drive data from
+the bus. The repeat patterns of spatial connectivity are visible in
+figure~\ref{fig:microprocessor}a, showing the man-made horizontal and
+vertical layout of the same types of transistors.
+
+
 
 \begin{figure}
   \centering 
@@ -310,14 +318,15 @@ are visible in figure~\ref{fig:microprocessor}a,
 
 \section{Discussion}
 We have presented a machine learning technique that allows cell types
-and connectivity structure to be discovered using only spatial and
+and microcircuitry to be discovered using only distance and
 connectivity data. We have shown its applicability to a newly
 published connectomics dataset from the mouse retina, the classical
-connectivity of the worm c elegans, and the connectivity of a
-historical man-made microprocessor. We have found that spatial
-connectivity alone is sufficient to discover interesting motifs that
-were known to exist in the systems based on decades of previous
-research which had utilized extensive additional information. “
+connectivity of the worm c. elegans, and the connectivity of a
+historical man-made microprocessor. We have found that distance and
+connectivity alone are sufficient to discover cell types and
+microcircuitry that were known to exist in the systems based on decades
+of previous research which had utilized extensive additional
+information.
 
 For probabilistic models like ours, no known solution exists to
 exactly find the most probable parsing of the neurons into cell-types
@@ -330,44 +339,46 @@ techniques that may offer better approximations to the global optimum
 the problem we addressed here.
 
 Our inference becomes slower as the amount of data increases. Our
-algorithm required 10xxx hours for 1000 neurons and would therefore
-take months for 10,000 neurons, which would not be acceptable. Various
-new techniques promise to allow similar calculations to take less time
-and scale to larger datasets \autocite{}.
+algorithm required 30 hours for 1000 neurons and could take months for
+substantially longer datasets. Scaling this class of probabilistic
+model is an active area of research, and recent results in both
+variational methods \autocite{Hoffmann2013} and spectral learning
+  \autocite{Anandkumar2012} promise substantial speed increases.
 
 
-*Fixed and hand selected likelihood link functions We picked the
-sigmoid. Should be estimated, Our small collection of parametric forms
-for spatial functions are obviously not exhaustive
+  Larger datasets will generally allow algorithms to distinguish more
+  distinct types (cite supplemental data) and more data should
+  algorithms to get closer to the results from anatomy. Moreover, in
+  general, for such problems precision increases with the size of the
+  dataset and the cells that we have are not sufficient to
+  statistically distinguish all the cell types known in anatomy
+  (71xxx). Still, using only connectivity and distance it is possible
+  to meaningfully divide neurons into types.
 
-*We do not use other sources of information that are totally there in
-the datasets. Cell morphology could be used. Laminar organization.
+Our small collection of hand-selected distance-dependent likelihood
+functions are clearly non-exhaustive, and assume monotonicity
+of connectivity probability -- for a given class, closer cells
+are never less-likely to connect. This is known to be insufficient
+for various neural systems. Future models could incorporate
+a wider variety of likelihood functions, or even learn the global
+functional form from the data. 
 
-*Larger datasets will generally allow algorithms to distinguish more
-distinct types (cite supplemental data) and more data should
-algorithms to get closer to the results from anatomy. Moreover, in
-general, for such problems precision increases with the size of the
-dataset and the 9xxx cells that we have are not sufficient to
-statistically distinguish all the cell types known in anatomy
-(71xxx). Still, using only connectivity it is possible to meaningfully
-divide neurons into classes.
+There have existed a a range of previous approaches to the discovery
+of neural microcircuitry (cites). These generally involve a great deal
+of manual labor and ad-hoc determination of what constitutes a “type”
+of cell -- to this day there are disagreements in the literature as to
+the “true” types in the mammalian retina. Much as phylogenomics has
+changed our understanding of animal ontologies, modern large scale
+data will allow the efficient unbiased discovery of cell types and
+circuits. The sheer amount of available data demands the introduction
+of algorithmic approaches.
 
-[ how this changes things] There exist a range of previous approaches
-to the discovery of microcircuitry [coherence of language]
-(cites). These generally involve a great deal of manual labor and
-ad-hoc determination of what constitutes a “type” of cell -- to this
-day there are disagreements in the literature as to the “true” types
-in the mammalian retina. Much as phylogenomics has changed our
-understanding of animal ontologies, modern large scale data will allow
-the efficient unbiased discovery of structure. The sheer amount of
-available data demands the introduction of algorithmic approaches.
-
-
-*A new way of phenotyping, combining spatial motif ideas with clustering ideas
-
-*Novel data analysis techniques are required to lead us into the big
-data age. Our approach is orthogonal to all others (because in high d
-everything is orthogonal).
+The development of automatic identification and quantification of cell
+type may also provide new phenotypic tools for quantifying the effect
+of disease, genetic abnormalities, and genetic
+interventions. Particular pathologies and genetic manipulations may
+subtly change the number and connectivity of cell types in ways
+only visible with algorithmic analysis. 
 
 Ultimately, we will need to combine information across different
 sources into a joint understanding of neural function. Distinct cell
@@ -388,20 +399,17 @@ joint model of brain function.
 % the model 
 
 
-We assume as input a connectivity matrix $R$ defining the connections
-between cells, as well as a distance function $d(e_i, e_j)$
+We take as input a connectivity matrix $R$ defining the connections
+between cell $e_i$ and $e_j$, as well as a distance function $d(e_i, e_j)$
 representing a (physical) distance between adjacent cells. See the
 supplemental material for extension to multiple connectivity
-matrices. We assume there exist an unknown number of latent
-(unobserved) cell types, $k$, $k \in \{1, 2, 3, \dots\}$, and that
+matrices. We assume there exist an unknown number $k$ of latent
+(unobserved) cell types, $k \in \{1, 2, 3, \dots\}$, and that
 each cell $e_i$ belongs to a single cell type, $c_i = k$. The observed
-connectivity between two cells $R(e_i, e_j)$ then only depends on
-their latent type and their distance through a link function $f(c_i,
-c_j, d(e_i, e_j))$ If $c_i=m$ and $c_j=n$ then there exists a
-latent-class-specific set of parameters $\eta_{mn}$ which parametrizes
-$f$, as well as a set of global hyper parameters $\theta$.
+connectivity between two cells $R(e_i, e_j)$ then depends only on
+their latent type and their distance through a link function $f(\cdot, d(e_i, e_j))$. We assume $f$ is parameterized based on the latent class, $c_i=m$ and $c_j=n$, via a parameter$\eta_{mn}$, as well as a set of global hyper parameters $\theta$, such that the link function is $f(d(e_i, e_j) | \eta_{mn}, \theta)$. 
 
-We then jointly compute the maximum a posteriroi (MAP) estimate of the
+We then jointly infer the maximum a posteriroi (MAP) estimate of the
 class assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and
 the global model hyperparameters $\theta$ :
 
@@ -423,19 +431,19 @@ Our model is a extension of infinite stochastic block models
 \todo{infinite subset relaitonal model has good summaries}
 
 We describe three link functions, ``Logistic-distance Bernoulli'',
-``logistic-distance fixed-lambda Bernoulli'', and ``logistid-Distance
+``logistic-distance fixed-lambda Bernoulli'', and ``logistic-Distance
 Poisson''. 
 
-The ``logistic-distance Bernoulli'' model associates with each latent class 
-two parameters, $\mu_{mn}$ and $\lambda_{mn}$, and the probability that two
-cells $e_i$ and $e_j$ are connected is given by
+% fixme class component, NOT class
+The ``logistic-distance Bernoulli'' link model assumes that, if cell
+$e_i$ is of class $m$ and cell $e_j$ is of class $n$, then $\eta_{mn}
+= (\mu_{mn}, \lambda_{mn})$, and the probability that two cells $e_i$
+and $e_j$ are connected is given by
 \begin{eqnarray}
 p^* &=& \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda_{mn}}}\\
 p &= & p^* \cdot (p_{max} - p_{min}) + p_{min}
 \end{eqnarray}
 where $p_{max}$ and $p_{min}$ are per-graph hyperparameters. Per-component parameters $\mu_{mn} \sim \exp(\mu | \mu^{hp})$ and $\lambda_{mn} \sim \exp(\lambda | \lambda^{hp})$. 
-Inference is performed on these hyperparameters as well, see TODO supplemental 
-for details. 
 
 We use a Dirichlet-process prior on cluster assignments, which allows
 the number of clusters to be determined automatically. In brief, the
@@ -495,7 +503,7 @@ ongoing area of research in the probabilistic modeling community
 \subsection {Mouse Retina}
 Dense serial electron microscopy of a $VOLUMNE$ in the mouse retina by
 \autocite{Helmstaedter2013} yielded a listing of places where neurons
-come into contact. There were $number$ cells originally, and selected
+come into contact. There were over 1000 cells originally, and selected
 the $950$ for which the location of the soma could be reconstruted
 from the provided cell plots (soma locations were not provided by the
 study's authors in machine-readble form). Ultimately
@@ -504,7 +512,7 @@ all pairs of 950 cells. Area was thresholded at $0.5\mu m$, determined
 by hand, to yield a 950 $\times$ 950 entry matrix that served as input
 to our algorithm. We measured the distance between cells using
 the reconstructed soma centers, and used the Logistic-Distance
-spatial relation. Hyperprior distributions are shown in \ref{supplemental}. 
+spatial relation. Hyperprior griddings are shown in \ref{supplemental}. 
 
 \subsection{C. elegans}
 
@@ -515,19 +523,21 @@ cell's position was its distance along the anterior-posterior axis
 normalzed between zero and one. We used both networks, the chemical
 network as a directed graph and the electrical network as undirected
 graph. We use the synapse counts with the logistic-distance poisson
-likelihood, scaling the counts by a factor of 4 to compensate for 
+likelihood, scaling the counts by 4.0 to compensate for 
 the Poisson's overdispersion. 
 
 \subsection{Microprocessor}
-We extracted the connection graph for all transistors in the MOS6502
-\autocite{visual6502}. Each transistor has three terminals: an input
-G, a source, and a drain, labeled C1 and C2. We identified the region
-consisting of the three general-purpose registers X, Y, and S via
-visual inspection and focused our efforts there. We created a total of
-six connectivity matrices by examining possible terminal parings. One
-graph, for example, $R^{gc_1}(e_i, e_j)=1$ if transistor $e_j$ and $e_j$ are
-connected via pins $g$ and $c_1$. 
-\todo{How do we handle symmetry here?}
+We extracted the connection graph for the transistors in the MOS6502
+\autocite{visual6502}. Each transistor has three terminals (gate,
+source, drain), but the methods of the original dataset were unable to
+consistently resolve which of the C1 and C2 terminals were source and
+drain, leading to ambiguity in our encoding. We identified a region
+consisting of consisting of three registers X, Y, and S via visual
+inspection and focused our efforts there. We created a total of six
+connectivity matrices by examining possible terminal parings. One
+graph, for example, $R^{gc_1}(e_i, e_j)=1$ if transistor $e_j$ and
+$e_j$ are connected via pins $g$ and $c_1$. 
+
 
 % \begin{addendum}
 %  \item Put acknowledgements here.
@@ -546,20 +556,22 @@ obtained from the project website, at http://spatialrelation.github.io.
 \subsection{Extension to multiple graphs}
 The model can handle multiple graphs $R^q$ simultaneously with a shared clustering by simply considering the product of 
 \begin{equation}
-  p(\vec{c}, \{\eta^q\}, \{\theta^q\} | \{R^q\} ) \propto \prod_q \Bigg(\prod_{i, j} p(R^q(e_i, e_j) | f(d(e_i, e_j) | \eta^q_{c_ic_j}), \theta^q) \prod_{m, n} p(\eta^q_{mn} | \theta^q)  p(\theta^q) \Bigg) p(\vec{c} | \alpha) p(\alpha) 
+  p(\vec{c}, \{\eta^q\}, \{\theta^q\} | \{R^q\} ) \propto \prod_q \Bigg(\prod_{i, j} p(R^q(e_i, e_j) | f(d(e_i, e_j) | \eta^q_{c_ic_j}, \theta^q) \prod_{m, n} p(\eta^q_{mn} | \theta^q)  p(\theta^q) \Bigg) p(\vec{c} | \alpha) p(\alpha) 
 \end{equation}
 
 \subsection{Microprocessor Netlist annotation}
-\begin{figure}
-  \centering 
-    \centerline{\includegraphics[width=183mm]{mos6502/sixrelation.xysregs.ldfl.circos.4.R2.ai}}
-\end{figure}
+This is a matrix consisting of the different clusters of nets for 
+the registers. 
+
 
 \subsection{Hyperprior grids}
 
-For the mouse retina Logistic-Distance Bernoulli model, we gridded $\mu^{hp}$ and $\lambda^{hp}$ into 40 $\log_{10}$-spaced points 1.0 and 80. $p_{min} \in [0.001, 0.005, 0.01]$ and $p_{max} \in [0.80, 0.90, 0.95, 0.99$.
+For the mouse retina Logistic-Distance Bernoulli model, we gridded $\mu^{hp}$ and $\lambda^{hp}$ into 40 $\log_{10}$-spaced points 1.0 and 80. $p_{min} \in [0.001, 0.005, 0.01]$ and $p_{max} \in [0.80, 0.90, 0.95, 0.99]$.
 
-For the c. elegans data with the Logistic Distance poisson model, we gridded $\mu_{hp$ and $\lambda$ into 20 $\log_{10}$-spaced points bween 0.2 and 2.0, and the $ratescale^{hp}$ parameter into 20 $\log_{10}$-spaced points between 2.0 and 20.0. We globally set $rate_{min}=0.01$. 
+For the c. elegans data with the Logistic Distance poisson model, we gridded $\mu_{hp}$ and $\lambda$ into 20 $\log_{10}$-spaced points bween 0.2 and 2.0, and the $ratescale^{hp}$ parameter into 20 $\log_{10}$-spaced points between 2.0 and 20.0. We globally set $rate_{min}=0.01$. 
+
+For the microprocessor with the Logistic Distance fixed lambda Bernoulli likelihood, we gridded $mu_{hp}$ into 50 $\log_{10}$-spaced points between 10 and 500 and set $\lambda=\mu_{hp}/10$. $p_{min} \in \{0.001, 0.01, 0.02\}$  and both $p_\alpha$ and $p_\beta \in \{0.1, 1.0, 2.0\}$. 
+
 
 \todo{Explain Adjusted Rand Index} 
 

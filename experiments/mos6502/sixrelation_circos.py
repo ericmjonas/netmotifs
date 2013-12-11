@@ -7,7 +7,7 @@ import irm
 CIRCOS_DIST_THRESHOLDS = [20, 50, 100, 200, 500]
 
 for dataset, model in [('xysregs', 'ldfl'), 
-                       ('xysregs', 'ld'), 
+                       #('xysregs', 'ld'), 
                        #('xysregs', 'ndfw'), 
                        #('xysregs', 'bb'), 
                        #('decode', 'ldfl'), 
@@ -19,6 +19,16 @@ for dataset, model in [('xysregs', 'ldfl'),
     raw_data = pickle.load(open("data.pickle", 'r'))
     wiredf = raw_data['wiredf']
     tfdf = raw_data['tfdf']
+
+    null_names = wiredf['name'].isnull()
+    wiredf['name'][null_names] = ["n%d" % d for d in range(np.sum(null_names))]
+    # translations
+    wire_translations = {"dasb0": "sb0", 
+                         "dasb4" : "sb4"}
+    for w_old, w_new in wire_translations.iteritems():
+
+        wiredf['name'][wiredf['name'] == w_old] = w_new
+
 
     x = pickle.load(open("typed.%s.region.pickle" % dataset))
     adj_mat = x['adj_mat']
@@ -49,7 +59,7 @@ for dataset, model in [('xysregs', 'ldfl'),
     fid = open("sixrelation.%s.%s.output.html" % (dataset, model), 'w')
 
     for c_n, c in df.groupby('cluster'):
-        fid.write(c.sort('name.gate').to_html())
+        fid.write(c.sort(['name.gate', 'name.c1']).to_html())
 
     model_name = data['relations']['R1']['model']
 
@@ -189,7 +199,7 @@ for dataset, model in [('xysregs', 'ldfl'),
             circos_p.add_plot('text', {'r0' : '1.05r', 
                                        'r1' : '1.15r', 
                                        'label_font' : 'condensed', 
-                                       'label_size' : '20p', 
+                                       'label_size' : '10p', 
                                        'label_rotate' : 'yes', 
                                        'label_snuggle' : 'no'
                                    }, 
@@ -199,7 +209,7 @@ for dataset, model in [('xysregs', 'ldfl'),
             circos_p.add_plot('text', {'r0' : '1.15r', 
                                        'r1' : '1.25r', 
                                        'label_font' : 'condensed', 
-                                       'label_size' : '20p', 
+                                       'label_size' : '10p', 
                                        'label_rotate' : 'yes', 
                                        'label_snuggle' : 'no'
 
@@ -210,7 +220,7 @@ for dataset, model in [('xysregs', 'ldfl'),
             circos_p.add_plot('text', {'r0' : '1.25r', 
                                        'r1' : '1.55r', 
                                        'label_font' : 'condensed', 
-                                       'label_size' : '20p', 
+                                       'label_size' : '10p', 
                                        'label_rotate' : 'yes', 
                                        'label_snuggle' : 'no'
                                    }, 
