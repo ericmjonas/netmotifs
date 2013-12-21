@@ -275,3 +275,29 @@ def norm_dist_bump(x, mu, width, p, p_min):
 
 def logspace(x, y, bins):
     return np.logspace(np.log10(x), np.log10(y), bins)
+
+
+def multi_napsack(K, vals):
+    """
+    return a list of K ordered list of vals split such that
+    the total length of the longest list is minimized
+    
+    Useful for laying out unevenly-ordered figures
+    
+    e.g. : K = 2, vals = [3, 5, 2, 1]
+    out: [5, 1], [3, 2]
+
+    """
+
+    totals = np.zeros(K)
+    out = [[] for _ in range(K)]
+    
+    ai = np.argsort(vals)[::-1]
+    for i in ai:
+        v = vals[i]
+        tgt_bin = np.argmin(totals)
+        out[tgt_bin].append(i)
+        totals[tgt_bin] += v
+    return out
+
+

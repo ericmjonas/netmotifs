@@ -14,6 +14,7 @@ import matplotlib.gridspec as gridspec
 import irm
 import irm.data
 import util
+from irm import rand
 
 def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
@@ -33,6 +34,10 @@ EXPERIMENTS = [
     ('retina.1.1.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.ld.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.0.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.1.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.2.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.1.3.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
     #('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
     ('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
@@ -44,6 +49,10 @@ THOLDS = [0.01, 0.1, 0.5, 1.0]
     
 MULAMBS = [1.0, 5.0, 10.0, 20.0, 50.0]
 PMAXS = [0.95, 0.9, 0.7]
+
+BB_ALPHAS = [1.0]
+BB_BETAS = [1.0]
+
 
             
 INIT_CONFIGS = {'fixed_10_200' : {'N' : 10, 
@@ -254,6 +263,39 @@ def create_latents_ld(infile,
     pickle.dump({'infile' : infile, 
                  }, open(meta_filename, 'w'))
 
+def create_latents_bb_params():
+    for a in create_tholds():
+        inf = a[1][0]
+        for ai, alpha in enumerate(BB_ALPHAS):
+            for bi, beta in enumerate(BB_BETAS):
+                outf_base = inf[:-len('.data.pickle')]
+                outf = "%s.bb.%d.%d" % (outf_base, ai, bi)
+                yield inf, [outf + '.data', 
+                            outf + '.latent', outf + '.meta'], alpha, beta
+        
+@follows(data_retina_adj_bin)
+@files(create_latents_bb_params)
+def create_latents_bb(infile, 
+                      (data_filename, latent_filename, meta_filename), 
+                      alpha, beta):
+
+    d = pickle.load(open(infile, 'r'))
+    conn_and_dist = d['dist_matrix']['link']
+    
+    model_name= "BetaBernoulli" 
+
+    irm_latent, irm_data = irm.irmio.default_graph_init(conn_and_dist, model_name)
+
+    HPS = {'alpha' : alpha,
+           'beta' : beta}
+
+    irm_latent['relations']['R1']['hps'] = HPS
+
+    pickle.dump(irm_latent, open(latent_filename, 'w'))
+    pickle.dump(irm_data, open(data_filename, 'w'))
+    pickle.dump({'infile' : infile, 
+                 }, open(meta_filename, 'w'))
+
 
 
 def create_latents_edp_params():
@@ -377,6 +419,7 @@ def init_generator():
             
 @follows(create_latents_ld_truth)
 @follows(create_latents_ld)
+@follows(create_latents_bb)
 @follows(create_latents_edp)
 @files(init_generator)
 def create_inits(data_filename, out_filenames, init_config_name, init_config):
@@ -576,6 +619,7 @@ def plot_best_cluster_latent(exp_results,
     reorder_synapses = util.reorder_synapse_ids(synapses, cell_id_permutation)
 
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+    model = data['relations']['R1']['model']
 
     for chain_pos, (cluster_fname, latent_fname) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
@@ -589,8 +633,11 @@ def plot_best_cluster_latent(exp_results,
                                      pos_vec, reorder_synapses, 
                                      cluster_fname, class_colors=type_colors)
 
+        print dist_matrix.dtype, model
+        if "istance" not in model:
+            dist_matrix = dist_matrix['link']
         util.plot_latent(sample_latent, dist_matrix, latent_fname, 
-                         model = data['relations']['R1']['model'],
+                         model = model, 
                          PLOT_MAX_DIST=150.0, MAX_CLASSES=20)
 
 
@@ -1014,21 +1061,76 @@ def plot_truth_latent(exp_results,
     df = pandas.DataFrame({'cell_id' : cell_id_permutation, 
                            'cell_type' : cell_types, 
                            'cluster' : cell_assignment})
+    df = df.join(df2, on='cell_type')
+    print df.head()
 
     CLASS_N = len(np.unique(cell_assignment))
     f = pylab.figure(figsize=(8, 11))
     fid = open(out_filename + '.html', 'w')
-    for g_i, (group_name, group) in enumerate( df.groupby(['cluster'])):
-        ax = f.add_subplot(1, CLASS_N,  g_i+1)
-        CN = len(group)
-        for i in range(CN):
-            pylab.axhline(i, c='k', alpha=0.5)
-        ax.scatter(group['cell_type'], np.arange(CN))
-        ax.set_xlim(0, 80)
 
-        ax.set_xticks([])
-    
-        fid.write(group.to_html())
+    # compute the axes positions
+    COL_NUMBER = 4
+    COL_SPACE = 1.0 / COL_NUMBER
+    COL_WIDTH = COL_SPACE - 0.02
+    COL_PRE = 0.02
+    ROW_CONTRACT = 0.05
+    ROW_PRE = 0.02
+    ROW_SPACE = 0.01
+
+    s = df['cluster'].value_counts()
+
+    a = irm.util.multi_napsack(COL_NUMBER, np.array(s))
+
+    MAX_LEN = np.sum([np.array(s)[ai] for ai in a[0]])
+    for col_i, col in enumerate(a):
+        pos = 0
+        for row_pos in col:
+            cluster_id = s.index.values[row_pos]
+            sub_df = df[df['cluster'] == cluster_id]
+            sub_df = sub_df.sort('cell_type')
+            height = len(sub_df) / float(MAX_LEN) * 0.90
+
+            ax = f.add_axes([COL_PRE + col_i * COL_SPACE, 
+                             1.0 - pos - height - ROW_PRE, 
+                             COL_WIDTH, height])
+
+            CN = len(sub_df)
+            
+            for i in range(CN):
+                ax.axhline(i, c='k', alpha=0.05)
+
+            colors = [np.array(coarse_colors[ct])/255.0 for ct in sub_df['des']]
+            ax.scatter(sub_df['cell_type'], np.arange(CN), 
+                       c= colors, s=15,
+                       edgecolor='none')
+            # optionally plot text
+            for i in range(CN):
+                t = sub_df.irow(i)['cell_type']
+                xpos = 1
+                hl = 'left'
+                if t < 30:
+                    xpos = TYPE_N-2
+                    hl = 'right'
+                ax.text(xpos, i, "%d" % sub_df.index.values[i], 
+                        verticalalignment='center', fontsize=3.5,
+                        horizontalalignment=hl)
+            
+            ax.set_yticks([])
+            ax.grid(1)
+            ax.set_xlim(0, TYPE_N)
+            ax.set_ylim(-0.5, CN+0.5)
+            ax.set_xticks([10, 20, 30, 40, 50, 60, 70])
+
+
+            for tick in ax.xaxis.iter_ticks():
+                if pos == 0 :
+                    tick[0].label2On = True                    
+                tick[0].label1On = False
+                tick[0].label2.set_rotation('vertical')
+                tick[0].label2.set_fontsize(6) 
+            pos += height + ROW_SPACE
+
+    # fid.write(group.to_html())
     fid.close()
 
     f.savefig(out_filename)
@@ -1142,7 +1244,201 @@ def plot_truth_latent(exp_results,
     #         circos_p.set_class_ribbons(ribbons)
                                             
     #     irm.plots.circos.write(circos_p, circos_filename_small)
+@transform(get_results, suffix(".samples"), 
+           ".cluster_metrics.pickle" )
+def compute_cluster_metrics(exp_results, 
+                      out_filename):
 
+    sample_d = pickle.load(open(exp_results))
+    chains = sample_d['chains']
+    
+    exp = sample_d['exp']
+    data_filename = exp['data_filename']
+    data = pickle.load(open(data_filename))
+    data_basename, _ = os.path.splitext(data_filename)
+    meta = pickle.load(open(data_basename + ".meta"))
+
+    meta_infile = meta['infile']
+    print "meta_infile=", meta_infile
+
+    d = pickle.load(open(meta_infile, 'r'))
+    conn = d['dist_matrix']['link']
+    cell_id_permutation = d['cell_id_permutation']
+    
+    dist_matrix = d['dist_matrix']
+    orig_data = pickle.load(open(d['infile']))
+    cell_types = d['types'][:len(conn)]
+    
+    type_metadata_df = pickle.load(open("type_metadata.pickle", 'r'))['type_metadata']
+
+    chains = [c for c in chains if type(c['scores']) != int]
+    CHAINN = len(chains)
+
+    chains_sorted_order = np.argsort([d['scores'][-1] for d in chains])[::-1]
+    chain_pos = 0
+
+    best_chain_i = chains_sorted_order[chain_pos]
+    best_chain = chains[best_chain_i]
+    sample_latent = best_chain['state']
+    cell_assignment = np.array(sample_latent['domains']['d1']['assignment'])
+
+    # this is potentially fun: get the ranges for each type
+    TYPE_N = np.max(cell_types) + 1
+
+    df2 = pandas.DataFrame(index=np.arange(1, TYPE_N))
+    df2['des'] = type_metadata_df['coarse']
+    df2 = df2.fillna('other')
+    df2['id'] = df2.index.values.astype(int)
+    gc_mean_i = df2.groupby('des').mean().astype(int)
+    gc_min_i = df2.groupby('des').min().astype(int)
+    gc_max_i = df2.groupby('des').max().astype(int)
+
+    soma_positions = pickle.load(open('soma.positions.pickle', 'r'))
+    pos_vec = soma_positions['pos_vec'][cell_id_permutation]
+
+
+    df = pandas.DataFrame({'cell_id' : cell_id_permutation, 
+                           'cell_type' : cell_types, 
+                           'cluster' : cell_assignment,
+                           'x' : pos_vec[:, 0], 
+                           'y' : pos_vec[:, 1], 
+                           'z' : pos_vec[:, 2]})
+    df = df.join(df2, on='cell_type')
+
+
+    coarse_map = {'gc' : 0, 
+                      'nac' : 1, 
+                      'mwac' : 2, 
+                      'bc' : 3, 
+                      'other' : 4}
+
+    canon_true_fine = irm.util.canonicalize_assignment(df['cell_type'])
+    canon_true_coarse = [coarse_map[x['des']] for x_i, x in df.iterrows()]
+    ca = irm.util.canonicalize_assignment(df['cluster'])
+
+
+    ari = rand.compute_adj_rand_index(canon_true_fine, ca)
+    ari_coarse = rand.compute_adj_rand_index(canon_true_coarse, ca)
+
+                                             
+    jaccard = rand.compute_jaccard(canon_true_fine, ca)
+    jaccard_coarse = rand.compute_jaccard(canon_true_coarse, ca)
+
+    ss = rand.compute_similarity_stats(canon_true_fine, ca)
+    
+    # other statistics 
+    
+    # cluster count
+    
+    # average variance x
+    vars = df.groupby('cluster').var()
+    # average variance y
+    # average variance z
+    
+    pickle.dump({'ari' : ari, 
+                 'ari_coarse' : ari_coarse, 
+                 'jaccard' : jaccard, 
+                 'jaccard_coarse' : jaccard_coarse,
+                 'n11' : ss['n11'], 
+                 'vars' : vars, 
+                 'df' : df
+                 }, open(out_filename, 'w'))
+
+@merge(compute_cluster_metrics, "cluster_metrics.pickle")
+def merge_cluster_metrics(infiles, outfile):
+    res = []
+    v_df = []
+    for infile in infiles:
+        d = pickle.load(open(infile, 'r'))
+        df = d['df']
+        res.append({'filename' : infile, 
+                    'ari' : d['ari'], 
+                    'ari_coarse' : d['ari_coarse'], 
+                    'jaccard_coarse' : d['jaccard_coarse'], 
+                    'jaccard' : d['jaccard'], 
+                    'n11' : d['n11'], 
+                })
+
+        vars = d['vars']
+        vars['filename'] = infile
+        v_df.append(vars)
+
+
+    # add in the two others
+    fine_vars = df.copy().groupby('cell_type').var()
+    fine_vars['filename'] = "truth.fine"
+
+    coarse_vars = df.copy().groupby('des').var()
+    coarse_vars['filename'] = "truth.coarse"
+    print coarse_vars
+    v_df.append(fine_vars)
+    v_df.append(coarse_vars)
+
+    clust_df = pandas.DataFrame(res)
+    var_df = pandas.concat(v_df)
+
+    pickle.dump({'clust_df' : clust_df, 
+                 'var_df' : var_df},
+                open(outfile, 'w'))
+
+@files(merge_cluster_metrics, "spatial_var.pdf")
+def plot_cluster_vars(infile, outfile):
+    d = pickle.load(open(infile, 'r'))
+
+    var_df = d['var_df']
+    var_df = var_df[np.isfinite(var_df['x'])]
+    var_df = var_df[np.isfinite(var_df['y'])]
+    var_df = var_df[np.isfinite(var_df['z'])]
+    tgts = [('Relational Model',
+             "1.2.bb.0.0.data-fixed_20_100-anneal_slow_400", 'r', None), 
+            ('Spatial-relational Model', 
+             "1.2.ld.0.0.data-fixed_20_100-anneal_slow_400", 'b', None), 
+            ('truth (fine)', 'truth.fine' ,'k', {'linewidth' : 2, 
+                                                 'linestyle' : '--'}), 
+            ('truth (coarse)', 'truth.coarse', 'k', {'linewidth' : 4}),
+        ]
+
+    f = pylab.figure()
+    ax = f.add_subplot(1, 1, 1)
+    normed = True
+    for t_i, (tgt_name, tgt_fname, c, args) in enumerate(tgts):
+        var_df_sub = var_df[var_df['filename'].str.contains(tgt_fname)]
+
+        s = np.sqrt(var_df_sub['y'] + var_df_sub['z'])
+        bins = np.linspace(0, 60, 40)
+
+        if 'truth' not in tgt_name:
+            ax.hist(s, bins=bins, 
+                    normed=normed, color=c, label=tgt_name)
+        else:
+            hist, edge = np.histogram(s, bins=bins, normed=normed)
+            centers = bins[:-1] + (bins[1] - bins[0])/2.
+            
+            ax.plot(centers, hist, c=c, label=tgt_name, 
+                    **args)
+    ax.set_xlim(0, 60)
+    ax.set_xlabel("distance (um)")
+    ax.set_ylabel("fraction")
+    ax.legend(loc="upper left")
+    f.savefig(outfile)
+
+    # f = pylab.figure(figsize=(6, 8))
+    # for i, v in enumerate(['x', 'y', 'z']):
+    #     ax = f.add_subplot(3, 1, i + 1)
+    #     vars = []
+    #     for t_i, (tgt_name, tgt_fname) in enumerate(tgts):
+    #         var_df_sub = var_df[var_df['filename'].str.contains(tgt_fname)]
+    #         vars.append(np.sqrt(var_df_sub[v]))
+
+    #     ax.boxplot(vars)
+    #     ax.set_xticklabels([x[0] for x in tgts])
+    #     ax.set_ylabel("standard dev")
+    #     ax.set_title(v)
+
+
+    f.tight_layout()
+    f.savefig(outfile)
+    
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
               create_inits, 
@@ -1155,5 +1451,8 @@ pipeline_run([data_retina_adj_bin,
               plot_circos_latent, 
               plot_clustered_somapos,
               plot_truth_latent, 
+              compute_cluster_metrics, 
+              merge_cluster_metrics,
+              plot_cluster_vars
           ], multiprocess=2)
                         

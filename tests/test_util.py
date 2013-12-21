@@ -67,3 +67,11 @@ def test_boundaries():
     assert_equal(b['b'], [2, 3])
     assert_equal(b['c'], [3, 5])
     assert_equal(b['d'], [5, 6])
+
+def test_multi_napsack():
+    v = [3, 5, 2, 1]
+    a = util.multi_napsack(2, v)
+    assert_equal([[1, 3], [0, 2]], a)
+    
+    a = util.multi_napsack(3, v)
+    assert_equal([[1], [0], [2, 3]], a)
