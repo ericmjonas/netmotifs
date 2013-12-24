@@ -301,3 +301,25 @@ def multi_napsack(K, vals):
     return out
 
 
+def dm_post_pred(mk, N, alpha, fixed_k):
+    """
+    dirichlet multinomial post pred
+    Taken from Rasmussen NIPS 99 eqn 13
+
+    Prob of adding a customer to the table which currently seats
+    mk people.
+    """
+    return np.log((mk + alpha/fixed_k) / (N - 1 + alpha))
+
+
+def dm_score(counts, alpha, fixed_k):
+    """
+    Dirichlet multinomial score of a count vector
+    """
+    score = 0
+    i = 0
+    for table in counts:
+        for customer in range(table):
+            score += dm_post_pred(customer, i + 1, alpha, fixed_k)
+            i += 1
+    return score

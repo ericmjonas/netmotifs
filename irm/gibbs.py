@@ -81,3 +81,34 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
 
         # for r in domain_inf.relations:
         #     r.assert_assigned()
+
+def gibbs_sample_fixed_k(domain_inf, rng, impotent=False):
+
+    T_N = domain_inf.entity_count()
+
+    if impotent:
+        print "gibbs_sample_type: IMPOTENT"
+
+    for entity_pos in np.random.permutation(T_N):
+        g = domain_inf.remove_entity_from_group(entity_pos)
+        # if domain_inf.group_size(g) == 0:
+        #     temp_group = g
+        # else:
+        #     temp_group = domain_inf.create_group(rng)
+
+
+        groups = domain_inf.get_groups()
+        scores = np.zeros(len(groups))
+        for gi, group_id in enumerate(groups):
+            scores[gi] = domain_inf.post_pred(group_id, entity_pos)
+        #print entity_pos, scores
+        sample_i = util.sample_from_scores(scores)
+        new_group = groups[sample_i]
+
+        if impotent:
+            new_group = g
+
+        domain_inf.add_entity_to_group(new_group, entity_pos)
+        # if new_group != temp_group:
+        #     assert domain_inf.group_size(temp_group) == 0
+        #     domain_inf.delete_group(temp_group)

@@ -25,7 +25,7 @@ class DomainInterface(object):
     Also computes the CRP
     """
 
-    def __init__(self, ENT_N, relations_dict):
+    def __init__(self, ENT_N, relations_dict, fixed_k = False):
         """
         relations : {'relationname' : ('DOMAINNAME', rel_obj)}
         where domainname is the name the relation knows this domain as
@@ -45,6 +45,9 @@ class DomainInterface(object):
         self.assignments[:] = NOT_ASSIGNED
         self.temp = 1.0
 
+        self.fixed_k = fixed_k
+        print "This model fixed_k= ", self.fixed_k
+
     def get_relation_pos(self, relation_name):
         return self.relation_pos[relation_name]
 
@@ -60,6 +63,9 @@ class DomainInterface(object):
     def get_groups(self):
         return self.gid_mapping.keys()
 
+    def group_count(self):
+        return len(self.gid_mapping)
+
     def set_temp(self, t):
         self.temp = t
 
@@ -72,6 +78,10 @@ class DomainInterface(object):
         new_gid = self.g_pos
         self.g_pos += 1
         self.gid_mapping[new_gid] = tuple(rel_groupid)
+
+        #if len(self.gid_mapping) > self.fixed_k:
+        #    print "WARNING: Creating too many groups in fixed K configuration" 
+
         return new_gid
     
     def group_size(self, gid):
@@ -100,7 +110,10 @@ class DomainInterface(object):
         [r.delete_group(t, g) for g, (t, r) in zip(rel_groupid, self.relations)]
         
         del self.gid_mapping[group_id]
-        
+
+        #if self.fixed_k:
+        #    print "WARNING: Deleting group in Fixed K configuration"
+
     def add_entity_to_group(self, group_id, entity_pos):
         assert self.assignments[entity_pos] == NOT_ASSIGNED
         rel_groupid = self.gid_mapping[group_id]
@@ -121,8 +134,11 @@ class DomainInterface(object):
 
     def get_prior_score(self):
         count_vect = util.assign_to_counts(self.assignments)
-        crp_score = util.crp_score(count_vect, self.alpha)
-        return crp_score
+        if not self.fixed_k :
+            score = util.crp_score(count_vect, self.alpha)
+        else:
+            score = util.dm_score(count_vect, self.alpha, self.group_count())
+        return score
         
     def post_pred(self, group_id, entity_pos):
         """
@@ -136,9 +152,13 @@ class DomainInterface(object):
                                                                     self.relations)]
         gc = self.group_size(group_id)
         assigned_entity_N = self._assigned_entity_count()
-        
-        prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
-        
+
+        if not self.fixed_k:
+            prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
+        else:
+            prior_score = util.dm_post_pred(gc, assigned_entity_N+1, self.alpha, 
+                                            self.group_count())
+            
         return np.sum(scores) + prior_score/self.temp
 
 class IRM(object):

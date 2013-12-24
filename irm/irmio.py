@@ -13,7 +13,7 @@ def model_from_config_file(configfile):
 
 
 def create_model_from_data(data, relation_class=pyirmutil.Relation, 
-                      rng=None):
+                           rng=None, fixed_k=False):
 
     domains_config = data['domains']
     relations_config = data['relations']
@@ -42,7 +42,8 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
     domain_interfaces = {}
     for d_name, d_config in domains_config.iteritems():
         D_N = d_config['N'] 
-        ti = model.DomainInterface(D_N, domains_to_relations[d_name])
+        ti = model.DomainInterface(D_N, domains_to_relations[d_name], 
+                                   fixed_k)
         domain_interfaces[d_name] = ti
 
         

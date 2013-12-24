@@ -19,6 +19,9 @@ def default_kernel_nonconj_config():
     return [('nonconj_gibbs', {'M' : 10}), 
             ('slice_params', {'width' : 0.0})] # use default
 
+def default_kernel_fixed_config():
+    return [('fixed_gibbs', {}), 
+            ('slice_params', {'width' : 0.0})] # use default
     
 
 def add_domain_hp_grid_kernel(kernel_list, grid=None):
@@ -71,7 +74,12 @@ def do_inference(irm_model, rng, kernel_config, iteration,
         t1 = time.time()
         if kernel_name == 'conj_gibbs':
             for domain_name, domain_inf in irm_model.domains.iteritems():
-                gibbs.gibbs_sample_type(domain_inf, rng, params.get("impotent", False))
+                gibbs.gibbs_sample_type(domain_inf, rng, 
+                                        params.get("impotent", False))
+        elif kernel_name == 'fixed_gibbs':
+            for domain_name, domain_inf in irm_model.domains.iteritems():
+                gibbs.gibbs_sample_fixed_k(domain_inf, rng, 
+                                           params.get("impotent", False))
         elif kernel_name == 'nonconj_gibbs':
             for domain_name, domain_inf in irm_model.domains.iteritems():
                 gibbs.gibbs_sample_type_nonconj(domain_inf, 
@@ -131,7 +139,8 @@ def do_inference(irm_model, rng, kernel_config, iteration,
     return res
 
 class Runner(object):
-    def __init__(self, latent, data, kernel_config, seed=None):
+    def __init__(self, latent, data, kernel_config, seed=None, 
+                 fixed_k = False):
 
         # FIXME add seed
 
@@ -140,7 +149,8 @@ class Runner(object):
         if seed != None:
             pyirm.set_seed(self.rng, seed)
         
-        self.model = irmio.create_model_from_data(data, rng=self.rng)
+        self.model = irmio.create_model_from_data(data, rng=self.rng, 
+                                                  fixed_k = fixed_k)
         irmio.set_model_latent(self.model, latent, self.rng)
         self.iters = 0
         
