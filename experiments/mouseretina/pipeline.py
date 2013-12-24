@@ -101,6 +101,7 @@ KERNEL_CONFIGS = {
                   'debug' : {'ITERS' : 10, 
                              'kernels' : irm.runner.default_kernel_nonconj_config()}, 
                   'debug_fixed' : {'ITERS' : 40, 
+                                   'fixed_k' : True, 
                              'kernels' : irm.runner.default_kernel_fixed_config()}, 
 
                   }

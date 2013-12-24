@@ -143,7 +143,7 @@ class Runner(object):
                  fixed_k = False):
 
         # FIXME add seed
-
+        print "FIXED_K=", fixed_k
         # create the model
         self.rng = pyirm.RNG()
         if seed != None:
