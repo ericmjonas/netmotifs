@@ -199,6 +199,7 @@ def from_bucket(filename, BUCKET_BASE):
 def inference_run(latent_filename, 
                   data_filename, 
                   kernel_config,  ITERS, seed, BUCKET_BASE, init_type=None, 
+                  fixed_k = False, 
                   latent_samp_freq=20):
     """
     For running on the cloud
@@ -207,7 +208,8 @@ def inference_run(latent_filename,
     latent = from_bucket(latent_filename, BUCKET_BASE)
     data = from_bucket(data_filename, BUCKET_BASE)
 
-    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed)
+    chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 
+                                     fixed_k = fixed_k)
 
     if init_type != None:
         chain_runner.init(init_type)

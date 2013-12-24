@@ -42,6 +42,7 @@ EXPERIMENTS = [
     #('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
     ('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
     ('retina.count.edp', 'fixed_10_20', 'debug'), 
+    ('retina.1.0.bb.0.0', 'fixed_10_10', 'debug_fixed'), 
                
 ]
 
@@ -61,6 +62,9 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
                 'fixed_10_20' : {'N' : 10, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 20}}, 
+                'fixed_10_10' : {'N' : 10, 
+                                  'config' : {'type' : 'fixed', 
+                                              'group_num' : 10}}, 
                 'fixed_20_100' : {'N' : 20, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 100}}, 
@@ -96,6 +100,8 @@ KERNEL_CONFIGS = {
 
                   'debug' : {'ITERS' : 10, 
                              'kernels' : irm.runner.default_kernel_nonconj_config()}, 
+                  'debug_fixed' : {'ITERS' : 40, 
+                             'kernels' : irm.runner.default_kernel_fixed_config()}, 
 
                   }
 
@@ -451,6 +457,7 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
     CHAINS_TO_RUN = len(inits)
     ITERS = kc['ITERS']
     kernel_config = kc['kernels']
+    fixed_k = kc.get('fixed_k', False)
     
     jids = cloud.map(irm.experiments.inference_run, inits, 
                      [data_filename]*CHAINS_TO_RUN, 
@@ -458,6 +465,8 @@ def run_exp((data_filename, inits), wait_file, kernel_config_name):
                      [ITERS] * CHAINS_TO_RUN, 
                      range(CHAINS_TO_RUN), 
                      [BUCKET_BASE]*CHAINS_TO_RUN, 
+                     [None] * CHAINS_TO_RUN, 
+                     [fixed_k] * CHAINS_TO_RUN, 
                      _label="%s-%s-%s" % (data_filename, inits[0], 
                                           kernel_config_name), 
                      _env='connectivitymotif', 
