@@ -16,6 +16,7 @@
 \usepackage{multicol}
 \usepackage{csquotes}
 \usepackage{pdfpages}
+\usepackage{placeins}
 
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
@@ -32,9 +33,7 @@
 \begin{document}
 \maketitle
 
-\todo{Citations}
-\todo{Log score plots for real data} 
-\todo{Hierarhcical structure?}
+
 % \begin{affiliations}
 %   \item Something Something
 %   \item Something Something
@@ -43,16 +42,14 @@
 \begin{abstract}
   New techniques produce massive data about neural connectivity,
   necessitating new analysis methods to discover underlying
-  structure. There is strong evidence for microcircuitry, where the
-  probability of connections depends on the types of pre- and
-  post-synaptic neurons and their distance. Here we developed a
-  nonparametric Bayesian technique that identifies neuron type and circuitry
-  patterns using only this connection data. We show that the approach recovers
+  structure. It has long been assumed that discovering the local patterns of microcircuitry is the key to understanding neural function. Here we developed a
+  nonparametric Bayesian technique that identifies neuron types and circuitry
+  patterns in connectomics data. We show that the approach recovers
   known neuron types in the retina, reveals interesting structure in
   the nervous system of c. elegans, and automatically discovers the
-  structure of microprocessors. Our approach is a first step towards
-  condensing connectomics data into meaningful, human readable
-  structure.
+  structure of microprocessors. Our approach extracts structural meaning from connectomics, enabling new approaches of deriving anatomical insights from these emerging datasets.
+
+
 \end{abstract}
 
 \section*{Introduction}
@@ -98,7 +95,7 @@ to model distance promises to  improve the detection of microcircuitry
 from neural data.
 
 When it comes to neuroscience and other computing systems, we expect
-patterns of connectivity much more compelx than traditional motifs,
+patterns of connectivity much more complex than traditional motifs,
 exhibiting a strong spatial dependence arising from the complex
 genetic, chemical, and activity-based neural development process. 
 
@@ -131,7 +128,7 @@ of the cells by those hidden types. b.) shows the cell adjacency
 matrix with cells of the same type grouped together. d.) shows
 the learned probability of connection between our different types
 at various distances, illustrating short-range and long-range
-connectivtiy patterns.}
+connectivity patterns.}
 \label{fig:overview}
 \end{figure}
 
@@ -145,7 +142,8 @@ connection is and how quickly it decays with distance depends on the
 two cell-types. We combine annealing with Markov Chain Monte Carlo to
 perform simultaneously joint posterior inference over the structure,
 parameters, and hyperparameters of the model (see Methods). This
-procedure yields a division of all neurons into cell-types along with
+procedure automatically learns the number of cell types, which cells 
+belong to which types, along with the 
 the distance and type dependent connectivity probabilities (see
 fig~\ref{fig:overview}). These results can then be compared with the
 results of previous anatomical studies that have used other aspects of
@@ -157,25 +155,30 @@ need to assess if the model works properly. We thus started out by
 simulating data for which we know the correct structure and comparing
 the estimated structure based on the algorithm (see methods) with the
 one we used for simulation. We find that the model does a good job of
-recovering the structure we used to generate the data (fig~\ref{fig:synthetic}a)
-Indeed, it does far better than a simpler and well established
-model (stochastic block) that assumes that there is no distance
-dependence to the connectivity. The model converges relatively
-quickly, which is enabled by xxx cool tricks we used to speed it
-up. It appears that the model behaves the way it should and allows
-application to large datasets.
+recovering the structure we used to generate the data
+(fig~\ref{fig:synthetic}a) Indeed, it does far better than a simpler
+and well established model (the infinite stochastic block model, or
+ISBM) that assumes that there is no distance dependence to the
+connectivity. The model converges relatively quickly to an estimate of
+the most probable values for the cell types, which is enabled by using
+a combination of simulated annealing and parallelized Markov chain
+Monte Carlo (see methods for details). It appears that the model
+behaves the way it should and allows application to relatively large
+datasets.
 
 \begin{figure}
   \centering 
   \centerline{\includegraphics{synthetic.ai}}
   \caption{Correct recovery of true numbers of hidden classes
-in synthetic data. a.) Other models overcluster the number
+in synthetic data. a.) Other models over-cluster the number
 of classes as they fail to take distance into account, whereas
 our model finds close to the true number of classes. b.) ARI, a measure
 of ``correct clustering'', for
 different true class counts, between our model and a traditional
-nonparametric stochastic block model. c.) Multiple Markov chains iterateively
-converge towards a highly-probable solution. }
+ISBM. c.) For synthetic data, 
+the IRM over clusters, finding a large number of spatially-localized types. 
+In contrast, the spatial-relational model recovers the true spatial
+extent of the underlying types.}
 \label{fig:synthetic}
 \end{figure}
 
@@ -193,39 +196,61 @@ reconstructed cells. We want to know to which level we can classify
 neurons into types based on this connectivity only.
 
 The algorithm took 8 hours to converge to a locally optimal solution,
-dividing neurons into a set of cell types (fig~\ref{fig:retina}c, each
+dividing neurons into a set of cell types (fig~\ref{fig:mouseretina}c, each
 wedge is a type). For each pair of neurons there is a specific
-distance dependent connection probability (fig~\ref{fig:retina}b,c,d),
+distance dependent connection probability (fig~\ref{fig:mouseretina}b,c,d),
 which is well approximated by the model fit. Moreover, each type of
 cell is rather isotropically distributed across space
-(fig~\ref{fig:retina}e) as should be expected for true cell types. The
+(fig~\ref{fig:mouseretina}e) as should be expected for true cell types. The
 algorithm is thus able to extract meaningful structure from the data.
 
 Comparing the results of the algorithm to other information sources
 allows evaluating the quality of the type determination. Our types
 closely reflect the (anatomist-determined) segmentation of cells into
 retinal ganglion, narrow amacrine, medium/wide amacrine, and bipolar
-cells (Figure 2a, outermost ring). We find that the types we find tend
-to reflect the known laminar distribution in the retina
-(fig~\ref{fig:retina}c, middle ring), which is exciting as the
-algorithm did not actually use this type of information. The algorithm
-yields a separation of neurons into a smaller number of types than the fully
-granular listing of 71 types found by the original authors of the paper, 
-although is still highly correlated with those finer type distinctions (see supp~\ref{supp:mouseretina}. It is our expectation that, with larger datasets, 
-even closer agreement would be found.  [TODO:
-Do we assign any of the unknown cells correctly?  are types 72-79
-“different” or simply unknown?]
+cells (fig~\ref{fig:mouseretina}c, outermost ring). We find that the
+types we find tend to reflect the known laminar distribution in the
+retina (fig~\ref{fig:mouseretina}c, middle ring), which is exciting as
+the algorithm did not actually use this type of information.
 
+
+The algorithm yields a separation of neurons into a smaller number of
+types than the fully granular listing of 71 types found by the
+original authors of the paper, although is still highly correlated
+with those finer type distinctions (see
+supp~\ref{supp:mouseretina}. It is our expectation that, with larger
+datasets, even closer agreement would be found.
+
+\todo{Do we assign any of the unknown cells correctly?  are types 72-79
+“different” or simply unknown?}
+
+We compared the results of our model to the traditional ISBM to see if
+the addition of spatial information was necessary. We find that, as expected from our synthetic experiments, the
+IRM massively over-segmented the data, finding
+spatially-localized “communities” of cells which bore little relation
+to known types.  The average spatial extent of the types found by the ISBM
+was  $14.6\pm8.1 \mu m$. However, in the ground truth by
+anatomists the average distance was $34.3\pm7.6 \mu m$ and $35.3\pm 2.4 \mu m$, quite
+close to the $34.5\pm 1.0 \mu m$ discovered by our algorithm. Modeling the
+distance-dependence prevents over-segmentation and thus allows more
+meaningful estimates.
+
+% from experiments/mouseretina/spatial_var.txt
+
+% Relational Model: mean = 14.586508 std=8.136334
+% Spatial-Relational Model: mean = 34.540355 std=1.069483
+% Truth (fine): mean = 34.348443 std=7.567564
+% Truth (coarse): mean = 35.276636 std=2.372951
 
 \begin{figure}
   \centering 
   \centerline{\includegraphics{mouseretina.ai}}
   \caption{Discovering cell classes in the mouse retina connectome. 
-a.) Input adajacency data for 950 cells for which soma positions were known. b. clsutered adjacency matrix. c.) connectivity diagram showing our clusters, as
+a.) Input adjacency data for 950 cells for which soma positions were known. b. clustered adjacency matrix. c.) connectivity diagram showing our clusters, as
 well as the cell depth and known cell type of each cell. Our model agrees
 with the cell types traditionally identified by anatomists, and identifies 
 laminar-specific connectivity patterns. d.) Connectivity between our
-clusters as a function of distance -- the cluster consisting primarially of
+clusters as a function of distance -- the cluster consisting primarily of
 retinal ganglion cells (lower left-center) exhibits the expected near and
 far connectivity.}
 \label{fig:mouseretina}
@@ -242,7 +267,7 @@ the retina, only the motor neurons in c. elegans exhibit regular
 distribution in space, being distributed along the body axis. Most
 interneurons are concentrated in various ganglia that project
 throughout the entire animal, and the sensory neurons are primarily
-located in a small number of very anteriior ganglia. 
+located in a small number of anterior ganglia. 
 
 Using both the chemical and electrical connectivity (see methods), we
 determined the underlying clusters explained by connectivity and
@@ -254,9 +279,9 @@ agreement with the classifications originally outlined by Brenner in
 
 We identify cell types that reflect the known motor/non-motor neuron
 classes, even though this system lacks the strong repeat
-microcircuitry our model was designed for.  Motorneuron types AS, DA,
+microcircuitry our model was designed for.  Motor-neuron types AS, DA,
 and VA, all exclusively postsynaptic, are clustered together, as are
-motorneuron types VD and DD. Traditional types VC, DB, and VB also
+motor-neuron types VD and DD. Traditional types VC, DB, and VB also
 mostly share a cluster. Various head motor neurons, including types
 SMD, RMD, and RIM are clustered together. Interneurons with known
 anatomically-distinct connectivity patterns, such as RIA (2 cells) or
@@ -267,7 +292,7 @@ combinations of head and sensory neurons are combined, and a
 difficult-to-explain group of 2 VD, 2 VB, a VA, and a DD neuron are
 grouped together. Our identified cell types thus reflect a
 ``coarsening'' of known types, based entirely on connectivity and
-distance information, evne when the organism exhibits substantially
+distance information, even when the organism exhibits substantially
 less spatial regularity than the retina. 
 
 
@@ -277,8 +302,8 @@ less spatial regularity than the retina.
   \caption{Discovering cell types in the \textit{c. elegans}
     connectome. a.) Initial cell connectivity matrix, red are
     (directional) chemical synapses, blue are electrical
-    synapses. Point size is proportaionl to synapse count between
-    those cells. b.) Clustered adjaceny matrix showing identified
+    synapses. Point size is proportional to synapse count between
+    those cells. b.) Clustered adjacency matrix showing identified
     clusters. c.) Inter-cluster connectivity, showing the position of
     each cell along the body axis as well as the ``true'' cell type --
     both coarse (motor, sensory, and interneuron) as well as fine
@@ -298,7 +323,7 @@ the processor with complex but known structure containing the primary
 8-bit registers X, Y, and S (figure).
 
 Our algorithm identifies areas of spatial homogeneity that mirror the
-known structure in the underlying architectural circuit, segementing
+known structure in the underlying architectural circuit, segmenting
 transistor types recognizable to computer architects. Using the
 original schematics, we see that one identified type contains the
 ``clocked'' transistors, which retain digital state. Two other types
@@ -363,7 +388,7 @@ variational methods \autocite{Hoffman2013} and spectral learning
   general, for such problems precision increases with the size of the
   dataset and the cells that we have are not sufficient to
   statistically distinguish all the cell types known in anatomy
-  (71xxx). Still, using only connectivity and distance it is possible
+  ($\sim 70$). Still, using only connectivity and distance it is possible
   to meaningfully divide neurons into types.
 
 Our small collection of hand-selected distance-dependent likelihood
@@ -374,8 +399,8 @@ for various neural systems. Future models could incorporate
 a wider variety of likelihood functions, or even learn the global
 functional form from the data. 
 
-There have existed a a range of previous approaches to the discovery
-of neural microcircuitry (cites). These generally involve a great deal
+There have existed a range of previous approaches to the discovery
+of neural microcircuitry \autocite{} These generally involve a great deal
 of manual labor and ad-hoc determination of what constitutes a “type”
 of cell -- to this day there are disagreements in the literature as to
 the “true” types in the mammalian retina. Much as phylogenomics has
@@ -385,11 +410,8 @@ circuits. The sheer amount of available data demands the introduction
 of algorithmic approaches.
 
 The development of automatic identification and quantification of cell
-type may also provide new phenotypic tools for quantifying the effect
-of disease, genetic abnormalities, and genetic
-interventions. Particular pathologies and genetic manipulations may
-subtly change the number and connectivity of cell types in ways
-only visible with algorithmic analysis. 
+type may also provide a new computational phenotype for quantifying the effect
+of disease, genetic interventions, and developmentally-experienced neural activity. Our method can in principle identify neuron-types across non-connected graphs, e.g. across animals. For example, the types of neurons in one animal can be associated with the types of neurons in another animal, in the same way as this is already possible through molecular markers \autocite{}. This could be particularly important if cell types appear that are due to properties of the stimuli and experience as opposed to the molecular properties of cells \autocite{}. This would allow comparative quantitative anatomy across animals, and the search for the causes of the ultimate connectivity.
 
 Ultimately, we will need to combine information across different
 sources into a joint understanding of neural function. Distinct cell
@@ -398,6 +420,9 @@ behavior or stimuli and many other ways. Algorithms based on each type
 information can then be combined to synthesize all the available
 information from one experiment or even across experiments into a
 joint model of brain function.
+
+\printbibliography
+
 
 \newpage
 \section{Methods }
@@ -413,7 +438,7 @@ each cell $e_i$ belongs to a single cell type, $c_i = k$. The observed
 connectivity between two cells $R(e_i, e_j)$ then depends only on
 their latent type and their distance through a link function $f(\cdot, d(e_i, e_j))$. We assume $f$ is parameterized based on the latent class, $c_i=m$ and $c_j=n$, via a parameter$\eta_{mn}$, as well as a set of global hyper parameters $\theta$, such that the link function is $f(d(e_i, e_j) | \eta_{mn}, \theta)$. 
 
-We then jointly infer the maximum a posteriroi (MAP) estimate of the
+We then jointly infer the maximum a posteriori (MAP) estimate of the
 class assignment vector ${c_i}$, the parameter matrix $\eta_{mn}$, and
 the global model hyperparameters $\theta$ :
 
@@ -425,12 +450,12 @@ the global model hyperparameters $\theta$ :
 % Methods section 3000 words
 % methods summary does not appear in the online text
 % methods section can have no figures or tables [grrr]
-% todo describe multiple independent relations? 
+
 
 \subsection{Probabilistic Model}
 
-Our model is a extension of infinite stochastic block models
-\autocite{Kemp2006a,Xu2006} to incorporate spatial constraints,
+Our model is a extension of the ISBM
+\autocite{Kemp2006a,Xu2006} to incorporate spatial relations between entities,
 inspired by attempts to extend these models with arbitrary
 discriminative functions\autocite{Murphy2012}.
 
@@ -476,7 +501,7 @@ for the duration of the Gibbs scan.
 We then employ a transition kernel to update the per-component
 parameter values $\eta_{mn}$. Conditioned on the assignment vector
 $\vec{c}$ and the model hyperparameters $\theta, \alpha$ the 
-individual $\eta_{mn}$ are indepednent. We slice sample \autocite{Neal2003}
+individual $\eta_{mn}$ are independent. We slice sample \autocite{Neal2003}
 each component's parameters, choosing the slice width as a function
 of the global hyperparameter range. 
 
@@ -492,11 +517,11 @@ $T=1$ over 300 iterations unless otherwise indicated, and
 then run the chain for another $100$ iterations. 
 
 To pick the MAP, we run up to $100$ simultaneous chains in parallel,
-iniitalized from different random initial points in the statespace,
+initialized from different random initial points in the state space,
 and then pick the chain with the highest log likelihood. Early
 experiments attempted to use the full ensemble of chains as an
 estimate of the posterior but were abandoned due to the difficulty of
-summarizing the posterior over such a complex state space, whcih is an
+summarizing the posterior over such a complex state space, which is an
 ongoing area of research in the probabilistic modeling community
 \autocite{}.
 
@@ -508,9 +533,9 @@ ongoing area of research in the probabilistic modeling community
 Dense serial electron microscopy of a $VOLUMNE$ in the mouse retina by
 \autocite{Helmstaedter2013} yielded a listing of places where neurons
 come into contact. There were over 1000 cells originally, and selected
-the $950$ for which the location of the soma could be reconstruted
+the $950$ for which the location of the soma could be reconstructed
 from the provided cell plots (soma locations were not provided by the
-study's authors in machine-readble form). Ultimately
+study's authors in machine-readable form). Ultimately
 this left a matrix between the total synapse-like contact area between
 all pairs of 950 cells. Area was thresholded at $0.5\mu m$, determined
 by hand, to yield a 950 $\times$ 950 entry matrix that served as input
@@ -524,7 +549,7 @@ We obtained the connectome of c. elegans from \autocite, and isolated
 the 279 nonpharyngeal neurons, with a total of 6393 chemical synapses
 and 890 gap junctions originally cleaned up in \autocite{Chen2006}. A
 cell's position was its distance along the anterior-posterior axis
-normalzed between zero and one. We used both networks, the chemical
+normalized between zero and one. We used both networks, the chemical
 network as a directed graph and the electrical network as undirected
 graph. We use the synapse counts with the logistic-distance poisson
 likelihood, scaling the counts by 4.0 to compensate for 
@@ -538,7 +563,7 @@ consistently resolve which of the C1 and C2 terminals were source and
 drain, leading to ambiguity in our encoding. We identified a region
 consisting of consisting of three registers X, Y, and S via visual
 inspection and focused our efforts there. We created a total of six
-connectivity matrices by examining possible terminal parings. One
+connectivity matrices by examining possible terminal pairings. One
 graph, for example, $R^{gc_1}(e_i, e_j)=1$ if transistor $e_j$ and
 $e_j$ are connected via pins $g$ and $c_1$. 
 
@@ -572,6 +597,8 @@ The model can handle multiple graphs $R^q$ simultaneously with a shared clusteri
   p(\vec{c}, \{\eta^q\}, \{\theta^q\} | \{R^q\} ) \propto \prod_q \Bigg(\prod_{i, j} p(R^q(e_i, e_j) | f(d(e_i, e_j) | \eta^q_{c_ic_j}, \theta^q) \prod_{m, n} p(\eta^q_{mn} | \theta^q)  p(\theta^q) \Bigg) p(\vec{c} | \alpha) p(\alpha) 
 \end{equation}
 
+\FloatBarrier
+
 \subsection{Microprocessor Netlist annotation}
 \label{supp:mos6502netlist}
 This is a matrix consisting of the different clusters of nets for 
@@ -579,6 +606,34 @@ the registers, with the colors consistent with figure~\ref{mos6502}
 
 \includepdf[pages=-]{mos6502.clusters.pdf}
 
+\FloatBarrier
+\subsection{Comparison to IRM for Mouse Retina}
+
+\begin{figure}[h!]
+  \centering 
+    \centerline{\includegraphics[width=5in]{mouseretina/spatial_var.pdf}}
+  \caption{}
+\label{fig:supp:irmspatialcomparemouse}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering 
+    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
+  \caption{}
+\label{fig:supp:retinabbclusters}
+\end{figure}
+
+\begin{figure}[h!]
+
+  \centering 
+    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.ld.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
+  \caption{}
+\label{fig:supp:retinaldclusters}
+\end{figure}
+
+\newpage
+
+\FloatBarrier
 \subsection{Hyperprior grids}
 \label{supp:hyperpriors}
 
@@ -589,9 +644,12 @@ For the c. elegans data with the Logistic Distance poisson model, we gridded $\m
 For the microprocessor with the Logistic Distance fixed lambda Bernoulli likelihood, we gridded $mu_{hp}$ into 50 $\log_{10}$-spaced points between 10 and 500 and set $\lambda=\mu_{hp}/10$. $p_{min} \in \{0.001, 0.01, 0.02\}$  and both $p_\alpha$ and $p_\beta \in \{0.1, 1.0, 2.0\}$. 
 
 
-\todo{Explain Adjusted Rand Index} 
+\section{Measuring clustering similarity}
 
-\printbibliography
+The adjusted rand index (ARI) is a measure of the similarity of two different clusterings \autocite{Rand1971} -- two identical clusters have an ARI of 1.0 while progressively more dissimilar clusters have lower ARIs, becoming negative as the clustering gets anti-correlated.
+
 
 \end{document}
+
+
 

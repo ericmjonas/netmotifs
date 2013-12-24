@@ -563,14 +563,16 @@ def merge_results(exp_results, merge_filename):
                       'chain_id' : di, 
                       'assign' : a, 
                       'score' : d['scores'][-1], 
-                      'true_assign' : true_assignvect}
+                      'true_assign' : true_assignvect, 
+                      'node_pos' : nodes_with_class['pos']}
             result.update(params)
             results.append(result)
     df = pandas.DataFrame(results)
     pickle.dump(df, open(merge_filename, 'w'))
 
 PLOT_DATASETS = ['class_compare', 'class_compare_big']
-@files(merge_results, [('%s.rand.pdf' % c, '%s.ari.pdf' % c) for c in PLOT_DATASETS])
+@files(merge_results, [('%s.rand.pdf' % c, '%s.ari.pdf' % c, 
+                        '%s.spatial_variance.pdf' % c) for c in PLOT_DATASETS])
 def plot_results(infile, outfiles):
     df = pickle.load(open(infile, 'r'))
     
@@ -627,6 +629,79 @@ def plot_results(infile, outfiles):
         ax.set_xticklabels([1, 2, 4, 8, 16])
         f.tight_layout()
         f.savefig(plot_files[1])
+
+
+        ## The future 
+
+        def cluster_var(row):
+            assign = row['assign']
+            true_assign = row['true_assign']
+            node_pos = row['node_pos']
+            def node_to_df(assign, nodes):
+                return pandas.DataFrame({'cluster' : assign, 'x' : node_pos[:, 0], 
+                                    'y' : node_pos[:, 1], 'z' : node_pos[:, 2]})
+
+            rdf1 = node_to_df(assign, node_pos)
+            rdf1['truth'] = False
+
+            rdf2 = node_to_df(true_assign, node_pos)
+            rdf2['truth'] = True
+
+            rdf = pandas.concat([rdf1, rdf2])
+            rdf[['x', 'y', 'z']] = rdf[['x', 'y', 'z']].astype(float)
+
+
+            return rdf.groupby(['truth', 'cluster']).var()
+
+        #a = df_cc.groupby(['dataset_name', 'jitter', 'model', 'nonzero_frac', 'class_n', 
+        #                    'side_n', 'seed', 'truth']).apply(lambda group: group.sort_index(by='score', ascending=False).head(1))
+        df_vars = []
+        for rid, r in a.iterrows():
+            cv = cluster_var(r)
+            cv['model'] = r['model']
+            cv['seed'] = r['seed']
+            cv['class_n'] = r['class_n']
+            df_vars.append(cv)
+        df_vars = pandas.concat(df_vars)
+        df_vars['truth'] = df_vars.index.get_level_values('truth')
+        df_vars['std'] = np.sqrt(df_vars['x'] + df_vars['y'])
+
+        f = pylab.figure(figsize=(4.0, 6.5))
+        for i, class_n in enumerate([4, 8, 16]):
+            ax = f.add_subplot(3, 1, i + 1)
+            bins = np.linspace(0, 3.5, 20)
+
+            bin_width = (bins[1] - bins[0])
+            for model, color in [('bb', 'r'), 
+                                 ('ld', 'b'),]:
+                df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==False)]
+                hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
+                ax.bar(bins[:-1], hist*bin_width, width=bin_width, color=color, 
+                       label=model)
+                       
+
+            df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==True)]
+            hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
+            print "Histogram=", hist
+            ax.plot(bins[:-1] + bin_width/2.0, hist*bin_width, c='k', linewidth=4, 
+                    label='truth')
+            ax.set_yticks([0.0, 1.0])
+            ax.set_ylim(0.0, 1.1)
+            ax.set_ylabel("frac (class=%d)" % class_n)
+            if i == 0:
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles, [    'Ground Truth', 
+                                        'Relational Model', 
+                                        'Spatial Relational Model', 
+                                    ], 
+                          loc='upper left', 
+                          fontsize=12)
+            if i < 2:
+                ax.set_xticklabels([])
+        ax.set_xlabel("size of clusters (2D std dev)")
+        f.tight_layout()
+        f.savefig(plot_files[2])
+
 
 @files(merge_results, ['manygen.rand.pdf', 'manygen.ari.pdf'])
 def plot_results_many_gen(infile, outfiles):

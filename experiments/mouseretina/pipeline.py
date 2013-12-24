@@ -1071,24 +1071,28 @@ def plot_truth_latent(exp_results,
     # compute the axes positions
     COL_NUMBER = 4
     COL_SPACE = 1.0 / COL_NUMBER
-    COL_WIDTH = COL_SPACE - 0.02
+    COL_WIDTH = COL_SPACE - 0.03
     COL_PRE = 0.02
     ROW_CONTRACT = 0.05
     ROW_PRE = 0.02
     ROW_SPACE = 0.01
 
+    VERT_SCALE = 1.0
     s = df['cluster'].value_counts()
 
     a = irm.util.multi_napsack(COL_NUMBER, np.array(s))
+    CLUST_MAX_PER_COL = len(a[0])
+    VERT_SCALE = 1.0 -  (CLUST_MAX_PER_COL+4) *ROW_SPACE
 
     MAX_LEN = np.sum([np.array(s)[ai] for ai in a[0]])
+
     for col_i, col in enumerate(a):
         pos = 0
         for row_pos in col:
             cluster_id = s.index.values[row_pos]
             sub_df = df[df['cluster'] == cluster_id]
             sub_df = sub_df.sort('cell_type')
-            height = len(sub_df) / float(MAX_LEN) * 0.90
+            height = len(sub_df) / float(MAX_LEN) * VERT_SCALE
 
             ax = f.add_axes([COL_PRE + col_i * COL_SPACE, 
                              1.0 - pos - height - ROW_PRE, 
@@ -1136,114 +1140,6 @@ def plot_truth_latent(exp_results,
     f.savefig(out_filename)
 
 
-    # for fi, (circos_filename_main, circos_filename_small) in enumerate(out_filenames):
-    #     CLASS_N = len(np.unique(cell_assignment))
-        
-
-    #     class_ids = sorted(np.unique(cell_assignment))
-
-    #     custom_color_map = {}
-    #     for c_i, c_v in enumerate(class_ids):
-    #         c = np.array(pylab.cm.Set1(float(c_i) / CLASS_N)[:3])*255
-    #         custom_color_map['ccolor%d' % c_v]  = c.astype(int)
-
-    #     colors = np.linspace(0, 360, CLASS_N)
-    #     color_str = ['ccolor%d' % int(d) for d in class_ids]
-        
-    #     for n, v in coarse_colors.iteritems():
-    #         custom_color_map['true_coarse_%s' % n] = v
-
-    #     circos_p = irm.plots.circos.CircosPlot(cell_assignment, 
-    #                                            ideogram_radius="0.7r",
-    #                                            ideogram_thickness="50p", 
-    #                                            karyotype_colors = color_str, 
-    #                                            custom_color_map = custom_color_map)
-
-    #     if model_name == "LogisticDistance":
-    #         v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
-    #                                            sample_latent['relations']['R1']['ss'], 
-    #                                            sample_latent['relations']['R1']['hps'], 
-    #                                            model_name)
-    #         thold = 0.50 
-    #         ribbons = []
-    #         links = []
-    #         for (src, dest), p in v.iteritems():
-    #             if p > thold:
-    #                 ribbons.append((src, dest, int(40*p)))
-    #         circos_p.set_class_ribbons(ribbons)
-    #         pos_min = 40
-    #         pos_max = 120
-    #         pos_r_min = 1.00
-    #         pos_r_max = pos_r_min + 0.25
-    #         ten_um_frac = 10.0/(pos_max - pos_min)
-
-    #         circos_p.add_plot('scatter', {'r0' : '%fr' % pos_r_min, 
-    #                                       'r1' : '%fr' % pos_r_max, 
-    #                                       'min' : pos_min, 
-    #                                       'max' : pos_max, 
-    #                                       'glyph' : 'circle', 
-    #                                       'glyph_size' : 10, 
-    #                                       'color' : 'black',
-    #                                       'stroke_thickness' : 0
-    #                                       }, 
-    #                           pos_vec[:, 0], 
-    #                           {'backgrounds' : [('background', {'color': 'vvlgrey', 
-    #                                                             'y0' : pos_min, 
-    #                                                             'y1' : pos_max})],  
-    #                            'axes': [('axis', {'color' : 'vgrey', 
-    #                                               'thickness' : 1, 
-    #                                               'spacing' : '%fr' % ten_um_frac})]})
-            
-    #         print "TYPE_N=", TYPE_N
-    #         type_color_map = {'gc' : 0, 
-    #                           'nac' : 1, 
-    #                           'mwac' : 2, 
-    #                           'bc' : 3, 
-    #                           'other' : 4}
-
-    #         # pick colors
-    #         colors = ['true_coarse_%s' % s for s in ['gc', 'nac', 'mwac', 'bc', 'other']]
-                      
-    #         circos_p.add_plot('heatmap', {'r0' : '1.28r', 
-    #                                       'r1' : '1.34r', 
-    #                                       'min' : 0, 
-    #                                       'max' : 4, 
-    #                                       'stroke_thickness' :0,
-    #                                       'color': ",".join(colors)}, 
-    #                           [type_color_map[df2.ix[i]['des']] for i in cell_types])
-            
-    #         # circos_p.add_plot('scatter', {'r0' : '1.01r', 
-    #         #                               'r1' : '1.10r', 
-    #         #                               'min' : 0, 
-    #         #                               'max' : 3, 
-    #         #                               'gliph' : 'square', 
-    #         #                               'color' : 'black', 
-    #         #                               'stroke_thickness' : 0}, 
-    #         #                   [type_lut[i] for i in cell_types])
-
-                            
-                                            
-    #     irm.plots.circos.write(circos_p, circos_filename_main)
-        
-    #     circos_p = irm.plots.circos.CircosPlot(cell_assignment, ideogram_radius="0.5r", 
-    #                                            ideogram_thickness="80p", 
-    #                                            karyotype_colors = color_str, 
-    #                                            custom_color_map = custom_color_map)
-        
-    #     if model_name == "LogisticDistance":
-    #         v = irm.irmio.latent_distance_eval(CIRCOS_DIST_THRESHOLDS[fi], 
-    #                                            sample_latent['relations']['R1']['ss'], 
-    #                                            sample_latent['relations']['R1']['hps'], 
-    #                                            model_name)
-    #         thold = 0.50 
-    #         ribbons = []
-    #         links = []
-    #         for (src, dest), p in v.iteritems():
-    #             if p > thold:
-    #                 ribbons.append((src, dest, int(40*p)))
-    #         circos_p.set_class_ribbons(ribbons)
-                                            
-    #     irm.plots.circos.write(circos_p, circos_filename_small)
 @transform(get_results, suffix(".samples"), 
            ".cluster_metrics.pickle" )
 def compute_cluster_metrics(exp_results, 
@@ -1381,8 +1277,8 @@ def merge_cluster_metrics(infiles, outfile):
                  'var_df' : var_df},
                 open(outfile, 'w'))
 
-@files(merge_cluster_metrics, "spatial_var.pdf")
-def plot_cluster_vars(infile, outfile):
+@files(merge_cluster_metrics, ("spatial_var.pdf", "spatial_var.txt"))
+def plot_cluster_vars(infile, (outfile_plot, outfile_rpt)):
     d = pickle.load(open(infile, 'r'))
 
     var_df = d['var_df']
@@ -1391,23 +1287,27 @@ def plot_cluster_vars(infile, outfile):
     var_df = var_df[np.isfinite(var_df['z'])]
     tgts = [('Relational Model',
              "1.2.bb.0.0.data-fixed_20_100-anneal_slow_400", 'r', None), 
-            ('Spatial-relational Model', 
+            ('Spatial-Relational Model', 
              "1.2.ld.0.0.data-fixed_20_100-anneal_slow_400", 'b', None), 
-            ('truth (fine)', 'truth.fine' ,'k', {'linewidth' : 2, 
+            ('Truth (fine)', 'truth.fine' ,'k', {'linewidth' : 2, 
                                                  'linestyle' : '--'}), 
-            ('truth (coarse)', 'truth.coarse', 'k', {'linewidth' : 4}),
+            ('Truth (coarse)', 'truth.coarse', 'k', {'linewidth' : 4}),
         ]
 
-    f = pylab.figure()
+    f = pylab.figure(figsize=(8,6))
     ax = f.add_subplot(1, 1, 1)
     normed = True
+    report_fid = open(outfile_rpt, 'w')
     for t_i, (tgt_name, tgt_fname, c, args) in enumerate(tgts):
         var_df_sub = var_df[var_df['filename'].str.contains(tgt_fname)]
 
         s = np.sqrt(var_df_sub['y'] + var_df_sub['z'])
+        mean = np.mean(s)
+        std = np.std(s)
+        
         bins = np.linspace(0, 60, 40)
 
-        if 'truth' not in tgt_name:
+        if 'Truth' not in tgt_name:
             ax.hist(s, bins=bins, 
                     normed=normed, color=c, label=tgt_name)
         else:
@@ -1416,12 +1316,13 @@ def plot_cluster_vars(infile, outfile):
             
             ax.plot(centers, hist, c=c, label=tgt_name, 
                     **args)
+        report_fid.write("%s: mean = %f std=%f \n" % (tgt_name, mean, std))
+
     ax.set_xlim(0, 60)
-    ax.set_xlabel("distance (um)")
+    ax.set_xlabel("std. dev. of type (um)")
     ax.set_ylabel("fraction")
     ax.legend(loc="upper left")
-    f.savefig(outfile)
-
+    ax.set_title("spatial distribution of type")
     # f = pylab.figure(figsize=(6, 8))
     # for i, v in enumerate(['x', 'y', 'z']):
     #     ax = f.add_subplot(3, 1, i + 1)
@@ -1437,7 +1338,7 @@ def plot_cluster_vars(infile, outfile):
 
 
     f.tight_layout()
-    f.savefig(outfile)
+    f.savefig(outfile_plot)
     
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
