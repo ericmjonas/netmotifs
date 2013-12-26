@@ -24,3 +24,8 @@ paper.pdf: paper.tex
 
 dropbox:
 	cp -r * ~/Dropbox/jonaskording-connectomics 
+
+debug: paper.pdf
+	biber paper | grep "didn't" 
+	grep "LaTeX Warning" paper.log
+

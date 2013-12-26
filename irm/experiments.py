@@ -20,7 +20,7 @@ It's only here because it's easy to import.
 
 
 def create_init(latent_filename, data_filename, out_filenames, 
-                init= None):
+                init= None, keep_ground_truth=True):
     """ 
     CONVENTION: when we create N inits, the first is actually 
     initialized from the "ground truth" of the intial init (whatever
@@ -58,7 +58,7 @@ def create_init(latent_filename, data_filename, out_filenames,
         else:
             raise NotImplementedError("Unknown init type")
             
-        if c > 0: # first one stays the same
+        if (not keep_ground_truth) or (c > 0) : # first one stays the same
             latent['domains']['d1']['assignment'] = a
 
         # generate new suffstats, recompute suffstats in light of new assignment

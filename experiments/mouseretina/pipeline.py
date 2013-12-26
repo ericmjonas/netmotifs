@@ -8,6 +8,7 @@ from matplotlib import pylab
 import matplotlib
 import pandas
 import colorbrewer
+from nose.tools import assert_equal 
 
 import matplotlib.gridspec as gridspec
 
@@ -38,13 +39,19 @@ EXPERIMENTS = [
     ('retina.1.1.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
+    # ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
     #('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
-    ('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
-    ('retina.count.edp', 'fixed_10_20', 'debug'), 
+    #('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
+    #('retina.count.edp', 'fixed_10_20', 'debug'), 
     ('retina.1.0.bb.0.0', 'fixed_10_10', 'debug_fixed'), 
                
 ]
+MANUAL_K = [5, 10, 12, 15, 20, 30, 50, 70]
+for k in MANUAL_K:
+    EXPERIMENTS += [('retina.1.1.bb.0.0', 'fixed_20_%d' % k, 'anneal_slow_fixed_400'), 
+                    ('retina.1.2.bb.0.0', 'fixed_20_%d' % k, 'anneal_slow_fixed_400')]
+
+
 
 THOLDS = [0.01, 0.1, 0.5, 1.0]
     
@@ -74,6 +81,10 @@ INIT_CONFIGS = {'fixed_10_200' : {'N' : 10,
                               'config' : {'type' : 'truth'}}, 
 }
 
+for k in MANUAL_K:
+    INIT_CONFIGS['fixed_20_%d' % k] = {'N' : 20, 
+                                       'config' : {'type' : 'fixed', 
+                                                   'group_num' : k}}
 
 slow_anneal = irm.runner.default_kernel_anneal()
 slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
@@ -94,9 +105,18 @@ def generate_ld_hypers():
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistance'] = generate_ld_hypers()
 
+
+slow_anneal_fixed = copy.deepcopy(slow_anneal)
+assert_equal(slow_anneal_fixed[0][1]['subkernels'][0], ('nonconj_gibbs', {'M' : 10}))
+slow_anneal_fixed[0][1]['subkernels'][0] = ('fixed_gibbs', {})
+
+
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
+                  'anneal_slow_fixed_400' : {'ITERS' : 400, 
+                                             'kernels' : slow_anneal_fixed, 
+                                             'fixed_k' : True},
 
                   'debug' : {'ITERS' : 10, 
                              'kernels' : irm.runner.default_kernel_nonconj_config()}, 
@@ -435,7 +455,8 @@ def create_inits(data_filename, out_filenames, init_config_name, init_config):
     
     irm.experiments.create_init(latent_filename, data_filename, 
                                 out_filenames, 
-                                init= init_config['config'])
+                                init= init_config['config'], 
+                                keep_ground_truth=False)
 
 def experiment_generator():
     for data_name, init_config_name, kernel_config_name in EXPERIMENTS:
@@ -573,7 +594,7 @@ def plot_scores_z(exp_results, (plot_latent_filename, plot_truth_filename)):
                                  plot_truth_filename)
 
 @transform(get_results, suffix(".samples"), 
-           [(".%d.clusters.pdf" % d, ".%d.latent.pdf" % d )  for d in range(1)])
+           [(".%d.clusters.pdf" % d, ".%d.latent.pdf" % d )  for d in range(2)])
 def plot_best_cluster_latent(exp_results, 
                      out_filenames):
 
@@ -630,6 +651,9 @@ def plot_best_cluster_latent(exp_results,
 
     pos_vec = soma_positions['pos_vec'][cell_id_permutation]
     model = data['relations']['R1']['model']
+    print dist_matrix.dtype, model
+    if "istance" not in model:
+        dist_matrix = dist_matrix['link']
 
     for chain_pos, (cluster_fname, latent_fname) in enumerate(out_filenames):
         best_chain_i = chains_sorted_order[chain_pos]
@@ -643,9 +667,8 @@ def plot_best_cluster_latent(exp_results,
                                      pos_vec, reorder_synapses, 
                                      cluster_fname, class_colors=type_colors)
 
-        print dist_matrix.dtype, model
-        if "istance" not in model:
-            dist_matrix = dist_matrix['link']
+            
+        print "model=", model, dist_matrix.dtype
         util.plot_latent(sample_latent, dist_matrix, latent_fname, 
                          model = model, 
                          PLOT_MAX_DIST=150.0, MAX_CLASSES=20)
@@ -1247,6 +1270,8 @@ def compute_cluster_metrics(exp_results,
                  'jaccard_coarse' : jaccard_coarse,
                  'n11' : ss['n11'], 
                  'vars' : vars, 
+                 'cluster_n' : len(np.unique(df['cluster'])),
+
                  'df' : df
                  }, open(out_filename, 'w'))
 
@@ -1262,6 +1287,7 @@ def merge_cluster_metrics(infiles, outfile):
                     'ari_coarse' : d['ari_coarse'], 
                     'jaccard_coarse' : d['jaccard_coarse'], 
                     'jaccard' : d['jaccard'], 
+                    'cluster_n' : d['cluster_n'],
                     'n11' : d['n11'], 
                 })
 
@@ -1295,10 +1321,12 @@ def plot_cluster_vars(infile, (outfile_plot, outfile_rpt)):
     var_df = var_df[np.isfinite(var_df['x'])]
     var_df = var_df[np.isfinite(var_df['y'])]
     var_df = var_df[np.isfinite(var_df['z'])]
-    tgts = [('Relational Model',
+    tgts = [('Infintite Stochastic Block Model',
              "1.2.bb.0.0.data-fixed_20_100-anneal_slow_400", 'r', None), 
-            ('Spatial-Relational Model', 
+            ('Infinite Spatial-Relational Model', 
              "1.2.ld.0.0.data-fixed_20_100-anneal_slow_400", 'b', None), 
+            ('Finite SBM, K=12', 
+             "1.2.bb.0.0.data-fixed_20_12-anneal_slow_fixed_400", 'g', None), 
             ('Truth (fine)', 'truth.fine' ,'k', {'linewidth' : 2, 
                                                  'linestyle' : '--'}), 
             ('Truth (coarse)', 'truth.coarse', 'k', {'linewidth' : 4}),
@@ -1349,6 +1377,45 @@ def plot_cluster_vars(infile, (outfile_plot, outfile_rpt)):
 
     f.tight_layout()
     f.savefig(outfile_plot)
+
+@files(merge_cluster_metrics, ("ari_vs_cluster.pdf", "ari_vs_cluster.txt"))
+def plot_cluster_aris(infile, (outfile_plot, outfile_rpt)):
+    d = pickle.load(open(infile, 'r'))
+
+    tgt_config = "1.2"
+
+    clust_df = d['clust_df']
+    clust_df = clust_df[clust_df['filename'].str.contains("retina.%s" % tgt_config)]
+    clust_df['finite'] = clust_df['filename'].str.contains("_slow_fixed_400")
+
+
+    finite_df = clust_df[clust_df['finite']]
+
+    ld_df = clust_df[clust_df['filename'].str.contains("ld")]
+    bb_df = clust_df[clust_df['filename'].str.contains("_slow_400")]
+    bb_df = bb_df[bb_df['filename'].str.contains("bb")]
+
+    f = pylab.figure()
+    ax = f.add_subplot(1, 1, 1)
+
+    ax.scatter(finite_df['cluster_n'], finite_df['ari'], s=50, c='b', label="SBM")
+
+
+    ax.scatter(bb_df['cluster_n'], bb_df['ari'], s=90, c='g', label="iSBM")
+    ax.scatter(ld_df['cluster_n'], ld_df['ari'], s=90, c='r', label="iSRM")
+
+    ax.set_xlabel("number of found types")
+    ax.set_ylabel("adjusted rand index")
+    ax.set_xlim(0, 120)
+    ax.grid()
+    ax.legend()
+
+    f.savefig(outfile_plot)
+
+    fid = open(outfile_rpt, 'w')
+    fid.write(clust_df.to_html())
+    fid.close()
+              
     
 pipeline_run([data_retina_adj_bin, 
               data_retina_adj_count, 
@@ -1364,6 +1431,7 @@ pipeline_run([data_retina_adj_bin,
               plot_truth_latent, 
               compute_cluster_metrics, 
               merge_cluster_metrics,
-              plot_cluster_vars
+              plot_cluster_vars, 
+              plot_cluster_aris, 
           ], multiprocess=2)
                         

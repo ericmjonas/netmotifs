@@ -580,9 +580,25 @@ $e_j$ are connected via pins $g$ and $c_1$.
 
 \subsection{Other Likelihoods}
 \label{supp:otherlikelihoods}
- - Reparameterized logistic-distance bernoulli with fixed lambda
 
- - Logistic-distance poisson
+We reparameterized the Logistic-Distance Bernoulli likelihood to
+better capture the microprocessor data structure. We explicitly
+setting the maximum probability $p$ of the logistic function on a
+per-component basis, drawing from a global $p \sim Beta(\alpha_{hp},
+\beta_{hp})$. Then $\lambda$ is set for each component as a global
+hyperparameter, $\lambda$.
+
+
+The ``logistic-distance Poisson'' spatial model assumes that, if cell
+$e_i$ is of class $m$ and cell $e_j$ is of class $n$, then $\eta_{mn}
+= (\mu_{mn}, r_{mn})$, and the probability of $R(e_i, e_j) = c$ synapses between two cells $e_i$ and $e_j$ is given by:
+\begin{eqnarray}
+\lambda^* &=& \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda}}\\
+\lambda & = & \lambda^* \cdot (r_{mn} - r_{min}) + r_{min} \\
+R(e_i, e_j) \sim Poi(c | \lambda)
+\end{eqnarray}
+
+where $\lambda$ and $r_{min}$ are per-graph parameters. Per-component parameters $\mu_{mn} \sim \exp(\mu | \mu^{hp})$ and $r_{mn} \sim \exp(r_{mn} | r_{scale}^{hp})$. 
 
 \subsection{Source code}
 
@@ -607,7 +623,27 @@ the registers, with the colors consistent with figure~\ref{mos6502}
 \includepdf[pages=-]{mos6502.clusters.pdf}
 
 \FloatBarrier
-\subsection{Comparison to IRM for Mouse Retina}
+\subsection{Model Comparison for Mouse Retina}
+
+We compare the clusters found by our model, the traditional infinite
+stochastic block model, and a finite stochastic block model with the number
+of clusters set to the best-found number from our iSRM model ($k=12$).
+
+We see from fig~\ref{fig:supp:irmspatialcomparemouse} that the spatial
+variance of our clusters closely matches the ground truth, while the
+other two models find spatially-localized
+clusters. Figure~\ref{fig:supp:mousecompareari} shows the ARI of our
+clustering, the clustering found by the iSBM,
+as well as the result of parametrically varying the traditional stochastic
+block model for various values of $k$. 
+
+The actual clusterings for iSRM, the iSBM, and $SBM_{k=12}$ are shown
+in figures \ref{fig:supp:retinabbclusters},
+\ref{fig:supp:retinaldclusters}, and
+\ref{fig:supp:retinabbfixedclusters} respectively. Each block is a
+cluster, with the true cell type indicated along the x-axis, and the
+cell ID written to the left or right.
+
 
 \begin{figure}[h!]
   \centering 
@@ -618,9 +654,24 @@ the registers, with the colors consistent with figure~\ref{mos6502}
 
 \begin{figure}[h!]
   \centering 
+    \centerline{\includegraphics[width=5in]{mouseretina/ari_vs_cluster.pdf}}
+  \caption{}
+\label{fig:supp:mousecompareari}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering 
     \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
   \caption{}
 \label{fig:supp:retinabbclusters}
+\end{figure}
+
+\begin{figure}[h!]
+
+  \centering 
+    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_12-anneal_slow_fixed_400.truth_latent.pdf}}
+  \caption{}
+\label{fig:supp:retinabbfixedclusters}
 \end{figure}
 
 \begin{figure}[h!]
@@ -646,7 +697,10 @@ For the microprocessor with the Logistic Distance fixed lambda Bernoulli likelih
 
 \section{Measuring clustering similarity}
 
-The adjusted rand index (ARI) is a measure of the similarity of two different clusterings \autocite{Rand1971} -- two identical clusters have an ARI of 1.0 while progressively more dissimilar clusters have lower ARIs, becoming negative as the clustering gets anti-correlated.
+The adjusted rand index (ARI) is a measure of the similarity of two
+different clusterings \autocite{Rand1971} -- two identical clusters
+have an ARI of 1.0 while progressively more dissimilar clusters have
+lower ARIs, becoming negative as the clustering gets anti-correlated.
 
 
 \end{document}
