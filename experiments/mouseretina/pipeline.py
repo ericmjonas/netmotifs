@@ -9,6 +9,7 @@ import matplotlib
 import pandas
 import colorbrewer
 from nose.tools import assert_equal 
+from sklearn import metrics
 
 import matplotlib.gridspec as gridspec
 
@@ -1246,8 +1247,11 @@ def compute_cluster_metrics(exp_results,
     ca = irm.util.canonicalize_assignment(df['cluster'])
 
 
-    ari = rand.compute_adj_rand_index(canon_true_fine, ca)
-    ari_coarse = rand.compute_adj_rand_index(canon_true_coarse, ca)
+    ari = metrics.adjusted_rand_score(canon_true_fine, ca)
+    ari_coarse = metrics.adjusted_rand_score(canon_true_coarse, ca)
+
+    ami = metrics.adjusted_mutual_info_score(canon_true_fine, ca)
+    ami_coarse = metrics.adjusted_mutual_info_score(canon_true_coarse, ca)
 
                                              
     jaccard = rand.compute_jaccard(canon_true_fine, ca)
@@ -1266,6 +1270,8 @@ def compute_cluster_metrics(exp_results,
     
     pickle.dump({'ari' : ari, 
                  'ari_coarse' : ari_coarse, 
+                 'ami' : ami, 
+                 'ami_coarse' : ami_coarse, 
                  'jaccard' : jaccard, 
                  'jaccard_coarse' : jaccard_coarse,
                  'n11' : ss['n11'], 
@@ -1285,6 +1291,8 @@ def merge_cluster_metrics(infiles, outfile):
         res.append({'filename' : infile, 
                     'ari' : d['ari'], 
                     'ari_coarse' : d['ari_coarse'], 
+                    'ami' : d['ami'], 
+                    'ami_coarse' : d['ami_coarse'], 
                     'jaccard_coarse' : d['jaccard_coarse'], 
                     'jaccard' : d['jaccard'], 
                     'cluster_n' : d['cluster_n'],
@@ -1398,11 +1406,12 @@ def plot_cluster_aris(infile, (outfile_plot, outfile_rpt)):
     f = pylab.figure()
     ax = f.add_subplot(1, 1, 1)
 
-    ax.scatter(finite_df['cluster_n'], finite_df['ari'], s=50, c='b', label="SBM")
+    index = 'ari'
+    ax.scatter(finite_df['cluster_n'], finite_df[index], s=50, c='b', label="SBM")
 
 
-    ax.scatter(bb_df['cluster_n'], bb_df['ari'], s=90, c='g', label="iSBM")
-    ax.scatter(ld_df['cluster_n'], ld_df['ari'], s=90, c='r', label="iSRM")
+    ax.scatter(bb_df['cluster_n'], bb_df[index], s=90, c='g', label="iSBM")
+    ax.scatter(ld_df['cluster_n'], ld_df[index], s=90, c='r', label="iSRM")
 
     ax.set_xlabel("number of found types")
     ax.set_ylabel("adjusted rand index")

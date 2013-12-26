@@ -62,7 +62,7 @@ this kind of high-throughput transition has been seen before --
 rise of sequencing techniques necessitated the
 development of novel computational methods to understand genomic
 structure, ushering in an era of bioinformatics as an independent
-discipline \autocite{}.
+discipline \autocite{Koboldt2013}.
 
 The brain consists of multiple kinds of neurons, each of which is
 hypothesized to have a specific role in the overall
@@ -70,11 +70,11 @@ computation. Neuron types differ in many ways, e.g. chemical or
 morphological, but they also differ in the way they connect to one
 another. In fact, the idea of well defined local connectivity patterns
 has been prominent in many areas, ranging from sensory (e.g. retina,
-\autocite{} via processing (e.g. neocortex) to movement (e.g. spinal
-cord) \autocite{}. Indeed, such repeated patterns also exists in
-human-made computing circuits. It remains an important challenge to
-develop algorithms to use anatomical data, e.g. connectomics, to back
-out underlying connectivity motifs.
+\autocite{Masland2001} via processing (e.g. neocortex \autocite{Mountcastle1997})
+to movement (e.g. spinal cord) \autocite{Grillner2005}. Indeed, such
+repeated patterns also exists in human-made computing circuits. It
+remains an important challenge to develop algorithms to use anatomical
+data, e.g. connectomics, to back out underlying connectivity motifs.
 
 The discovery of structure is a crucial aspect of network
 science. Early approaches focused on global graph properties, such as
@@ -84,15 +84,15 @@ of global network, more recent work aims at identifying very small-scale
 repeat patterns, or “motifs” in networks\autocite{Milo2002}
 
 The discovery of structure in probabilistic graphs is a crucial aspect
-in machine learning. Commonly used algorithms include spectral methods
-\autocite{},   community-based-detection   methods  \autocite{},   and
-stochastic block  models \autocite{Nowicki2001}.  While these
-approaches powerfully  incorporate the probabilistic nature of neural
-connections \autocite{} they do not generally consider the known fact
-that  the  probability  of  connections  between  neurons  depends  on
-distance. Combining such probabilistic models with a spatial component
-to model distance promises to  improve the detection of microcircuitry
-from neural data.
+in machine learning. Commonly used algorithms include
+community-based-detection methods \autocite{Girvan2002}, and
+stochastic block models \autocite{Nowicki2001}.  While these
+approaches can incorporate the probabilistic nature of neural
+connections \autocite{Hill2012} they do not generally consider the
+known fact that the probability of connections between neurons depends
+on distance. Combining such probabilistic models with a spatial
+component to model distance promises to improve the detection of
+microcircuitry from neural data.
 
 When it comes to neuroscience and other computing systems, we expect
 patterns of connectivity much more complex than traditional motifs,
@@ -103,8 +103,8 @@ genetic, chemical, and activity-based neural development process.
 Here we describe a Bayesian non-parametric model that can discover
 circuit structure automatically from connectomics data: both the cell
 types and their spatial patterns of interconnection. We apply it to
-three computing systems: the mouse retina connectome \autocite{}, the
-c. elegans connectome \autocite{}, and a ``connectome'' of a classical
+three computing systems: the mouse retina connectome \autocite{Helmstaedter2013}, the
+c. elegans connectome \autocite{White1986}, and a ``connectome'' of a classical
 microprocessor \autocite{James2010}. Note we do not explicitly
 consider cellular morphology, absolute position (cell layer), or any
 chemical or genetic information. Yet in all cases, we discover
@@ -400,7 +400,7 @@ a wider variety of likelihood functions, or even learn the global
 functional form from the data. 
 
 There have existed a range of previous approaches to the discovery
-of neural microcircuitry \autocite{} These generally involve a great deal
+of neural microcircuitry \autocite{missing} These generally involve a great deal
 of manual labor and ad-hoc determination of what constitutes a “type”
 of cell -- to this day there are disagreements in the literature as to
 the “true” types in the mammalian retina. Much as phylogenomics has
@@ -411,7 +411,7 @@ of algorithmic approaches.
 
 The development of automatic identification and quantification of cell
 type may also provide a new computational phenotype for quantifying the effect
-of disease, genetic interventions, and developmentally-experienced neural activity. Our method can in principle identify neuron-types across non-connected graphs, e.g. across animals. For example, the types of neurons in one animal can be associated with the types of neurons in another animal, in the same way as this is already possible through molecular markers \autocite{}. This could be particularly important if cell types appear that are due to properties of the stimuli and experience as opposed to the molecular properties of cells \autocite{}. This would allow comparative quantitative anatomy across animals, and the search for the causes of the ultimate connectivity.
+of disease, genetic interventions, and developmentally-experienced neural activity. Our method can in principle identify neuron-types across non-connected graphs, e.g. across animals. For example, the types of neurons in one animal can be associated with the types of neurons in another animal, in the same way as this is already possible through molecular markers \autocite{Brown2009}. This could be particularly important if cell types appear that are due to properties of the stimuli and experience as opposed to the molecular properties of cells \autocite{missing}. This would allow comparative quantitative anatomy across animals, and the search for the causes of the ultimate connectivity.
 
 Ultimately, we will need to combine information across different
 sources into a joint understanding of neural function. Distinct cell
@@ -523,7 +523,7 @@ experiments attempted to use the full ensemble of chains as an
 estimate of the posterior but were abandoned due to the difficulty of
 summarizing the posterior over such a complex state space, which is an
 ongoing area of research in the probabilistic modeling community
-\autocite{}.
+\autocite{missing}.
 
 
 \subsection{Validation}
@@ -698,7 +698,7 @@ For the microprocessor with the Logistic Distance fixed lambda Bernoulli likelih
 \section{Measuring clustering similarity}
 
 The adjusted rand index (ARI) is a measure of the similarity of two
-different clusterings \autocite{Rand1971} -- two identical clusters
+different clusterings \autocite{Hubert1985} -- two identical clusters
 have an ARI of 1.0 while progressively more dissimilar clusters have
 lower ARIs, becoming negative as the clustering gets anti-correlated.
 

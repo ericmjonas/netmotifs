@@ -7,6 +7,7 @@ import time
 from matplotlib import pylab
 import pandas
 import rand
+from sklearn import metrics
 
 import irm
 import irm.data
