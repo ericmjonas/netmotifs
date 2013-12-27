@@ -591,15 +591,17 @@ def plot_results(infile, outfiles):
                    'ld' : 'r'}
         f = pylab.figure(figsize=(4, 3))
         ax = f.add_subplot(1, 1, 1)
-
+        labels = {'bb' : "iSBM", 
+                  'ld' : "iSRM"}
         for g_idx, g in a.groupby(['model']):
-            print g_idx
             ax.scatter(g.index.get_level_values('class_n'), g['empirical_class_n'], c=colors[g_idx],
-                          edgecolor='none')
-        ax.plot([1, 16], [1, 16], c='k')
-        ax.set_xlabel("true class number")
-        ax.set_ylabel("estimated class number")
+                          edgecolor='none', label= labels[g_idx])
+        ax.plot([1, 16], [1, 16], c='k', label="ground truth")
+        ax.set_xlabel("true type number")
+        ax.set_ylabel("estimated type number")
         ax.set_xticks([1, 2, 4, 8, 16])
+        ax.legend(loc="upper left", fontsize=10)
+                  
         f.tight_layout()
         f.savefig(plot_files[0])
 
@@ -621,11 +623,12 @@ def plot_results(infile, outfiles):
             ax.bar(np.arange(N)*CLASS_SPACE + offsets[g_idx], h['ari'], width=WIDTH, 
                     color=colors[g_idx])
             ax.errorbar(np.arange(N)*CLASS_SPACE + offsets[g_idx] + WIDTH/2, 
-                        h['ari'], yerr= herr['ari'], capsize=0,elinewidth=4,ecolor='k', linewidth=0)
+                        h['ari'], yerr= herr['ari'], capsize=0,elinewidth=3, linewidth=0, ecolor='grey')
         #ax.plot([1, 16], [1, 1], c='k')
-        ax.set_xlabel("true class number")
-        ax.set_ylabel("adjusted rand index")
+        ax.set_xlabel("true type number")
+        ax.set_ylabel("adjusted Rand index")
         ax.set_ylim(0, 1.0)
+        ax.set_yticks([0.0, 1.0])
         ax.set_xticks(np.arange(N)*CLASS_SPACE + 1)
         ax.set_xticklabels([1, 2, 4, 8, 16])
         f.tight_layout()
@@ -692,8 +695,8 @@ def plot_results(infile, outfiles):
             if i == 0:
                 handles, labels = ax.get_legend_handles_labels()
                 ax.legend(handles, [    'Ground Truth', 
-                                        'Relational Model', 
-                                        'Spatial Relational Model', 
+                                        'iSBM', 
+                                        'iSRM', 
                                     ], 
                           loc='upper left', 
                           fontsize=12)

@@ -124,12 +124,12 @@ microcircuitry from connectivity data.
   \centering 
     \centerline{\includegraphics[width=183mm]{overview.ai}}
   \caption{An overview of our method. a. Input data is
-an adjacency matrix indicating whether cell $i$ (row)
+a connectivity matrix indicating whether cell $i$ (row)
 synapses on cell $j$ (column). The location of each cell in space is known. 
 b. Our algorithm discovers hidden cell types in this connectivity data
 by assuming all cells of a type share a distance-dependent connectivity 
 profile, c.), with cells of other types. This results in a clustering 
-of the cells by those hidden types. b.) shows the cell adjacency
+of the cells by those hidden types. b.) shows the cell connectivity
 matrix with cells of the same type grouped together. d.) shows
 the learned probability of connection between our different types
 at various distances, illustrating short-range and long-range
@@ -141,7 +141,8 @@ connectivity patterns.}
 We use a Bayesian structure discovery approach that is based on
 prior knowledge about the way positions and cell types affect the
 probability of connections between cells, a so-called generative
-model. We term our model the ``infinite spatial-relational model''. 
+model. We term our model the ``infinite spatial-relational model'' (iSRM), 
+in keeping with the existing nonparametric literature.  
 The probability of connections between pairs of neurons
 decreases with distance, but how high the baseline probability of
 connection is and how quickly it decays with distance depends on the
@@ -198,7 +199,7 @@ extent of the underlying types.}
   \centering 
   \centerline{\includegraphics{mouseretina.ai}}
   \caption{Discovering cell classes in the mouse retina connectome. 
-a.) Input adjacency data for 950 cells for which soma positions were known. b. clustered adjacency matrix. c.) connectivity diagram showing our clusters, as
+a.) Input connectivity data for 950 cells for which soma positions were known. b. clustered connectivity matrix. c.) connectivity diagram showing our clusters, as
 well as the cell depth and known cell type of each cell. Our model agrees
 with the cell types traditionally identified by anatomists, and identifies 
 laminar-specific connectivity patterns. d.) Connectivity between our
@@ -272,7 +273,7 @@ over-segmentation and thus allows more meaningful estimates.
 
 \begin{figure}[ht!]
   \centering 
-  \centerline{\includegraphics{celegans.ai}}
+  \centerline{\includegraphics[width=5in]{celegans.ai}}
   \caption{Discovering cell types in the \textit{c. elegans}
     connectome. a.) Initial cell connectivity matrix, red are
     (directional) chemical synapses, blue are electrical
@@ -393,15 +394,14 @@ model is an active area of research, and recent results in both
 variational methods \autocite{Hoffman2013} and spectral learning
   \autocite{Anandkumar2012} promise substantial speed increases.
 
-
-  Larger datasets will generally allow algorithms to distinguish more
-  distinct types (cite supplemental data) and more data should
-  algorithms to get closer to the results from anatomy. Moreover, in
-  general, for such problems precision increases with the size of the
-  dataset and the cells that we have are not sufficient to
-  statistically distinguish all the cell types known in anatomy
-  ($\sim 70$). Still, using only connectivity and distance it is possible
-  to meaningfully divide neurons into types.
+  Larger datasets will allow algorithms to distinguish more distinct
+  types \todo{Add supplemental data} and we expect closer agreement
+  with existing anotomical knowledge as more data become available.
+  Moreover, in general, for such problems precision increases with the
+  size of the dataset and the cells that we have are not sufficient to
+  statistically distinguish all the cell types known in anatomy (such
+  as the $\sim 70$ in the retina). Still, using only connectivity and
+  distance it is possible to meaningfully divide neurons into types.
 
 Our small collection of hand-selected distance-dependent likelihood
 functions are clearly non-exhaustive, and assume monotonicity
@@ -411,7 +411,7 @@ for various neural systems. Future models could incorporate
 a wider variety of likelihood functions, or even learn the global
 functional form from the data. 
 
-There have existed a range of previous approaches to the discovery of
+There exist a range of previous approaches to the discovery of
 neural microcircuitry \todo{Do we want a citation here?}. These
 generally involve a great deal of manual labor and ad-hoc
 determination of what constitutes a “type” of cell -- to this day
@@ -435,8 +435,8 @@ types appear that are due to properties of the stimuli and experience
 as opposed to just the molecular properties of cells, such as color
 and orientation selective types in primary visual cortex
 \autocite{Sincich2005,Lennie2005}. This would allow comparative
-quantitative anatomy across animals, and the search for the causes of
-the ultimate connectivity.
+quantitative anatomy across animals, and aid the search for the
+ultimate causes of connectivity.
 
 Ultimately, we will need to combine information across different
 sources into a joint understanding of neural function. Distinct cell
@@ -458,15 +458,15 @@ between cell $e_i$ and $e_j$, as well as a distance function $d(e_i,
 e_j)$ representing a (physical) distance between adjacent cells. See
 the supplemental material for extension to multiple connectivity
 matrices. We assume there exist an unknown number $K$ of latent
-(unobserved) cell types, $k \in \{1, 2, 3, \dots\, K}$, and that each
+(unobserved) cell types, $k \in \{1, 2, 3, \dots, K\}$, and that each
 cell $e_i$ belongs to a single cell type. We indicate a cell $e_i$ is
 of type $k$ using the assignment vector $\vec(c)$, so $c_i = k$. The
 observed connectivity between two cells $R(e_i, e_j)$ then depends
 only on their latent type and their distance through a link function
 $f(\cdot, d(e_i, e_j))$. We assume $f$ is parameterized based on the
-latent class, $c_i=m$ and $c_j=n$, via a parameter$\eta_{mn}$, as well
+latent type, $c_i=m$ and $c_j=n$, via a parameter$\eta_{mn}$, as well
 as a set of global hyper parameters $\theta$, such that the link
-function is $f(d(e_i, e_j) | \eta_{mn}, \theta)$.
+function is $f(d(e_i, e_j) | \eta_{mn}, \theta)$. 
 
 We then jointly infer the maximum a posteriori (MAP) estimate of the
 class assignment vector $\vec(c) = \{c_i\}$, the parameter matrix $\eta_{mn}$, and
@@ -495,14 +495,22 @@ and others in the supplemental material.
 
 % fixme class component, NOT class
 The ``logistic-distance Bernoulli'' spatial model assumes that, if cell
-$e_i$ is of class $m$ and cell $e_j$ is of class $n$, then $\eta_{mn}
+$e_i$ is of type $m$ and cell $e_j$ is of type $n$, then $\eta_{mn}
 = (\mu_{mn}, \lambda_{mn})$, and the probability that two cells $e_i$
 and $e_j$ are connected is given by
 \begin{eqnarray}
 p^* &=& \frac{1.0}{1 + \exp \frac{d(e_i, e_j) - \mu_{mn}}{\lambda_{mn}}}\\
 p &= & p^* \cdot (p_{max} - p_{min}) + p_{min}
 \end{eqnarray}
-where $p_{max}$ and $p_{min}$ are per-graph hyperparameters. Per-component parameters $\mu_{mn} \sim \exp(\mu | \mu^{hp})$ and $\lambda_{mn} \sim \exp(\lambda | \lambda^{hp})$. 
+where $p_{max}$ and $p_{min}$ are global per-graph parameters. 
+
+We place an exponential priors on the latent parameters:
+\begin{eqnarray}
+ \mu_{mn} \sim \exp(\mu | \mu^{hp}) \\
+\lambda_{mn} \sim \exp(\lambda | \lambda^{hp})
+\end{eqnarray}
+
+using  $\lambda^{hp}$ and $\mu^{hp}$ as global per-graph hyperparameters. 
 
 We use a Dirichlet-process prior on class assignments, which allows
 the number of classs to be determined automatically. In brief, for $N$
@@ -556,7 +564,7 @@ experiments attempted to use the full ensemble of chains as an
 estimate of the posterior but were abandoned due to the difficulty of
 summarizing the posterior over such a complex state space, which is an
 ongoing area of research in the probabilistic modeling community
-\autocite{missing}.
+\todo{cite more? missing}.
 
 
 \todo{Validation: do we want to write extensively about posterior
@@ -581,15 +589,15 @@ supplemental section \ref{supp:hyperpriors}.
 
 \subsection{C. elegans}
 
-We obtained the connectome of c. elegans from \autocite{}, and isolated
-the 279 nonpharyngeal neurons, with a total of 6393 chemical synapses
-and 890 gap junctions originally cleaned up in \autocite{Chen2006}. A
-cell's position was its distance along the anterior-posterior axis
-normalized between zero and one. We used both networks, the chemical
-network as a directed graph and the electrical network as undirected
-graph. We use the synapse counts with the logistic-distance poisson
-likelihood, scaling the counts by 4.0 to compensate for 
-the Poisson's overdispersion. 
+We obtained the connectome of c. elegans from data published
+previously \autocite{Varshney2011}, and isolated the 279 nonpharyngeal
+neurons, with a total of 6393 chemical synapses and 890 gap junctions
+originally cleaned up in \autocite{Chen2006}. A cell's position was
+its distance along the anterior-posterior axis normalized between zero
+and one. We used both networks, the chemical network as a directed
+graph and the electrical network as undirected graph. We use the
+synapse counts with the logistic-distance poisson likelihood, scaling
+the counts by 4.0 to compensate for the Poisson's overdispersion.
 
 \subsection{Microprocessor}
 We extracted the connection graph for the transistors in the MOS6502
@@ -597,7 +605,7 @@ We extracted the connection graph for the transistors in the MOS6502
 source, drain), but the methods of the original dataset were unable to
 consistently resolve which of the C1 and C2 terminals were source and
 drain, leading to ambiguity in our encoding. We identified a region
-consisting of consisting of three registers X, Y, and S via visual
+consisting of three registers X, Y, and S via visual
 inspection and focused our efforts there. We created a total of six
 connectivity matrices by examining possible terminal pairings. One
 graph, for example, $R^{gc_1}(e_i, e_j)=1$ if transistor $e_j$ and
@@ -618,13 +626,13 @@ $e_j$ are connected via pins $g$ and $c_1$.
 \label{supp:otherlikelihoods}
 
 We reparameterized the Logistic-Distance Bernoulli likelihood to
-better capture the microprocessor data structure. We explicitly
+better capture the microprocessor data structure. We are explicitly
 setting the maximum probability $p$ of the logistic function on a
-per-component basis, drawing from a global $p \sim \Beta(\alpha_{hp},
+per-component basis, drawing from a global $p \sim \operatorname{Beta}(\alpha_{hp},
 \beta_{hp})$. Then $\lambda$ is set for each component as a global
 hyperparameter, $\lambda$.
 
-The ``logstic-distance Poisson'' spatial model is used to explicitly mode the count of synapses, $c$, between two neurons. The probability of c synapses between two neurons is distributed $c \sim \textrm{Poisson}(c | r)$, where $r$ (the ``rate'') is generated by a scaled logistic function (the logistic function has range $[0, 1]$. For each component \eta_{mn} we learn both the threshold $\mu_{mn}$ and the rate scaling factor $r_{mn}$ Thus if for cells $m$ and $n$ are likely to have on average $20$ synases if they are closer than $5 \mu m$, then $\mu_{mn} = 5$ and $r_{mn} = 20$  " 
+The ``logstic-distance Poisson'' spatial model is used to explicitly mode the count of synapses, $c$, between two neurons. The probability of c synapses between two neurons is distributed $c \sim \textrm{Poisson}(c | r)$, where $r$ (the ``rate'') is generated by a scaled logistic function (the logistic function has range $[0, 1]$. For each component $\eta_{mn}$ we learn both the threshold $\mu_{mn}$ and the rate scaling factor $r_{mn}$ Thus if for cells $m$ and $n$ are likely to have on average $20$ synases if they are closer than $5 \mu m$, then $\mu_{mn} = 5$ and $r_{mn} = 20$  " 
 
 Thus the probability of $R(e_i, e_j) = c$ synapses between two cells $e_i$ and $e_j$ is given by:
 \begin{eqnarray}
@@ -686,39 +694,42 @@ cell ID written to the left or right.
 \begin{figure}[h!]
   \centering 
     \centerline{\includegraphics[width=5in]{mouseretina/spatial_var.pdf}}
-  \caption{}
+  \caption{The distribution of the spatial extent of cell types found by each of
+the above methods, and ground truth clusters}
 \label{fig:supp:irmspatialcomparemouse}
 \end{figure}
 
 \begin{figure}[h!]
   \centering 
     \centerline{\includegraphics[width=5in]{mouseretina/ari_vs_cluster.pdf}}
-  \caption{}
+  \caption{ARI vs cluster number for the iSRM, iSBM, and the SBM with varying K.}
 \label{fig:supp:mousecompareari}
 \end{figure}
 
 \begin{figure}[h!]
   \centering 
-    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
-  \caption{}
+    \centerline{\includegraphics[width=6.0in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
+  \caption{The cell IDs and found types (grouped) vs known types (y-axis)  found by the infinite stochastic block model, dramatically overclustering relative to ground truth}
 \label{fig:supp:retinabbclusters}
 \end{figure}
 
 \begin{figure}[h!]
 
   \centering 
-    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_12-anneal_slow_fixed_400.truth_latent.pdf}}
-  \caption{}
-\label{fig:supp:retinabbfixedclusters}
+    \centerline{\includegraphics[width=6.0in]{mouseretina/retina.1.2.ld.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
+  \caption{The cell IDs and found types (grouped) vs known types (y-axis) by the infinite spatial-relational model.}
+\label{fig:supp:retinaldclusters}
 \end{figure}
+
 
 \begin{figure}[h!]
 
   \centering 
-    \centerline{\includegraphics[width=6.5in]{mouseretina/retina.1.2.ld.0.0.data-fixed_20_100-anneal_slow_400.truth_latent.pdf}}
-  \caption{}
-\label{fig:supp:retinaldclusters}
+    \centerline{\includegraphics[width=6.0in]{mouseretina/retina.1.2.bb.0.0.data-fixed_20_12-anneal_slow_fixed_400.truth_latent.pdf}}
+  \caption{The cell IDs and found types (grouped) vs known types (y-axis) via the stochastic block model with $k=12$}
+\label{fig:supp:retinabbfixedclusters}
 \end{figure}
+
 
 \newpage
 

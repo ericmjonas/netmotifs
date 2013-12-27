@@ -1109,14 +1109,13 @@ def plot_truth_latent(exp_results,
     COL_PRE = 0.02
     ROW_CONTRACT = 0.05
     ROW_PRE = 0.02
-    ROW_SPACE = 0.01
-
-    VERT_SCALE = 1.0
+    ROW_SPACE = 0.005
+    ROW_HEIGHT_MIN = 0.015
     s = df['cluster'].value_counts()
 
     a = irm.util.multi_napsack(COL_NUMBER, np.array(s))
     CLUST_MAX_PER_COL = len(a[0])
-    VERT_SCALE = 1.0 -  (CLUST_MAX_PER_COL+4) *ROW_SPACE
+    VERT_SCALE = 0.95 -  (CLUST_MAX_PER_COL+4) *ROW_SPACE
 
     MAX_LEN = np.sum([np.array(s)[ai] for ai in a[0]])
 
@@ -1127,7 +1126,7 @@ def plot_truth_latent(exp_results,
             sub_df = df[df['cluster'] == cluster_id]
             sub_df = sub_df.sort('cell_type')
             height = len(sub_df) / float(MAX_LEN) * VERT_SCALE
-
+            height = np.max([height, ROW_HEIGHT_MIN])
             ax = f.add_axes([COL_PRE + col_i * COL_SPACE, 
                              1.0 - pos - height - ROW_PRE, 
                              COL_WIDTH, height])
@@ -1156,7 +1155,11 @@ def plot_truth_latent(exp_results,
             ax.set_yticks([])
             ax.grid(1)
             ax.set_xlim(0, TYPE_N)
-            ax.set_ylim(-0.5, CN+0.5)
+            if CN > 3:
+                ax.set_ylim(-1, CN+0.5)
+            else:
+                ax.set_ylim(-1, 3)
+
             ax.set_xticks([10, 20, 30, 40, 50, 60, 70])
 
 
