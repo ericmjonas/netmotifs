@@ -3,7 +3,6 @@
 \usepackage[english,american]{babel}
 \usepackage[backend=biber,style=nature]{biblatex}
 \usepackage[disable]{todonotes}
-\usepackage{subfiles}
 \usepackage{grffile}
 \usepackage{booktabs}
 \usepackage{hyperref}
@@ -20,6 +19,7 @@
 
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
+%\renewcommand{\includegraphics}[2][]{\fbox{}}
 
 \addbibresource{connectomics motif.bib}
 \addbibresource{connectomics motif-relational models.bib}
@@ -27,17 +27,20 @@
 \DeclareGraphicsRule{.ai}{pdf}{.ai}{}
 
 
-\title{Discovering cell types and circuits in connectomics data}
-\author{Eric Jonas, Konrad Kording}
+\title{Automatic discovery of circuit structure from neural connectomics}
+\author{Eric Jonas$^1$, Konrad Kording$^{2, 3,4}$}
 
 \begin{document}
 \maketitle
 
-
-% \begin{affiliations}
-%   \item Something Something
-%   \item Something Something
-% \end{affiliations}
+\begin{small}
+\begin{enumerate}
+  \item Department of Brain and Cognitive Sciences, Massachusetts Institute of Technology, Cambridge, Massachusetts
+  \item Department of Physical Medicine and Rehabilitation, Northwestern University and Rehabilitation Institute of Chicago, Chicago, Illinois
+  \item Department of Physiology, Northwestern University, Chicago, Illinois
+  \item Department of Applied Mathematics, Northwestern University, Chicago, Illinois
+\end{enumerate}
+\end{small}
 
 \begin{abstract}
   New techniques produce massive data about neural connectivity,
@@ -122,7 +125,7 @@ microcircuitry from connectivity data.
 
 \begin{figure}
   \centering 
-    \centerline{\includegraphics[width=183mm]{overview.ai}}
+  \centerline{\includegraphics[width=183mm]{overview.ai}}
   \caption{An overview of our method. a. Input data is
 a connectivity matrix indicating whether cell $i$ (row)
 synapses on cell $j$ (column). The location of each cell in space is known. 
@@ -271,7 +274,18 @@ over-segmentation and thus allows more meaningful estimates.
 
 \subsection{C. elegans}
 
-\begin{figure}[ht!]
+The roundworm Caenorhabditis elegans is a model system in
+developmental neuroscience\autocite{White1986}, with the location and
+connectivity of each of 302 neurons deterministically known. This
+incredible cross-organism consistency led to early mapping of the
+c. elegans chemical and electrical (gap junction) connectome. Unlike
+the retina, only the motor neurons in c. elegans exhibit regular
+distribution in space, being distributed along the body axis. Most
+interneurons are concentrated in various ganglia that project
+throughout the entire animal, and the sensory neurons are primarily
+located in a small number of anterior ganglia. 
+
+\begin{figure}
   \centering 
   \centerline{\includegraphics[width=5in]{celegans.ai}}
   \caption{Discovering cell types in the \textit{c. elegans}
@@ -285,17 +299,6 @@ over-segmentation and thus allows more meaningful estimates.
     (small text labels). }
   \label{fig:celegans}
 \end{figure}
-
-The roundworm Caenorhabditis elegans is a model system in
-developmental neuroscience\autocite{White1986}, with the location and
-connectivity of each of 302 neurons deterministically known. This
-incredible cross-organism consistency led to early mapping of the
-c. elegans chemical and electrical (gap junction) connectome. Unlike
-the retina, only the motor neurons in c. elegans exhibit regular
-distribution in space, being distributed along the body axis. Most
-interneurons are concentrated in various ganglia that project
-throughout the entire animal, and the sensory neurons are primarily
-located in a small number of anterior ganglia. 
 
 Using both the chemical and electrical connectivity (see methods), we
 determined the underlying clusters explained by connectivity and
@@ -446,12 +449,58 @@ information can then be combined to synthesize all the available
 information from one experiment or even across experiments into a
 joint model of brain function.
 
+\subsection{Methods Summary}
+
+We take as input a connectivity matrix $R$ defining the connections
+between cell $e_i$ and $e_j$, as well as a distance function $d(e_i,
+e_j)$ representing a (physical) distance between adjacent cells. See
+the supplemental material for extension to multiple connectivity
+matrices. We assume there exist an unknown number $K$ of latent
+(unobserved) cell types, $k \in \{1, 2, 3, \dots, K\}$, and that each
+cell $e_i$ belongs to a single cell type. We indicate a cell $e_i$ is
+of type $k$ using the assignment vector $\vec(c)$, so $c_i = k$. The
+observed connectivity between two cells $R(e_i, e_j)$ then depends
+only on their latent type and their distance through a link function
+$f(\cdot, d(e_i, e_j))$. We assume $f$ is parameterized based on the
+latent type, $c_i=m$ and $c_j=n$, via a parameter$\eta_{mn}$, as well
+as a set of global hyper parameters $\theta$, such that the link
+function is $f(d(e_i, e_j) | \eta_{mn}, \theta)$. 
+
+We then jointly infer the maximum a posteriori (MAP) estimate of the
+class assignment vector $\vec(c) = \{c_i\}$, the parameter matrix $\eta_{mn}$, and
+the global model hyperparameters $\theta$ :
+
+\begin{equation}
+  p(\vec{c}, \eta, \theta | R ) \propto \prod_{i, j} p(R(e_i, e_j) | f(d(e_i, e_j) | \eta_{c_ic_j}), \theta) \prod_{m, n} p(\eta_{mn} | \theta)  p(\theta) p(\vec{c} | \alpha) p(\alpha) p(\theta)
+\end{equation}
+
+Inference is performed in three steps via composible transition 
+kernels -- one for structural, one for per-type parameters, and
+one kernel for global parameters and hyperparameters. Details
+of data preprocessing, inference parameters, and runtime can
+be found in the Methods section. 
+
 \printbibliography
 
+\begin{itemize}
+
+ \item \textbf{Acknowledgments} We thank Josh Vogelstein for discussions and reading of the manuscript, Finale Doshi-Velez for early discussions on the model, and Erica Peterson, and Jonathan Glidden for extensive manuscript review. 
+\item \textbf{Author Contributions} KK and EJ developed model. EJ derived inference, implemented code, tested, and ran experiments. KK and EJ wrote manuscript text and solicited feedback. 
+ \item \textbf{Competing Interests} The authors declare that they have no
+competing financial interests.
+ \item \textbf{Correspondence} Correspondence and requests for materials
+should be addressed to E.J.~(email: jonas@mit.edu).
+\end{itemize}
 
 \newpage
 \section{Methods }
-\subsection{Methods Summary}
+
+\subsection{Probabilistic Model}
+
+Our model is a extension of the iSBM
+\autocite{Kemp2006a,Xu2006} to incorporate spatial relations between entities,
+inspired by attempts to extend these models with arbitrary
+discriminative functions\autocite{Murphy2012}.
 
 We take as input a connectivity matrix $R$ defining the connections
 between cell $e_i$ and $e_j$, as well as a distance function $d(e_i,
@@ -481,13 +530,6 @@ the global model hyperparameters $\theta$ :
 % methods summary does not appear in the online text
 % methods section can have no figures or tables [grrr]
 
-
-\subsection{Probabilistic Model}
-
-Our model is a extension of the iSBM
-\autocite{Kemp2006a,Xu2006} to incorporate spatial relations between entities,
-inspired by attempts to extend these models with arbitrary
-discriminative functions\autocite{Murphy2012}.
 
 
 We describe the spatial ``Logistic-distance Bernoulli''  function here,
@@ -663,7 +705,7 @@ The model can handle multiple graphs $R^q$ simultaneously with a shared clusteri
 
 \subsection{Microprocessor Netlist annotation}
 \label{supp:mos6502netlist}
-This is a matrix consisting of the different clusters of nets for 
+This is a matrix consisting of the different clusters of electrical nets for 
 the registers, with the colors consistent with figure~\ref{fig:mos6502}. 
 
 \includepdf[pages=-]{mos6502.clusters.pdf}
