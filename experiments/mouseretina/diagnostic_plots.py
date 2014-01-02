@@ -246,7 +246,7 @@ def plot_adjmat_byclass((type_file, pos_file, xlsxdata_file), (adj_mat_plot,)):
 
 
 @files(["type_metadata.pickle", "soma.positions.pickle", "xlsxdata.pickle"], 
-       ['adjmat.byz.png'])
+       ['adjmat.byz.jpg'])
 def plot_adjmat_byz((type_file, pos_file, xlsxdata_file), (adj_mat_plot,)):
     soma_pos = pickle.load(open(pos_file, 'r'))
     type_metadata = pickle.load(open(type_file, 'r'))['type_metadata']
@@ -279,7 +279,7 @@ def plot_adjmat_byz((type_file, pos_file, xlsxdata_file), (adj_mat_plot,)):
     ax.set_ylim(CELL_N, 0)
     ax.set_title("mouse retina connectivity matrix")
     f.tight_layout()
-    f.savefig(adj_mat_plot, dpi=200)
+    f.savefig(adj_mat_plot, dpi=70)
 
 
 
