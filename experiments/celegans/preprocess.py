@@ -142,10 +142,10 @@ def preprocess(infile, outfile):
                 for synapse_type, nbr in connections[c]:
                     code = synapse_type[0]
                     if code == 'S':
-                        conn_matrix[n1_i, n2_i]['chemical'] = nbr
+                        conn_matrix[n1_i, n2_i]['chemical'] += nbr
                         
-                    elif code == 'S':
-                        conn_matrix[n2_i, n1_i]['chemical'] = nbr
+                    elif code == 'Sp':
+                        conn_matrix[n1_i, n2_i]['chemical'] += nbr
                         
                     elif code == 'E':
                         conn_matrix[n1_i, n2_i]['electrical'] = nbr
