@@ -143,10 +143,6 @@ def preprocess(infile, outfile):
                     code = synapse_type[0]
                     if code == 'S':
                         conn_matrix[n1_i, n2_i]['chemical'] += nbr
-                        
-                    elif code == 'Sp':
-                        conn_matrix[n1_i, n2_i]['chemical'] += nbr
-                        
                     elif code == 'E':
                         conn_matrix[n1_i, n2_i]['electrical'] = nbr
                     elif code == "N":
