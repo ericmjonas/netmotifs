@@ -676,8 +676,8 @@ def plot_results(infile, outfiles):
             bins = np.linspace(0, 3.5, 20)
 
             bin_width = (bins[1] - bins[0])
-            for model, color in [('bb', 'r'), 
-                                 ('ld', 'b'),]:
+            for model, color in [('bb', 'b'), 
+                                 ('ld', 'r'),]:
                 df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==False)]
                 hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
                 ax.bar(bins[:-1], hist*bin_width, width=bin_width, color=color, 
