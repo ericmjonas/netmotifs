@@ -43,6 +43,16 @@ EXPERIMENTS = [
     ('celegans.2r.ldp.01', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ldp.02', 'fixed_100_200', 'anneal_slow_400'),  
     ('celegans.2r.ldp.03', 'fixed_100_200', 'anneal_slow_400'),  
+    ('celegans.2r.edp.00', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.edp.01', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.edp.02', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.edp.03', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.edp.04', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.ldp.00', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.ldp.01', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.ldp.02', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.ldp.03', 'fixed_100_200', 'anneal_slow_800'),  
+    ('celegans.2r.ldp.04', 'fixed_100_200', 'anneal_slow_800'),  
     #('celegans.2r.ldp.00', 'fixed_10_100', 'anneal_slow_20'),  
     #('celegans.2r.edp.00', 'fixed_10_100', 'anneal_slow_20'),  
 
@@ -69,12 +79,14 @@ LD_HPS = [(0.1, 0.1, 0.9, 0.01)] # , (0.1, 0.1, 0.5, 0.001),
 LDFL_HPS = [(0.2, 0.4, 0.01, 1.0, 1.0)] # , (0.1, 0.1, 0.5, 0.001),
 NDFW_HPS = [(0.1, 0.001, 0.1, 1.0, 1.0)]
 SDB_HPS = [(1.0, 1.0, 0.1, 0.001, 0.5, 4.0)]
-EDP_HPS = [(0.1, 1.0, 1.0), (0.1, 1.0, 2.0), (0.1, 1.0, 4.0), (0.1, 1.0, 8.0)]
+EDP_HPS = [(0.1, 1.0, 1.0), (0.1, 1.0, 2.0), (0.1, 1.0, 4.0), (0.1, 1.0, 8.0) , 
+           (0.1, 1.0, 6.0)]
 
 LDP_HPS = [(1.0, 1.0, 0.01, 2.0, 1.0), 
            (1.0, 1.0, 0.01, 2.0, 2.0), 
            (1.0, 1.0, 0.01, 2.0, 4.0), 
            (1.0, 1.0, 0.01, 2.0, 8.0), 
+           (1.0, 1.0, 0.01, 2.0, 6.0), 
        ]
 default_nonconj = irm.runner.default_kernel_nonconj_config()
 default_conj = irm.runner.default_kernel_config()
@@ -162,10 +174,15 @@ slow_anneal[0][1]['subkernels'][-1][1]['grids']['ExponentialDistancePoisson'] = 
 
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['LogisticDistancePoisson'] = irm.gridgibbshps.default_grid_logistic_distance_poisson(dist_scale = 2.0, rate_scale_scale = 20.0, GRIDN = 20)
 
+super_slow_anneal=copy.deepcopy(slow_anneal)
+super_slow_anneal[0][1]['anneal_sched']['start_temp'] = 64.0
+super_slow_anneal[0][1]['anneal_sched']['iterations'] = 600
 
 KERNEL_CONFIGS = {
                   'anneal_slow_400' : {'ITERS' : 400, 
                                        'kernels' : slow_anneal},
+                  'anneal_slow_800' : {'ITERS' : 800, 
+                                       'kernels' : super_slow_anneal},
                   'anneal_slow_20' : {'ITERS' : 20, 
                                        'kernels' : slow_anneal},
 
@@ -1157,9 +1174,9 @@ def plot_best_circos(exp_results,
                                                    sample_latent['relations'][relation]['ss'], 
                                                    sample_latent['relations'][relation]['hps'], 
                                                    model_name)
-                rate_scale = {'R1' : 0.2, 
-                              'R2' : 0.2}
-                thold = 1.0
+                rate_scale = {'R1' : 1.0, 
+                              'R2' : 2.0}
+                thold = 0.5
                 ribbons = []
                 links = []
                 for (src, dest), rate in v.iteritems():

@@ -44,17 +44,17 @@
 
 \begin{abstract}
   New techniques produce massive data about neural connectivity,
-  necessitating new analysis methods to discover underlying
-  structure. It has long been assumed that discovering the local
-  patterns of microcircuitry is the key to understanding neural
-  function. Here we developed a nonparametric Bayesian technique that
-  identifies neuron types and circuitry patterns in connectomics
-  data. We show that the approach recovers known neuron types in the
-  retina, reveals interesting structure in the nervous system of
-  c. elegans, and automatically discovers the structure of
-  microprocessors. Our approach extracts structural meaning from
-  connectomics, enabling new approaches of deriving anatomical
-  insights from these emerging datasets.
+  necessitating new analysis methods to discover the biological and
+  computational basis of this connectivity. It has long been assumed
+  that discovering the local patterns of microcircuitry is the key to
+  understanding neural function. Here we developed a nonparametric
+  Bayesian technique that identifies neuron types and microcircuitry
+  patterns in connectomics data. We show that the approach recovers
+  known neuron types in the retina, reveals interesting structure in
+  the nervous system of c. elegans, and automatically discovers the
+  structure of microprocessors. Our approach extracts structural
+  meaning from connectomics, enabling new approaches of deriving
+  anatomical insights from these emerging datasets.
 
 
 \end{abstract}
@@ -76,12 +76,13 @@ hypothesized to have a specific role in the overall
 computation. Neuron types differ in many ways, e.g. chemical or
 morphological, but they also differ in the way they connect to one
 another. In fact, the idea of well defined local connectivity patterns
-has been prominent in many areas, ranging from sensory (e.g. retina,
-\autocite{Masland2001} via processing (e.g. neocortex \autocite{Mountcastle1997})
-to movement (e.g. spinal cord) \autocite{Grillner2005}. Indeed, such
-repeated patterns also exists in human-made computing circuits. It
-remains an important challenge to develop algorithms to use anatomical
-data, e.g. connectomics, to back out underlying connectivity motifs.
+(microcircuits) has been prominent in many areas, ranging from sensory
+(e.g. retina, \autocite{Masland2001} via processing (e.g. neocortex
+\autocite{Mountcastle1997}) to movement (e.g. spinal cord)
+\autocite{Grillner2005}. Indeed, such repeated patterns also exists in
+human-made computing circuits. It remains an important challenge to
+develop algorithms to use anatomical data, e.g. connectomics, to back
+out underlying microcircuitry.
 
 The discovery of structure is a crucial aspect of network
 science. Early approaches focused on global graph properties, such as
@@ -141,17 +142,21 @@ connectivity patterns.}
 \end{figure}
 
 \section{Results}
-We use a Bayesian structure discovery approach that is based on
-prior knowledge about the way positions and cell types affect the
+We use a Bayesian structure discovery approach that is based on prior
+knowledge about the way positions and cell types affect the
 probability of connections between cells, a so-called generative
-model. We term our model the ``infinite spatial-relational model'' (iSRM), 
-in keeping with the existing nonparametric literature.  
-The probability of connections between pairs of neurons
-decreases with distance, but how high the baseline probability of
-connection is and how quickly it decays with distance depends on the
-two cell-types. Note that this simplistic prior information is all that 
-we tell our model; no additional physiological information is included. 
-
+model. Basing our model on previous infinite stochastic block models
+(iSBM)\autocite{Kemp2006a,Xu2006}, we assume that each neuron is a
+member of a single ``type'', and that the probability of two neurons
+being connected is a function of their types. Crucially, we
+incorporate the prior knowledge that spatial proximity matters, adding
+distance-dependence to the iSBM.  For example, retinal ganglion cells
+may synapse on nearby, but not far away, amacrine cells.  Note that
+this simplistic prior information is all that we tell our model; no
+additional physiological information is included.  We term our model
+the ``infinite spatial-relational model'' (iSRM), in keeping with the
+existing nonparametric literature, as it discovers a potentially
+unbounded number of unobserved, or ``latent'', cell types.
 
 We combine annealing with Markov Chain Monte Carlo to
 perform simultaneously joint posterior inference over the structure,
@@ -169,23 +174,24 @@ need to assess if the model works properly. We thus started out by
 simulating data for which we know the correct structure and comparing
 the estimated structure based on the algorithm (see methods) with the
 one we used for simulation. We find that the model does a good job of
-recovering the structure we used to generate the data
-(fig~\ref{fig:synthetic}a) Indeed, it does far better than a simpler
-and well established model (the infinite stochastic block model, or
-iSBM) that assumes that there is no distance dependence to the
-connectivity. The model converges relatively quickly to an estimate of
-the most probable values for the cell types, which is enabled by using
-a combination of simulated annealing and parallelized Markov chain
-Monte Carlo (see methods for details). It appears that the model
-behaves the way it should and allows application to relatively large
-datasets.
+recovering the correct number of cell types,
+(fig~\ref{fig:synthetic}a), the the cell identities
+(fig~\ref{fig:synthetic}b), and the spatial extent of each type
+(fig~\ref{fig:synthetic}c).  Indeed, it does far better than the
+existing infinite stochastic block model that assumes that there is no
+distance dependence to the connectivity. The model converges
+relatively quickly to an estimate of the most probable values for the
+cell types, which is enabled by using a combination of simulated
+annealing and parallelized Markov chain Monte Carlo (see methods for
+details). It appears that the model behaves the way it should and
+allows application to relatively large datasets.
 
 \begin{figure}
   \centering 
   \centerline{\includegraphics{synthetic.ai}}
   \caption{Correct recovery of true numbers of hidden classes
-in synthetic data. a.) Other models over-cluster the number
-of classes as they fail to take distance into account, whereas
+in synthetic data. a.) The iSBM over-segments the number
+of classes as it fails to take distance into account, whereas
 our model finds close to the true number of classes. b.) ARI, a measure
 of ``correct clustering'', for
 different true class counts, between our model and a traditional
@@ -259,10 +265,10 @@ the addition of spatial information was necessary. We find that, as
 expected from our synthetic experiments, the iSBM massively
 over-segmented the data, finding spatially-localized “communities” of
 cells which bore little relation to known types.  The average spatial
-extent of the types found by the iSBM was $14.6\pm8.1 \mu m$. However,
-in the ground truth by anatomists the average distance was $34.3\pm7.6
-\mu m$ and $35.3\pm 2.4 \mu m$, quite close to the $34.5\pm 1.0 \mu m$
-discovered by our algorithm. Modeling the distance-dependence prevents
+extent of the types found by the iSBM was $14.6\pm8.1 \mu m$. Using
+the anatomists' ground truth, the mean spatial extent of types was
+$34.3\pm7.6 \mu m$, quite close to the $34.5\pm 1.0 \mu m$ discovered
+by our algorithm. Modeling the distance-dependence prevents
 over-segmentation and thus allows more meaningful estimates.
 
 % from experiments/mouseretina/spatial_var.txt
@@ -311,13 +317,22 @@ agreement with the classifications originally outlined by Brenner in
 We identify cell types that reflect the known motor/non-motor neuron
 classes, even though this system lacks the strong repeat
 microcircuitry our model was designed for.  Motor-neuron types AS, DA,
-and VA, all exclusively postsynaptic, are clustered together, as are
-motor-neuron types VD and DD. Traditional types VC, DB, and VB also
-mostly share a cluster. Various head motor neurons, including types
+VA, and VB are clustered together, 
+
+as are
+
+
+``The processes of VDn and DDn do not have extended, apparently undifferentiated distal regions, as do the other motoneuron classes; instead, they end abruptly in close proximity to the end of a neighbouring process of the same class, often with a gap junction between them''
+
+motor-neuron types VD and DD, and head motor neuron types RMD and SMD. 
+
+Various head motor neurons, including types
 SMD, RMD, and RIM are clustered together. Interneurons with known
 anatomically-distinct connectivity patterns, such as RIA (2 cells) or
-AVA (2 cells) are clustered into pure types. The algorithm even
-correctly places the single-cell type DVB by itself. Note our
+AVA/AVB (4 cells) are clustered into pure types. 
+
+
+Note our
 clustering does not perfectly reflect known divisions -- several
 combinations of head and sensory neurons are combined, and a
 difficult-to-explain group of 2 VD, 2 VB, a VA, and a DD neuron are
