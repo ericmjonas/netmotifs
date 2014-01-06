@@ -255,17 +255,16 @@ over-segmentation and thus allows more meaningful estimates.
 % Truth (coarse): mean = 35.276636 std=2.372951
 
 \subsection{C. elegans}
-[TODO Say this is harder than retina because of these facts]
+
 The roundworm Caenorhabditis elegans is a model system in
 developmental neuroscience\autocite{White1986}, with the location and
-connectivity of each of 302 neurons deterministically known. This
-incredible cross-organism consistency led to early mapping of the
-c. elegans chemical and electrical (gap junction) connectome. Unlike
-the retina, only the motor neurons in c. elegans exhibit regular
-distribution in space, being distributed along the body axis. Most
-interneurons are concentrated in various ganglia that project
-throughout the entire animal, and the sensory neurons are primarily
-located in a small number of anterior ganglia. 
+connectivity of each of 302 neurons developmentally determined,
+leading to early measurement of the connectome. Unlike the retina,
+only the motor neurons in c. elegans exhibit regular distribution in
+space, being distributed along the body axis. Most interneurons are
+concentrated in various ganglia that project throughout the entire
+animal, and the sensory neurons are primarily located in a small
+number of anterior ganglia.
 
 \begin{figure}
   \centering 
@@ -293,29 +292,22 @@ agreement with the classifications originally outlined by Brenner in
 We identify cell types that reflect the known motor/non-motor neuron
 classes, even though this system lacks the strong repeat
 microcircuitry our model was designed for.  Motor-neuron types AS, DA,
-VA, and VB are clustered together, 
+and VA, all exclusively postsynaptic, are identified as a common type,
+as are motor-neuron types VD and DD. Traditional types VC, DB, and VB
+also mostly share a cluster. Various head motor neurons, including
+types SMD and RMD, are clustered together. Interneurons with known
+anatomically-distinct connectivity patterns, such as AVA (2 cells),
+are clustered into pure types.The algorithm even correctly places the
+single-cell types DVB and DVC by themselves.
 
-as are
+Note our clustering does not perfectly reflect known divisions --
+several combinations of head and sensory neurons are combined, and a
+difficult-to-explain group of mostly VB and DB motor neuron types,
+with VC split between various groups. Our identified cell types thus
+reflect a ``coarsening'' of known types, based entirely on
+connectivity and distance information, even when the organism exhibits
+substantially less spatial regularity than the retina.
 
-
-``The processes of VDn and DDn do not have extended, apparently undifferentiated distal regions, as do the other motoneuron classes; instead, they end abruptly in close proximity to the end of a neighbouring process of the same class, often with a gap junction between them''
-
-motor-neuron types VD and DD, and head motor neuron types RMD and SMD. 
-
-Various head motor neurons, including types
-SMD, RMD, and RIM are clustered together. Interneurons with known
-anatomically-distinct connectivity patterns, such as RIA (2 cells) or
-AVA/AVB (4 cells) are clustered into pure types. 
-
-
-Note our
-clustering does not perfectly reflect known divisions -- several
-combinations of head and sensory neurons are combined, and a
-difficult-to-explain group of 2 VD, 2 VB, a VA, and a DD neuron are
-grouped together. Our identified cell types thus reflect a
-``coarsening'' of known types, based entirely on connectivity and
-distance information, even when the organism exhibits substantially
-less spatial regularity than the retina. 
 
 
 \subsection{Microprocessor}
@@ -354,8 +346,6 @@ to the SB data bus, either allowing them to latch or drive data from
 the bus. The repeat patterns of spatial connectivity are visible in
 figure~\ref{fig:mos6502}a, showing the man-made horizontal and
 vertical layout of the same types of transistors.
-
-
 
 
 

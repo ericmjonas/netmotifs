@@ -1175,14 +1175,14 @@ def plot_best_circos(exp_results,
                                                    sample_latent['relations'][relation]['hps'], 
                                                    model_name)
                 rate_scale = {'R1' : 1.0, 
-                              'R2' : 2.0}
-                thold = 0.5
+                              'R2' : 1.0}
+                thold = 2.0
                 ribbons = []
                 links = []
                 for (src, dest), rate in v.iteritems():
                     scaled_rate = rate * rate_scale[relation]
                     if scaled_rate > thold:
-                        pix = int(5*scaled_rate)
+                        pix = int(3*scaled_rate)
                         print src, dest, rate, pix
 
                         ribbons.append((src, dest, pix))
