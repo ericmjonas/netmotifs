@@ -46,7 +46,7 @@
   New techniques produce massive data about neural connectivity,
   necessitating new analysis methods to discover the biological and
   computational basis of this connectivity. It has long been assumed
-  that discovering the local patterns of microcircuitry is the key to
+  that discovering the local patterns of microcircuitry is crucial to
   understanding neural function. Here we developed a nonparametric
   Bayesian technique that identifies neuron types and microcircuitry
   patterns in connectomics data. We show that the approach recovers
@@ -81,7 +81,7 @@ another. In fact, the idea of well defined local connectivity patterns
 \autocite{Mountcastle1997}) to movement (e.g. spinal cord)
 \autocite{Grillner2005}. Indeed, such repeated patterns also exists in
 human-made computing circuits. It remains an important challenge to
-develop algorithms to use anatomical data, e.g. connectomics, to back
+develop algorithms to use anatomical data, e.g. connectomics, to automatically back
 out underlying microcircuitry.
 
 The discovery of structure is a crucial aspect of network
@@ -142,32 +142,8 @@ connectivity patterns.}
 \end{figure}
 
 \section{Results}
-We use a Bayesian structure discovery approach that is based on prior
-knowledge about the way positions and cell types affect the
-probability of connections between cells, a so-called generative
-model. Basing our model on previous infinite stochastic block models
-(iSBM)\autocite{Kemp2006a,Xu2006}, we assume that each neuron is a
-member of a single ``type'', and that the probability of two neurons
-being connected is a function of their types. Crucially, we
-incorporate the prior knowledge that spatial proximity matters, adding
-distance-dependence to the iSBM.  For example, retinal ganglion cells
-may synapse on nearby, but not far away, amacrine cells.  Note that
-this simplistic prior information is all that we tell our model; no
-additional physiological information is included.  We term our model
-the ``infinite spatial-relational model'' (iSRM), in keeping with the
-existing nonparametric literature, as it discovers a potentially
-unbounded number of unobserved, or ``latent'', cell types.
-
-We combine annealing with Markov Chain Monte Carlo to
-perform simultaneously joint posterior inference over the structure,
-parameters, and hyperparameters of the model (see Methods). This
-procedure automatically learns the number of cell types, which cells 
-belong to which types, along with the 
-the distance and type dependent connectivity probabilities (see
-fig~\ref{fig:overview}). These results can then be compared with the
-results of previous anatomical studies that have used other aspects of
-neurons, such as chemical properties and cell-morphology to divide
-neurons into types.
+From the generic assumption that cell types exist and that connection probability depends on the involved cell types and distance, we develop a Bayesian structure discovery algorithm.
+We start with existing infinite stochastic block models (iSBM)\autocite{Kemp2006a,Xu2006}, which have been shown to meaningfully cluster connection graphs. We extend this approach by adding distance dependence to model salient aspects of microcircuitry. For example, retinal ganglion cells may synapse on nearby, but not far away, amacrine cells.  We term our model the ``infinite spatial-relational model'' (iSRM), in keeping with the existing nonparametric literature. This procedure automatically learns the number of cell types, which cells belong to which types, along with the the distance and type dependent connectivity probabilities (see fig~\ref{fig:overview}). We apply our algorithm to datasets from mouse retina, c-elegans and a historical microprocessor. Anatomists classify cells based on many features, giving us a meaningful baseline to compare against.
 
 Before we can use a probabilistic model to analyze real data we first
 need to assess if the model works properly. We thus started out by
@@ -279,7 +255,7 @@ over-segmentation and thus allows more meaningful estimates.
 % Truth (coarse): mean = 35.276636 std=2.372951
 
 \subsection{C. elegans}
-
+[TODO Say this is harder than retina because of these facts]
 The roundworm Caenorhabditis elegans is a model system in
 developmental neuroscience\autocite{White1986}, with the location and
 connectivity of each of 302 neurons deterministically known. This
@@ -810,6 +786,7 @@ lower ARIs, becoming negative as the clustering gets anti-correlated.
 
 
 \end{document}
+
 
 
 
