@@ -233,9 +233,6 @@ with those finer type distinctions (see
 supp~\ref{supp:mouseretina}. It is our expectation that, with larger
 datasets, even closer agreement would be found.
 
-\todo{Do we assign any of the unknown cells correctly?  are types 72-79
-“different” or simply unknown?}
-
 We compared the results of our model to the traditional iSBM to see if
 the addition of spatial information was necessary. We find that, as
 expected from our synthetic experiments, the iSBM massively
@@ -261,7 +258,7 @@ developmental neuroscience\autocite{White1986}, with the location and
 connectivity of each of 302 neurons developmentally determined,
 leading to early measurement of the connectome. Unlike the retina,
 only the motor neurons in c. elegans exhibit regular distribution in
-space, being distributed along the body axis. Most interneurons are
+space -- along the body axis. Most interneurons are
 concentrated in various ganglia that project throughout the entire
 animal, and the sensory neurons are primarily located in a small
 number of anterior ganglia.
@@ -309,7 +306,6 @@ connectivity and distance information, even when the organism exhibits
 substantially less spatial regularity than the retina.
 
 
-
 \subsection{Microprocessor}
 \begin{figure}
   \centering 
@@ -346,7 +342,6 @@ to the SB data bus, either allowing them to latch or drive data from
 the bus. The repeat patterns of spatial connectivity are visible in
 figure~\ref{fig:mos6502}a, showing the man-made horizontal and
 vertical layout of the same types of transistors.
-
 
 
 \section{Discussion}
@@ -690,6 +685,27 @@ This is a matrix consisting of the different clusters of electrical nets for
 the registers, with the colors consistent with figure~\ref{fig:mos6502}. 
 
 \includepdf[pages=-]{mos6502.clusters.pdf}
+
+
+
+\newpage
+
+\FloatBarrier
+\subsection{Detailed learned connectivity for mouse retina}
+
+Here we show the recovered distance-dependent connectivty profile
+versus the empirical distance-dependent connectivty for the
+retina dataset. The Logistic-distance Poisson likelihood closely
+matches the empirical likelihood for most classes.
+
+
+\begin{figure}[h!]
+  \centering 
+    \centerline{\includegraphics[width=7in,page=2]{mouseretina/retina.1.2.ld.0.0.data-fixed_20_100-anneal_slow_400.0.latent.pdf}}
+  \caption{Learned connectivity vs distance between each of the discovered cell types in the mouse retina. The rows are the source type, and the columns are the destination type. Blue is the empirical plot of the probability of connection vs distance for those two types; red is the learned function}. 
+
+\label{fig:supp:mousecompareari}
+\end{figure}
 
 \FloatBarrier
 \subsection{Model Comparison for Mouse Retina}

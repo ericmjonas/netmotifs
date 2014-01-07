@@ -212,7 +212,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
 
                 p = htrue.astype(float) / (hfalse + htrue)
 
-                ax.plot(bins[:-1], p)
+                ax.plot(bins[:-1], p, c='b', linewidth=3)
 
 
             if model == "LogisticDistance":
@@ -220,7 +220,7 @@ def plot_t1t1_params(fig, conn_and_dist, assign_vect, ss, hps, MAX_DIST=10,
                 print "MAX_DISTANCE=", MAX_DIST, np.max(fine_bins), np.max(bins), c
                 y = util.logistic(fine_bins, c['mu'], c['lambda']) 
                 y = y * (hps['p_max'] - hps['p_min']) + hps['p_min']
-                ax.plot(fine_bins, y, c='r') 
+                ax.plot(fine_bins, y, c='r', linewidth=2) 
                 ax.text(0, 0.2, r"mu: %3.2f" % c['mu'], fontsize=4)
                 ax.text(0, 0.6, r"lamb: %3.2f" % c['lambda'], fontsize=4)
                 ax.axvline(c['mu'], c='k')
