@@ -12,6 +12,9 @@ class Relation(object):
         elif isinstance(modeltype, models.GammaPoisson):
             modeltypestr = "GammaPoisson"
             self.conjugate = True
+        elif isinstance(modeltype, models.NormalInverseChiSq):
+            modeltypestr = "NormalInverseChiSq"
+            self.conjugate = True
         elif isinstance(modeltype, models.BetaBernoulliNonConj):
             modeltypestr = "BetaBernoulliNonConj"
         elif isinstance(modeltype, models.AccumModel):

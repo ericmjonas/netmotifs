@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.special import betaln
 import util
+from scipy.stats import chi2, t, norm
 
 class BetaBernoulli(object):
     def create_hps(self):
@@ -788,6 +789,65 @@ class LogisticDistancePoisson(object):
         
 
 
+
+class NormalInverseChiSq(object):
+    """
+    """
+    def data_dtype(self):
+        """
+        """
+        return np.float32
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'mu' :  np.random.normal(0, 5), 
+                'kappa' : np.random.gamma(1.2, 4), 
+                'sigmasq' : np.random.gamma(1.2, 4), 
+                'nu' : np.random.uniform(1.0, 5.0)}
+
+    def sample_param(self, hps):
+        """
+        draw a sample 
+
+        """
+        sigmasq = hps['nu'] * hps['sigmasq'] / chi2.rvs(hps['nu'])
+        
+        std = np.sqrt(sigmasq / hps['kappa'])
+        mu = np.random.normal(hps['mu'], std)
+
+        
+        return {'sigmasq' : sigmasq, 
+                'mu' : mu}
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAM P and not from 
+        suffstats. 
+        """
+        
+        mu = ss['mu']
+        sigmasq = ss['sigmasq']
+
+
+        return np.random.normal(mu, np.sqrt(sigmasq))
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        raise NotImplemented("No distance dependentce") 
+        
+
+
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
          'SigmoidDistance' : SigmoidDistance, 
@@ -798,6 +858,7 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'NormalDistanceFixedWidth': NormalDistanceFixedWidth, 
          'SquareDistanceBump' : SquareDistanceBump, 
          'ExponentialDistancePoisson' : ExponentialDistancePoisson, 
-         'LogisticDistancePoisson' : LogisticDistancePoisson
+         'LogisticDistancePoisson' : LogisticDistancePoisson, 
+         'NormalInverseChiSq' : NormalInverseChiSq, 
 }
 

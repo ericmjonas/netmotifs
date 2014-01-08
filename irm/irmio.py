@@ -294,6 +294,8 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
 
             elif relation.modeltypestr == "BetaBernoulli":
                 pass
+            elif relation.modeltypestr == "NormalInverseChiSq":
+                pass
             elif relation.modeltypestr == "GammaPoisson":
                 pass
 

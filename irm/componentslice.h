@@ -142,6 +142,15 @@ void slice_sample_exec<LogisticDistancePoisson>
  const std::vector<dppos_t> & dppos,
  float temp);
 
+template<>
+void slice_sample_exec<NormalInverseChiSq>
+(rng_t & rng, float width, 
+ NormalInverseChiSq::suffstats_t * ss, 
+ NormalInverseChiSq::hypers_t * hps, 
+ std::vector<NormalInverseChiSq::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos, 
+ float temp);
+
 }
 
 #endif

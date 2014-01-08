@@ -201,10 +201,22 @@ inline float log_sum_exp(float x, float y) {
         b = x; 
     }
     return a + log(1.0 + exp(b - a)); 
-    
-
 }
 
+inline float log_t_pdf(float x, float nu, float mu, float sigmasq)
+{
+    /*
+    Murphy, Eq. 304
+
+    */
+    float c = lgamma(.5 * (nu + 1.))
+        - (lgamma(.5 * nu) + .5 * (logf(nu * 3.1415926535f* sigmasq))); 
+    float xt = (x - mu); 
+    float s = xt * xt / sigmasq; 
+    float d = -(.5 * (nu + 1.)) * logf(1. + s / nu); 
+    return c + d; 
+    
+}
 
 #ifdef USE_LOGEXP_APPROX
 #define MYLOG fasterlog

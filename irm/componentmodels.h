@@ -1938,6 +1938,137 @@ struct LogisticDistancePoisson {
 
 }; 
 
+struct NormalInverseChiSq { 
+    typedef float value_t; 
+    
+    struct suffstats_t { 
+        uint32_t count; 
+        float mean; 
+        float var; 
+    }; 
+
+    struct hypers_t { 
+        float mu; 
+        float kappa; 
+        float sigmasq; 
+        float nu; 
+    }; 
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+        ss->count = 0; 
+        ss->mean = 0; 
+        ss->var = 0; 
+    }
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        ss->count++; 
+        float delta = val - ss->mean; 
+        ss->mean += delta/ss->count; 
+        ss->var += delta * (val - ss->mean); 
+
+    }
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+        float total = ss->mean * ss->count; 
+        float delta = val - ss->mean; 
+        ss->count--; 
+        if (ss->count == 0) { 
+            ss->mean = 0; 
+        } else { 
+            ss->mean = (total - val) / ss->count; 
+        }
+
+        if (ss->count <= 1) {
+            ss->var = 0; 
+        } else {
+            ss->var -= delta * (val - ss->mean); 
+        }
+
+        
+    }
+
+    static std::tuple<float, float, float, float> 
+    intermediates(hypers_t * hps, 
+                  suffstats_t * ss) { 
+        float total = ss->mean * ss->count; 
+        float mu_1 = hps->mu - ss->mean; 
+        float kappa_n = hps->kappa + ss->count; 
+        float mu_n = (hps->kappa * hps->mu + total) / kappa_n; 
+        float nu_n = hps->nu + ss->count; 
+        float sigmasq_n = 1. / nu_n * (
+                                       hps->nu * hps->sigmasq 
+                                       + ss->var
+                                       + (ss->count * hps->kappa * mu_1 * mu_1)/kappa_n); 
+        return std::make_tuple(mu_n, kappa_n, sigmasq_n, nu_n); 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        float mu_n, kappa_n, sigmasq_n, nu_n; 
+        std::tie(mu_n, kappa_n, sigmasq_n, nu_n) = intermediates(hps, ss); 
+        return log_t_pdf(
+                         val,
+                         nu_n,
+                         mu_n,
+                         ((1 + kappa_n) * sigmasq_n) / kappa_n); 
+
+        
+    }
+
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data,
+                       const std::vector<dppos_t> & dppos) { 
+        float mu_n, kappa_n, sigmasq_n, nu_n; 
+        std::tie(mu_n, kappa_n, sigmasq_n, nu_n) = intermediates(hps, ss); 
+        return lgamma(nu_n/2.0f) - lgamma(hps->nu/2.0) + 
+            0.5f * logf(hps->kappa / kappa_n) + 
+            (0.5f * hps->nu) * logf(hps->nu * hps->sigmasq) - 
+            (0.5f * nu_n) * logf(nu_n * sigmasq_n) -
+            ss->count/2.0 * 1.1447298858493991; 
+     
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.mu = bp::extract<float>(hps["mu"]); 
+        hp.kappa = bp::extract<float>(hps["kappa"]);
+        hp.sigmasq = bp::extract<float>(hps["sigmasq"]);
+        hp.nu = bp::extract<float>(hps["nu"]);
+        return hp; 
+
+    }
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["mu"] = hps.mu; 
+        hp["kappa"] = hps.kappa; 
+        hp["sigmasq"] = hps.sigmasq; 
+        hp["nu"] = hps.nu; 
+        
+        return hp; 
+
+    }
+
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["count"] = ss->count; 
+        d["mean"] = ss->mean; 
+        d["var"] = ss->var; 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->count = bp::extract<uint32_t>(v["count"]); 
+        ss->mean = bp::extract<float>(v["mean"]); 
+        ss->var = bp::extract<float>(v["var"]); 
+    }
+
+}; 
 
 }
 
