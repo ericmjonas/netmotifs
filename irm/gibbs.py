@@ -52,6 +52,9 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
     if impotent:
         print "gibbs_sample_type_nonconj IMPOTENT"
 
+    if T_N == 1:
+        return # nothing to do 
+
     for entity_pos in range(T_N):
         g = domain_inf.remove_entity_from_group(entity_pos)
         extra_groups = []
