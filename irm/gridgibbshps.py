@@ -127,3 +127,26 @@ def default_grid_logistic_distance_poisson(dist_scale = 1.0, rate_scale_scale = 
     return hps
 
 DEFAULT_RELATION_GRIDS['LogisticDistancePoisson'] = default_grid_logistic_distance_poisson()
+
+
+
+def default_grid_normal_inverse_chi_sq(mu_scale = 1.0, 
+                                       var_scale = 1.0, 
+                                       GRIDN = 10):
+    mu = np.linspace(-1.0, 1.0, GRIDN+1) * mu_scale #+1 to always include zero
+    sigmasq = util.logspace(0.1, 1.0, GRIDN) * var_scale
+    kappa = util.logspace(0.1, 10.0, GRIDN)
+    nu = util.logspace(0.1, 10.0, GRIDN)
+    
+    hps = []
+    for m in mu:
+        for s in sigmasq:
+            for k in kappa:
+                for n in nu:
+                    hps.append({'mu' : m, 
+                                'kappa' : k, 
+                                'sigmasq' : s, 
+                                'nu' : n})
+    return hps
+
+DEFAULT_RELATION_GRIDS['NormalInverseChiSq'] = default_grid_normal_inverse_chi_sq()
