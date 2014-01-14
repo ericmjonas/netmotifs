@@ -21,11 +21,11 @@ MODELS =  ["BetaBernoulliNonConj",
            'NormalDistanceFixedWidth', 
 
            'ExponentialDistancePoisson',
-           'LogisticDistancePoisson'
-
+           'LogisticDistancePoisson', 
+           'NormalInverseChiSq'
     #'SquareDistanceBump',  # NOTE THIS IS SO NOT READY FOR PRODUCTION the delta prob is broken
 ]
-MODELS = ['NormalInverseChiSq']
+
 
 
 KERNELS = {'default_nonconj' : irm.runner.default_kernel_nonconj_config(), 

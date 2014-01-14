@@ -1957,8 +1957,9 @@ struct NormalInverseChiSq {
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
                               rng_t & rng) { 
         ss->count = 0; 
-        ss->mean = 0; 
-        ss->var = 0; 
+        ss->mean = 0.0; 
+        ss->var = 0.0; 
+
     }
     template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 

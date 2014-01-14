@@ -212,7 +212,8 @@ def write(config, outfilename, tempdir=None):
             
             for entity_i, entity_val in enumerate(plot_data):
                 chrom_id, chrom_pos = config.id_to_chrom_pos[entity_i]
-                fid.write("c%d %d %d %s\n" % (chrom_id, chrom_pos, chrom_pos+1, entity_val))
+                if np.isfinite(entity_val):
+                    fid.write("c%d %d %d %s\n" % (chrom_id, chrom_pos, chrom_pos+1, entity_val))
 
             fid.close()
         # now write the config
