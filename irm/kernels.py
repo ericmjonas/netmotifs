@@ -174,9 +174,15 @@ def domain_hp_grid(model, rng, grid):
         gridgibbshps.grid_gibbs(set_func, get_score, grid)
 
 def relation_hp_grid(model, rng, grids):
+    """ add the ability to have per-relation grids """
+
     for relation_name, relation in model.relations.iteritems():
         model_name = relation.modeltypestr
-        if model_name not in grids:
+        if relation_name in grids:
+            grid = grids[relation_name]
+        elif model_name in grids:
+            grid = grids[model_name]
+        else:
             raise RuntimeError("model %s is not in the provided grids" % model_name)
 
         def set_func(val):
@@ -185,7 +191,7 @@ def relation_hp_grid(model, rng, grids):
         def get_score():
             return relation.total_score()
 
-        gridgibbshps.grid_gibbs(set_func, get_score, grids[model_name])
+        gridgibbshps.grid_gibbs(set_func, get_score, grid)
 
 def sequential_init(model, rng, M=10):
     """
