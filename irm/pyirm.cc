@@ -73,6 +73,10 @@ IComponentContainer * create_component_container(std::string data, bp::tuple dat
         IComponentContainer * cc = new ComponentContainer<LogisticDistancePoisson>(data, data_dims_v); 
         return cc; 
 
+    } else if(modeltype == "MixtureModelDistribution") { 
+        IComponentContainer * cc = new ComponentContainer<MixtureModelDistribution>(data, data_dims_v); 
+        return cc; 
+
     } else { 
         std::cout << modeltype << std::endl; 
         throw std::runtime_error("unknown model type"); 
@@ -144,6 +148,10 @@ BOOST_PYTHON_MODULE(pyirm)
   def("continuous_mh_sample", &continuous_mh_sampler_wrapper); 
   def("uniform_01", &uniform_01); 
 
+  def("normal_sample", &normal_sample); 
+  def("log_norm_dist", &log_norm_dist); 
+  def("chi2_sample", &chi2_sample); 
+  def("log_chi2_dist", &log_chi2_dist); 
   // helper class
   class_<group_dp_map_t>("group_dp_map_t", no_init); 
   

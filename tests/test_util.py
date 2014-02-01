@@ -1,6 +1,8 @@
 from nose.tools import *
 from irm import util
+import irm
 import numpy as np
+from matplotlib import pylab
 
 from numpy.testing import assert_approx_equal, assert_array_almost_equal
 
@@ -75,3 +77,71 @@ def test_multi_napsack():
     
     a = util.multi_napsack(3, v)
     assert_equal([[1], [0], [2, 3]], a)
+
+
+def test_normal_sample():
+    rng = irm.pyirm.RNG()
+
+
+    for mu in [-3.0, 10.0, 17.0]:
+        for sigmasq in [1.0, 20.0, 0.02]:
+            print mu, sigmasq
+
+            BINN = 100
+            R = 3
+            bins = np.linspace(mu - R*np.sqrt(sigmasq), 
+                               mu + R*np.sqrt(sigmasq), 
+                               BINN); 
+            bin_width = bins[1]-bins[0]
+            v = []
+            for i in range(100000):
+                v.append(irm.pyirm.normal_sample(mu, sigmasq, rng))
+            v = np.array(v)
+
+            h, _ = np.histogram(v, bins)
+            h = h.astype(float) / np.sum(h) 
+            s = [irm.pyirm.log_norm_dist(x+bin_width/2, mu, sigmasq) for x in bins[:-1]]
+
+            p = np.exp(s) / np.sum(np.exp(s))
+
+            assert irm.util.kl(h, p) < 0.001
+
+def test_chi2_sample():
+    rng = irm.pyirm.RNG()
+
+
+    for k in [1, 2, 3, 6]:
+
+        BINN = 300
+        R = 5
+        bins = np.linspace(0.0001, 
+                           k * R, 
+                           BINN); 
+        bin_width = bins[1]-bins[0]
+        v = []
+        for i in range(10000000):
+            v.append(irm.pyirm.chi2_sample(k, rng))
+        v = np.array(v)
+
+        h, _ = np.histogram(v, bins)
+        h = h.astype(float) / np.sum(h) 
+        s = [irm.pyirm.log_chi2_dist(x + bin_width/2, k) for x in bins[:-1]]
+        
+        t = s[0]
+        for si in s[1:]:
+            t = np.logaddexp(t, si)
+
+        p = np.exp(s - t)
+        
+        print "KL=", irm.util.kl(h, p)
+        # print "p=", p
+        # print "s=", s
+        # pylab.plot(bins[:-1] + bin_width/2, p, c='g')
+        # pylab.scatter(bins[:-1] + bin_width/2., h)
+        # pylab.grid()
+        # pylab.show()
+
+        assert irm.util.kl(h, p) < 0.004
+
+
+    

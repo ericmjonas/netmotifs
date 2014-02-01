@@ -4,10 +4,12 @@
 #include <map>
 #include <iostream> 
 #include <math.h>
+#include <limits>
 #include <boost/python.hpp>
 #include <boost/math/distributions.hpp>
 #include <unordered_set>
 #include <boost/container/flat_set.hpp>
+
 
 #include "util.h"
 #include "fastonebigheader.h"
@@ -2067,6 +2069,200 @@ struct NormalInverseChiSq {
         ss->count = bp::extract<uint32_t>(v["count"]); 
         ss->mean = bp::extract<float>(v["mean"]); 
         ss->var = bp::extract<float>(v["var"]); 
+    }
+
+}; 
+
+struct MixtureModelDistribution { 
+    /* 
+       nonconjugate type that includes 
+       
+     */ 
+    static const size_t MAX_DP = 1024; 
+    class value_t { 
+    public: // whatever there are going to be alignment issues in memory
+        int size_; 
+        float data_[MAX_DP]; 
+
+        inline size_t size() const { 
+            return size_; 
+        }
+
+         inline float  operator[](size_t pos) const { 
+            return data_[pos]; 
+
+        }
+    }; 
+
+
+    static constexpr float CHI_VAL = 1.0 ; 
+    static constexpr   float EPSILON = 0.0001; 
+    struct suffstats_t { 
+        // parameters
+        std::vector<float> mu; 
+        std::vector<float> var; 
+        std::vector<float> pi; 
+        
+    }; 
+
+    struct hypers_t { 
+        int comp_k; 
+        float dir_alpha; 
+        float var_scale; 
+    }; 
+    
+    static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
+                              rng_t & rng) { 
+
+        auto s =  sample_from_prior(hps, rng); 
+        ss->mu = s.mu; 
+        ss->var = s.var; 
+        ss->pi = s.pi; 
+    }
+
+    static suffstats_t sample_from_prior(hypers_t * hps, rng_t & rng) {
+        suffstats_t ss; 
+        for(int k = 0; k < hps->comp_k; ++k) { 
+            ss.mu.push_back(uniform_01(rng)); 
+            ss.var.push_back(chi2_sample(CHI_VAL, rng) * hps->var_scale + EPSILON); 
+        }
+
+        ss.pi = symmetric_dirichlet_sample(hps->comp_k, 
+                                           hps->dir_alpha, rng); 
+        return ss; 
+        
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+
+    }
+
+    template<typename RandomAccessIterator>
+    static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
+                       dppos_t dp_pos, RandomAccessIterator data) {
+    }
+
+    template<typename RandomAccessIterator>
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
+                           dppos_t dp_pos, RandomAccessIterator data) {
+        // Gets a single row of observations
+        return data_prob_mm(data[dp_pos], ss); 
+        
+    }
+
+    static float score_prior(suffstats_t * ss, hypers_t * hps) { 
+        int COMP_K = hps->comp_k; 
+        float score = 0.0; 
+
+        for(int k = 0; k < COMP_K; ++k) { 
+            if ((ss->mu[k] <= EPSILON) |  (ss->mu[k] >= (1.0 - EPSILON))) { 
+                return -std::numeric_limits<float>::infinity(); 
+            }
+            if ((ss->var[k] / hps->var_scale) < EPSILON) { 
+                return -std::numeric_limits<float>::infinity(); 
+            }
+            score += log_chi2_dist(ss->var[k] / hps->var_scale, CHI_VAL); 
+
+        }
+        score += log_symmetric_dir_dist(ss->pi, hps->dir_alpha); 
+
+        return score; 
+    }
+    
+    static float data_prob_mm(const value_t & val, 
+                            suffstats_t * ss) 
+    {
+        int N = val.size(); 
+        int K = ss->pi.size(); 
+        
+        float tot_score = 0.0; 
+        for(int n = 0; n < N; ++n) { 
+            float score = -1e80; 
+            for(int k = 0; k < K; ++k) { 
+                float mu = ss->mu[k]; 
+                float pi = ss->pi[k]; 
+                float sigmasq = ss->var[k]; 
+                float s = log_norm_dist(val[n], mu, sigmasq); 
+                s += log(pi); 
+                score = log_sum_exp(score, s); 
+            }
+            tot_score += score; 
+
+        }
+        return tot_score; 
+    }
+
+
+    template<typename RandomAccessIterator> 
+    static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
+                                  RandomAccessIterator data, 
+                                  const std::vector<dppos_t> & dppos)
+    {
+        float score = 0.0; 
+        for(auto pos : dppos) { 
+            score += post_pred(ss, hps, data[pos], pos, data); 
+        }
+        return score; 
+
+    }
+
+    template<typename RandomAccessIterator>
+    static float score(suffstats_t * ss, hypers_t * hps, 
+                       RandomAccessIterator data,
+                       const std::vector<dppos_t> & dppos) { 
+
+        float prior_score = score_prior(ss, hps); 
+        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        return prior_score + likelihood_score; 
+
+    }
+
+    static hypers_t bp_dict_to_hps(bp::dict & hps) { 
+        hypers_t hp; 
+        hp.comp_k = bp::extract<int>(hps["comp_k"]); 
+        hp.dir_alpha = bp::extract<float>(hps["dir_alpha"]);
+        hp.var_scale = bp::extract<float>(hps["var_scale"]);
+        return hp; 
+
+    }
+    static bp::dict hps_to_bp_dict(const hypers_t  & hps) {
+        bp::dict hp; 
+        hp["comp_k"] = hps.comp_k; 
+        hp["dir_alpha"] = hps.dir_alpha; 
+        hp["var_scale"] = hps.var_scale; 
+        return hp; 
+
+    }
+    static bp::list vect_f32_to_list(const std::vector<float> & v) {
+        bp::list l; 
+        for(float x : v) { 
+            l.append(x); 
+        }
+        return l ; 
+    }
+    static std::vector<float> list_to_vect_f32(bp::list l) { 
+        std::vector<float> v; 
+        for(int i = 0; i < bp::len(l); ++i) { 
+            v.push_back(bp::extract<float>(l[i])); 
+        }
+        return v; 
+
+    }
+    static bp::dict ss_to_dict(suffstats_t * ss) { 
+        bp::dict d; 
+        d["mu"] = vect_f32_to_list(ss->mu); 
+        d["var"] = vect_f32_to_list(ss->var); 
+        d["pi"] = vect_f32_to_list(ss->pi); 
+        return d; 
+    }
+
+    static void ss_from_dict(suffstats_t * ss, bp::dict v) { 
+        ss->mu = list_to_vect_f32(bp::extract<bp::list>(v["mu"])); 
+        ss->var = list_to_vect_f32(bp::extract<bp::list>(v["var"])); 
+        ss->pi = list_to_vect_f32(bp::extract<bp::list>(v["pi"])); 
+
     }
 
 }; 

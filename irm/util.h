@@ -8,6 +8,7 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/chi_squared_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <stdlib.h>
 #include "fastonebigheader.h"
@@ -154,6 +155,13 @@ inline float log_exp_dist(float x, float lambda) {
 
 }
 
+inline float log_norm_dist(float x, float mu, float sigmasq) {
+
+    return -0.5 * log(sigmasq) - 0.5* log(2.0 * 3.14159265) + -(x - mu) * (x-mu) / (2.*sigmasq); 
+    
+}
+
+
 inline float log_poisson_dist(int k, float lambda) {
     if(lambda <= 0.0) { 
             return -std::numeric_limits<float>::infinity();
@@ -186,9 +194,63 @@ inline float log_beta_dist(float p, float alpha, float beta) {
 
 inline float normal_sample(float mean, float var, rng_t & rng) { 
 
-    boost::random::normal_distribution<> real(mean, var); 
- return real(rng);
+    boost::random::normal_distribution<> real(mean, sqrt(var)); 
+    return real(rng);
 }
+
+inline float chi2_sample(float v, rng_t & rng) { 
+    boost::random::chi_squared_distribution<float> dist(v);
+    return dist(rng); 
+
+}
+
+
+inline float log_symmetric_dir_dist(const std::vector<float> pi, 
+                                    float alpha)
+{
+    float score = 0.0; 
+    int N = pi.size(); 
+    for (int i = 0; i < pi.size(); ++i) { 
+        score += (alpha - 1.0) * log(pi[i]); 
+    }
+    float beta = N * lgamma(alpha) - lgamma(alpha * N); 
+    score -= beta; 
+    return score ; 
+
+}
+
+inline std::vector<float> symmetric_dirichlet_sample(int N, float alpha, rng_t & rng) 
+{
+    //http://en.wikipedia.org/wiki/Dirichlet_distribution#Random_number_generation
+    std::vector<float> y(N); 
+    boost::random::gamma_distribution<float> gamma(alpha);
+    float sum = 0.0; 
+    for (int i = 0; i < N; ++i) { 
+        y[i] = gamma(rng); 
+        sum += y[i]; 
+    }
+    for (int i = 0; i < N; ++i) { 
+        y[i] = y[i] / sum; 
+    }
+
+    return y; 
+
+}
+
+inline float log_chi2_dist(float x, int k) { 
+
+    if (x <= 0 ) { 
+        return -std::numeric_limits<float>::infinity();
+    }
+    if (k <= 0 ) { 
+        return -std::numeric_limits<float>::infinity();
+    }
+    float a = -(k/2.*log(2)  + lgamma(k/2.0)); 
+    float b = (k/2. - 1) * log(x) - x/2.0 ; 
+    return a + b; 
+
+}
+
 
 inline float log_sum_exp(float x, float y) { 
     float a = 0; 

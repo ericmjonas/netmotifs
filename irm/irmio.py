@@ -292,6 +292,11 @@ def estimate_suffstats(irm_model, rng, ITERS=10):
                 # 'rate_width' : relation.get_hps()['rate_hp'] / 4.0}
                 relation.apply_comp_kernel("slice_sample", rng, params)
 
+            elif relation.modeltypestr == "MixtureModelDistribution":
+                params = {'width' : 0.0} # relation.get_hps()['mu_hp'] / 2.0
+                # 'rate_width' : relation.get_hps()['rate_hp'] / 4.0}
+                relation.apply_comp_kernel("slice_sample", rng, params)
+
             elif relation.modeltypestr == "BetaBernoulli":
                 pass
             elif relation.modeltypestr == "NormalInverseChiSq":

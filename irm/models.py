@@ -847,6 +847,66 @@ class NormalInverseChiSq(object):
         raise NotImplemented("No distance dependentce") 
         
 
+class MixtureModelDistribution(object):
+    """
+    Just a placeholder
+    """
+    def data_dtype(self):
+        """
+        """
+        return [('len',  np.int32), 
+                ('points', np.float32, (1024, ))]
+
+    
+    def sample_hps(self):
+        """
+        draw a sample of the HPs from some prior
+        """
+        return {'comp_k' :  np.random.poisson(2) + 1, 
+                'dir_alpha' : np.random.uniform(0.5, 1.5), 
+                'var_scale' : np.random.gamma(1.0, 2)/12.}
+
+
+
+    def sample_param(self, hps):
+        """
+        Sample some  parameters from the HPs
+        """
+        comp_k = hps['comp_k']
+
+        return {'mu' : [np.random.uniform(0.0001, 0.9999) for _ in range(comp_k)],
+                'var' : [np.random.chisquare(1.0)*hps['var_scale'] for _ in range(comp_k)],
+                'pi' : np.random.dirichlet(np.ones(comp_k) * hps['dir_alpha']).tolist()}
+
+
+    def sample_data(self, ss, hps):
+        """
+        NOTE THIS ONLY SAMPLES FROM THE PARAMS
+
+        """
+        N = np.min([1024, np.random.poisson(50) + 1])
+        data = np.zeros(1024, dtype=np.float32)
+        for n in range(N):
+            # pick the component
+            k = np.argwhere(np.random.multinomial(1, ss['pi'])).flatten()
+            v = np.random.normal(ss['mu'][k], np.sqrt(ss['var'][k]))
+            data[n] = v
+
+        x = np.zeros(1, dtype=self.data_dtype())
+        x[0]['len'] = N
+        x[0]['points'] = data
+        return x[0]
+
+    def est_parameters(self, data, hps):
+        """
+        A vector of data for this component, and the hypers
+        
+        """
+    def param_eval(self, d, ss, hps):
+        """
+        At distance dist, evaluate the prob of connection
+        """
+        # not relevant
 
 NAMES = {'BetaBernoulli' : BetaBernoulli, 
          'BetaBernoulliNonConj' : BetaBernoulliNonConj, 
@@ -860,5 +920,6 @@ NAMES = {'BetaBernoulli' : BetaBernoulli,
          'ExponentialDistancePoisson' : ExponentialDistancePoisson, 
          'LogisticDistancePoisson' : LogisticDistancePoisson, 
          'NormalInverseChiSq' : NormalInverseChiSq, 
+         'MixtureModelDistribution' : MixtureModelDistribution, 
 }
 

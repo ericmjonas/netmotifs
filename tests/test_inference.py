@@ -11,7 +11,8 @@ and relation classes.
 """
 
 ITERS_TO_RUN = 1
-MODELS =  ["BetaBernoulliNonConj", 
+MODELS =  [
+    "BetaBernoulliNonConj", 
            'LogisticDistance', 
            'LogisticDistanceFixedLambda', 
            'LinearDistance', 
@@ -24,6 +25,7 @@ MODELS =  ["BetaBernoulliNonConj",
            'LogisticDistancePoisson', 
            'NormalInverseChiSq'
     #'SquareDistanceBump',  # NOTE THIS IS SO NOT READY FOR PRODUCTION the delta prob is broken
+    "MixtureModelDistribution"
 ]
 
 
@@ -167,6 +169,7 @@ def check_score_progress(model_name, latent, data, seed, kernel_config, init_typ
     print "latent=", new_latent
 
     irmio.estimate_suffstats(run_truth.model, run_truth.rng)
+    print "estimated ss" 
 
     # get ground truth
     ground_truth_score = run_truth.get_score()

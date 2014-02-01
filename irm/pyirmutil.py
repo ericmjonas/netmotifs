@@ -35,6 +35,17 @@ class Relation(object):
             modeltypestr = "ExponentialDistancePoisson"
         elif isinstance(modeltype, models.LogisticDistancePoisson):
             modeltypestr = "LogisticDistancePoisson"
+        elif isinstance(modeltype, models.MixtureModelDistribution):
+            modeltypestr = "MixtureModelDistribution"
+            if data.dtype.itemsize != (1 * 4  +  1024*(4)):
+                raise Exception("Wrong dtype for MixtureModelDistribution %s, itemsize=%d" % (data.dtype, data.dtype.itemsize))
+            assert len(data.dtype.names) == 2
+            size_name = data.dtype.names[0]
+            assert data.dtype.fields[size_name][0] == np.int32
+
+            data_name = data.dtype.names[1]
+            if data.dtype.fields[data_name][0] != np.dtype("(1024,)f4"):
+                raise Exception("Wrong fields %s" % data.dtype.fields[data_name][0])
 
         else:
             raise NotImplementedError()

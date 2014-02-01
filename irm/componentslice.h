@@ -151,6 +151,20 @@ void slice_sample_exec<NormalInverseChiSq>
  const std::vector<dppos_t> & dppos, 
  float temp);
 
+
+template<>
+void slice_sample_exec<MixtureModelDistribution>
+(rng_t & rng, float width, 
+ MixtureModelDistribution::suffstats_t * ss, 
+ MixtureModelDistribution::hypers_t * hps, 
+ std::vector<MixtureModelDistribution::value_t>::iterator data, 
+ const std::vector<dppos_t> & dppos,
+ float temp);
+
+
+
+
+
 }
 
 #endif

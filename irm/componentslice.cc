@@ -418,4 +418,60 @@ template<> void slice_sample_exec<LogisticDistancePoisson>
 }
 
 
+template<>
+void slice_sample_exec<MixtureModelDistribution>
+(rng_t & rng, float width, 
+ MixtureModelDistribution::suffstats_t * ss, 
+ MixtureModelDistribution::hypers_t * hps, 
+ std::vector<MixtureModelDistribution::value_t>::iterator data,
+ const std::vector<dppos_t> & dppos,
+ float temp){
+
+    if (width == 0.0) { 
+        width = 0.2; 
+    }
+
+    for(int k = 0; k < hps->comp_k; ++k) { 
+        // For each component we slice sample the mu, var
+
+        auto mu = slice_sample2_double(
+                                       [ss, k, &hps, data, &dppos, temp](float x) -> float{
+                                           ss->mu[k] = x; 
+                                           return MixtureModelDistribution::score(ss, hps, data, 
+                                                                                  dppos) /temp;
+                                       }, ss->mu[k], width, rng); 
+    
+        ss->mu[k] = mu; 
+
+        auto var = slice_sample2_double(
+                                       [ss, k, &hps, data, &dppos, temp](float x) -> float{
+                                           ss->var[k] = x; 
+                                           return MixtureModelDistribution::score(ss, hps, data, 
+                                                                                  dppos) /temp;
+                                       }, ss->var[k], width, rng); 
+    
+        ss->var[k] = var; 
+
+
+
+    }
+
+    // sample dirichlet and do MH
+    auto oldpi = ss->pi; 
+
+    float oldscore = MixtureModelDistribution::score(ss, hps, data, dppos)/temp; 
+    ss->pi = symmetric_dirichlet_sample(hps->comp_k, hps->dir_alpha, rng); 
+    float newscore = MixtureModelDistribution::score(ss, hps, data, dppos)/temp; 
+    if (uniform_01(rng) < exp(newscore - oldscore)) { 
+        // accept
+    } else { 
+        ss->pi = oldpi; 
+    }
+        
+    
+    
+}
+
+
+
 }
