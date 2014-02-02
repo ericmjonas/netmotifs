@@ -875,7 +875,7 @@ class MixtureModelDistribution(object):
         comp_k = hps['comp_k']
 
         return {'mu' : [np.random.uniform(0.0001, 0.9999) for _ in range(comp_k)],
-                'var' : [np.random.chisquare(1.0)*hps['var_scale'] for _ in range(comp_k)],
+                'var' : [0.001 + np.random.chisquare(1.0)*hps['var_scale'] for _ in range(comp_k)],
                 'pi' : np.random.dirichlet(np.ones(comp_k) * hps['dir_alpha']).tolist()}
 
 
