@@ -2123,12 +2123,15 @@ struct MixtureModelDistribution {
     static suffstats_t sample_from_prior(hypers_t * hps, rng_t & rng) {
         suffstats_t ss; 
         for(int k = 0; k < hps->comp_k; ++k) { 
-            ss.mu.push_back(uniform_01(rng)); 
+            ss.mu.push_back(uniform(EPSILON, 1.0 - EPSILON, rng)); 
             ss.var.push_back(chi2_sample(CHI_VAL, rng) * hps->var_scale + EPSILON); 
+            assert (ss.var[k] < 1e10); 
         }
 
         ss.pi = symmetric_dirichlet_sample(hps->comp_k, 
                                            hps->dir_alpha, rng); 
+
+
         return ss; 
         
     }

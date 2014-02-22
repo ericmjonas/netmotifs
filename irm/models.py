@@ -851,6 +851,8 @@ class MixtureModelDistribution(object):
     """
     Just a placeholder
     """
+    EPSILON = 0.0001
+
     def data_dtype(self):
         """
         """
@@ -862,9 +864,10 @@ class MixtureModelDistribution(object):
         """
         draw a sample of the HPs from some prior
         """
-        return {'comp_k' :  np.random.poisson(2) + 1, 
+        hps =  {'comp_k' :  np.random.poisson(2) + 1, 
                 'dir_alpha' : np.random.uniform(0.5, 1.5), 
-                'var_scale' : np.random.gamma(1.0, 2)/12.}
+                'var_scale' : np.random.gamma(1.0, 2)/12. + self.EPSILON}
+        return hps
 
 
 
@@ -874,10 +877,13 @@ class MixtureModelDistribution(object):
         """
         comp_k = hps['comp_k']
 
-        return {'mu' : [np.random.uniform(0.0001, 0.9999) for _ in range(comp_k)],
-                'var' : [0.001 + np.random.chisquare(1.0)*hps['var_scale'] for _ in range(comp_k)],
-                'pi' : np.random.dirichlet(np.ones(comp_k) * hps['dir_alpha']).tolist()}
-
+        ss =  {'mu' : [np.random.uniform(0.0001, 0.9999) for _ in range(comp_k)],
+               'var' : [0.001 + np.random.chisquare(1.0)*hps['var_scale'] for _ in range(comp_k)],
+               'pi' : np.random.dirichlet(np.ones(comp_k) * hps['dir_alpha']).tolist()}
+        for si, s in enumerate(ss['var']):
+            print "sampling i=", si, "s=", s
+            assert s > 0.0001
+        return ss
 
     def sample_data(self, ss, hps):
         """

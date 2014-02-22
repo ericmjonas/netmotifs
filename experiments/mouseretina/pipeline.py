@@ -40,7 +40,7 @@ EXPERIMENTS = [
     ('retina.1.1.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.2.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
     ('retina.1.3.bb.0.0', 'fixed_20_100', 'anneal_slow_400'), 
-    # ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
+    ('retina.count.edp', 'fixed_20_100', 'anneal_slow_400'), 
     #('retina.1.0.ld.truth', 'truth_100', 'anneal_slow_400'), 
     #('retina.1.0.ld.0.0', 'fixed_10_20', 'debug'), 
     #('retina.count.edp', 'fixed_10_20', 'debug'), 
@@ -1284,8 +1284,8 @@ def compute_cluster_metrics(exp_results,
                  'df' : df
                  }, open(out_filename, 'w'))
 
-@merge(compute_cluster_metrics, "cluster_metrics.pickle")
-def merge_cluster_metrics(infiles, outfile):
+@merge(compute_cluster_metrics, ("cluster_metrics.pickle", 'cluster.metrics.html'))
+def merge_cluster_metrics(infiles, (outfile_pickle, outfile_html)):
     res = []
     v_df = []
     for infile in infiles:
@@ -1322,11 +1322,16 @@ def merge_cluster_metrics(infiles, outfile):
 
     pickle.dump({'clust_df' : clust_df, 
                  'var_df' : var_df},
-                open(outfile, 'w'))
+                open(outfile_pickle, 'w'))
+
+    fid = open(outfile_html, 'w')
+    fid.write(clust_df.to_html())
+    fid.write(var_df.to_html())
+    fid.close()
 
 @files(merge_cluster_metrics, ("spatial_var.pdf", "spatial_var.txt"))
-def plot_cluster_vars(infile, (outfile_plot, outfile_rpt)):
-    d = pickle.load(open(infile, 'r'))
+def plot_cluster_vars((infile_pickle, infile_rpt), (outfile_plot, outfile_rpt)):
+    d = pickle.load(open(infile_pickle, 'r'))
 
     var_df = d['var_df']
     var_df = var_df[np.isfinite(var_df['x'])]
@@ -1389,11 +1394,12 @@ def plot_cluster_vars(infile, (outfile_plot, outfile_rpt)):
     f.tight_layout()
     f.savefig(outfile_plot)
 
-@files(merge_cluster_metrics, ("ari_vs_cluster.pdf", "ari_vs_cluster.txt"))
-def plot_cluster_aris(infile, (outfile_plot, outfile_rpt)):
-    d = pickle.load(open(infile, 'r'))
+@files(merge_cluster_metrics, ("ari_vs_cluster.pdf", "ari_vs_cluster.html"))
+def plot_cluster_aris((infile_pickle, infile_report), 
+                      (outfile_plot, outfile_rpt)):
+    d = pickle.load(open(infile_pickle, 'r'))
 
-    tgt_config = "1.2"
+    tgt_config = "1.1"
 
     clust_df = d['clust_df']
     clust_df = clust_df[clust_df['filename'].str.contains("retina.%s" % tgt_config)]
@@ -1409,7 +1415,7 @@ def plot_cluster_aris(infile, (outfile_plot, outfile_rpt)):
     f = pylab.figure()
     ax = f.add_subplot(1, 1, 1)
 
-    index = 'ari'
+    index = 'ari_coarse'
     ax.scatter(finite_df['cluster_n'], finite_df[index], s=50, c='b', label="SBM")
 
 

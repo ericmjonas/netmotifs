@@ -430,9 +430,19 @@ void slice_sample_exec<MixtureModelDistribution>
     if (width == 0.0) { 
         width = 0.2; 
     }
-
+    assert(hps->comp_k == ss->var.size()); 
+    if(boost::math::isnan(MixtureModelDistribution::score(ss, hps, data, 
+                                               dppos))) {
+        std::cout << "beginning slice sampling from nan" << std::endl; 
+        for(int k = 0; k < hps->comp_k; ++k) { 
+            std::cout << "k=" << k 
+                      << " mu=" << ss->mu[k] 
+                      << " var=" << ss->var[k] << std::endl; 
+        }
+    }
     for(int k = 0; k < hps->comp_k; ++k) { 
-        // For each component we slice sample the mu, var
+        // std::cout << "before var[" << k << "]= " <<  ss->var[k] 
+        //           << " mu=" << ss->mu[k] << std::endl; 
 
         auto mu = slice_sample2_double(
                                        [ss, k, &hps, data, &dppos, temp](float x) -> float{
@@ -442,15 +452,16 @@ void slice_sample_exec<MixtureModelDistribution>
                                        }, ss->mu[k], width, rng); 
     
         ss->mu[k] = mu; 
-
+        // std::cout << "before var[" << k << "]= " <<  ss->var[k] << std::endl; 
+        
         auto var = slice_sample2_double(
                                        [ss, k, &hps, data, &dppos, temp](float x) -> float{
                                            ss->var[k] = x; 
                                            return MixtureModelDistribution::score(ss, hps, data, 
                                                                                   dppos) /temp;
                                        }, ss->var[k], width, rng); 
-    
         ss->var[k] = var; 
+        // std::cout << "var[" << k << "]= " <<  var << std::endl; 
 
 
 
