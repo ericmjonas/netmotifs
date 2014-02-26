@@ -174,7 +174,11 @@ def domain_hp_grid(model, rng, grid):
         gridgibbshps.grid_gibbs(set_func, get_score, grid)
 
 def relation_hp_grid(model, rng, grids):
-    """ add the ability to have per-relation grids """
+    """ add the ability to have per-relation grids 
+
+    If the grid is 'None', don't do inference 
+
+    """
 
     for relation_name, relation in model.relations.iteritems():
         model_name = relation.modeltypestr
@@ -190,6 +194,8 @@ def relation_hp_grid(model, rng, grids):
 
         def get_score():
             return relation.total_score()
+        if grid == None:
+            continue
 
         gridgibbshps.grid_gibbs(set_func, get_score, grid)
 
