@@ -157,7 +157,7 @@ inline float log_exp_dist(float x, float lambda) {
 
 inline float log_norm_dist(float x, float mu, float sigmasq) {
 
-    return -0.5 * log(sigmasq) - 0.5* log(2.0 * 3.14159265) + -(x - mu) * (x-mu) / (2.*sigmasq); 
+    return -0.5 * logf(sigmasq) - 0.5* logf(2.0 * 3.14159265) + -(x - mu) * (x-mu) / (2.*sigmasq); 
     
 }
 
@@ -167,7 +167,7 @@ inline float log_poisson_dist(int k, float lambda) {
             return -std::numeric_limits<float>::infinity();
 
     }
-    float score = k * logf(lambda) - lgamma(k+1) + -lambda; 
+    float score = k * logf(lambda) - lgammaf(k+1) + -lambda; 
     return score; 
 
 }
@@ -177,7 +177,7 @@ inline float logbeta(float alpha, float beta) {
 }
 
 inline float log_factorial(int N) { 
-    return lgamma(N + 1.0); 
+    return lgammaf(N + 1.0); 
 }
 
 inline float log_beta_dist(float p, float alpha, float beta) {
@@ -211,9 +211,9 @@ inline float log_symmetric_dir_dist(const std::vector<float> pi,
     float score = 0.0; 
     int N = pi.size(); 
     for (int i = 0; i < pi.size(); ++i) { 
-        score += (alpha - 1.0) * log(pi[i]); 
+        score += (alpha - 1.0) * logf(pi[i]); 
     }
-    float beta = N * lgamma(alpha) - lgamma(alpha * N); 
+    float beta = N * lgammaf(alpha) - lgammaf(alpha * N); 
     score -= beta; 
     return score ; 
 
@@ -245,8 +245,8 @@ inline float log_chi2_dist(float x, int k) {
     if (k <= 0 ) { 
         return -std::numeric_limits<float>::infinity();
     }
-    float a = -(k/2.*log(2)  + lgamma(k/2.0)); 
-    float b = (k/2. - 1) * log(x) - x/2.0 ; 
+    float a = -(k/2.*logf(2)  + lgammaf(k/2.0)); 
+    float b = (k/2. - 1) * logf(x) - x/2.0 ; 
     return a + b; 
 
 }
@@ -262,7 +262,7 @@ inline float log_sum_exp(float x, float y) {
         a = y; 
         b = x; 
     }
-    return a + log(1.0 + exp(b - a)); 
+    return a + logf(1.0 + exp(b - a)); 
 }
 
 inline float log_t_pdf(float x, float nu, float mu, float sigmasq)
@@ -271,8 +271,8 @@ inline float log_t_pdf(float x, float nu, float mu, float sigmasq)
     Murphy, Eq. 304
 
     */
-    float c = lgamma(.5 * (nu + 1.))
-        - (lgamma(.5 * nu) + .5 * (logf(nu * 3.1415926535f* sigmasq))); 
+    float c = lgammaf(.5 * (nu + 1.))
+        - (lgammaf(.5 * nu) + .5 * (logf(nu * 3.1415926535f* sigmasq))); 
     float xt = (x - mu); 
     float s = xt * xt / sigmasq; 
     float d = -(.5 * (nu + 1.)) * logf(1. + s / nu); 
