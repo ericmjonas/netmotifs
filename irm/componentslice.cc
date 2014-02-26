@@ -428,18 +428,10 @@ void slice_sample_exec<MixtureModelDistribution>
  float temp){
 
     if (width == 0.0) { 
-        width = 0.2; 
+        width = 1.0; 
     }
     assert(hps->comp_k == ss->var.size()); 
-    if(boost::math::isnan(MixtureModelDistribution::score(ss, hps, data, 
-                                               dppos))) {
-        std::cout << "beginning slice sampling from nan" << std::endl; 
-        for(int k = 0; k < hps->comp_k; ++k) { 
-            std::cout << "k=" << k 
-                      << " mu=" << ss->mu[k] 
-                      << " var=" << ss->var[k] << std::endl; 
-        }
-    }
+
     for(int k = 0; k < hps->comp_k; ++k) { 
         // std::cout << "before var[" << k << "]= " <<  ss->var[k] 
         //           << " mu=" << ss->mu[k] << std::endl; 
