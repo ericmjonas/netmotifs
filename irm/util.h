@@ -16,6 +16,18 @@
 #include "group_coords.h"
 
 
+#ifdef USE_LOGEXP_APPROX
+#define MYLOG fasterlog
+#define MYEXP fasterexp
+
+#endif 
+
+#ifndef USE_LOGEXP_APPROX
+#define MYLOG logf
+#define MYEXP expf
+
+#endif
+
 namespace irm { 
 
 typedef boost::random::mt19937 rng_t;
@@ -151,13 +163,13 @@ inline float log_exp_dist(float x, float lambda) {
             return -std::numeric_limits<float>::infinity();
 
     }
-    return logf(lambda) + -lambda*x; 
+    return MYLOG(lambda) + -lambda*x; 
 
 }
 
 inline float log_norm_dist(float x, float mu, float sigmasq) {
 
-    return -0.5 * logf(sigmasq) - 0.5* logf(2.0 * 3.14159265) + -(x - mu) * (x-mu) / (2.*sigmasq); 
+    return -0.5 * MYLOG(sigmasq) - 0.5* MYLOG(2.0 * 3.14159265) + -(x - mu) * (x-mu) / (2.*sigmasq); 
     
 }
 
@@ -167,7 +179,7 @@ inline float log_poisson_dist(int k, float lambda) {
             return -std::numeric_limits<float>::infinity();
 
     }
-    float score = k * logf(lambda) - lgammaf(k+1) + -lambda; 
+    float score = k * MYLOG(lambda) - lgammaf(k+1) + -lambda; 
     return score; 
 
 }
@@ -185,7 +197,7 @@ inline float log_beta_dist(float p, float alpha, float beta) {
             return -std::numeric_limits<float>::infinity();
 
     }
-    float a = (alpha-1.)*logf(p) + (beta-1.)*(logf(1-p)); 
+    float a = (alpha-1.)*MYLOG(p) + (beta-1.)*(MYLOG(1-p)); 
     float b = logbeta(alpha, beta); 
     
     return a + b; 
@@ -211,7 +223,7 @@ inline float log_symmetric_dir_dist(const std::vector<float> pi,
     float score = 0.0; 
     int N = pi.size(); 
     for (int i = 0; i < pi.size(); ++i) { 
-        score += (alpha - 1.0) * logf(pi[i]); 
+        score += (alpha - 1.0) * MYLOG(pi[i]); 
     }
     float beta = N * lgammaf(alpha) - lgammaf(alpha * N); 
     score -= beta; 
@@ -245,8 +257,8 @@ inline float log_chi2_dist(float x, int k) {
     if (k <= 0 ) { 
         return -std::numeric_limits<float>::infinity();
     }
-    float a = -(k/2.*logf(2)  + lgammaf(k/2.0)); 
-    float b = (k/2. - 1) * logf(x) - x/2.0 ; 
+    float a = -(k/2.*MYLOG(2)  + lgammaf(k/2.0)); 
+    float b = (k/2. - 1) * MYLOG(x) - x/2.0 ; 
     return a + b; 
 
 }
@@ -262,7 +274,7 @@ inline float log_sum_exp(float x, float y) {
         a = y; 
         b = x; 
     }
-    return a + logf(1.0 + exp(b - a)); 
+    return a + MYLOG(1.0 + exp(b - a)); 
 }
 
 inline float log_t_pdf(float x, float nu, float mu, float sigmasq)
@@ -272,25 +284,14 @@ inline float log_t_pdf(float x, float nu, float mu, float sigmasq)
 
     */
     float c = lgammaf(.5 * (nu + 1.))
-        - (lgammaf(.5 * nu) + .5 * (logf(nu * 3.1415926535f* sigmasq))); 
+        - (lgammaf(.5 * nu) + .5 * (MYLOG(nu * 3.1415926535f* sigmasq))); 
     float xt = (x - mu); 
     float s = xt * xt / sigmasq; 
-    float d = -(.5 * (nu + 1.)) * logf(1. + s / nu); 
+    float d = -(.5 * (nu + 1.)) * MYLOG(1. + s / nu); 
     return c + d; 
     
 }
 
-#ifdef USE_LOGEXP_APPROX
-#define MYLOG fasterlog
-#define MYEXP fasterexp
-
-#endif 
-
-#ifndef USE_LOGEXP_APPROX
-#define MYLOG logf
-#define MYEXP expf
-
-#endif
 
 }
 

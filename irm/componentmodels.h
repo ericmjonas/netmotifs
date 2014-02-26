@@ -72,11 +72,11 @@ struct BetaBernoulli {
         float alpha = hps->alpha; 
         float beta = hps->beta; 
 
-        float den = logf(alpha + beta + heads + tails); 
+        float den = MYLOG(alpha + beta + heads + tails); 
         if (val) { 
-            return logf(heads + alpha) - den; 
+            return MYLOG(heads + alpha) - den; 
         } else { 
-            return logf(tails + beta) - den; 
+            return MYLOG(tails + beta) - den; 
         }
         
     }
@@ -252,9 +252,9 @@ struct BetaBernoulliNonConj {
                            dppos_t dp_pos, RandomAccessIterator data) {
         float p = ss->p; 
         if (val) { 
-            return logf(p); 
+            return MYLOG(p); 
         } else { 
-            return logf(1-p); 
+            return MYLOG(1-p); 
         }
         
     }
@@ -268,7 +268,7 @@ struct BetaBernoulliNonConj {
             return -std::numeric_limits<float>::infinity();
         }
 
-        return logf(boost::math::pdf(dist, ss->p)); 
+        return MYLOG(boost::math::pdf(dist, ss->p)); 
     }
     
     template<typename RandomAccessIterator> 
@@ -294,9 +294,9 @@ struct BetaBernoulliNonConj {
         float score = 0.0; 
         for(auto dpi : dppos) { 
             if(data[dpi]) {
-                score += logf(ss->p); 
+                score += MYLOG(ss->p); 
             } else { 
-                score += logf(1 - ss->p); 
+                score += MYLOG(1 - ss->p); 
             }
         }
         return score; 
@@ -647,7 +647,7 @@ struct LogisticDistanceFixedLambda {
             return -std::numeric_limits<float>::infinity();
         }
 
-        score += logf(boost::math::pdf(dist, p_scale)); 
+        score += MYLOG(boost::math::pdf(dist, p_scale)); 
 
         return score; 
     }
@@ -839,9 +839,9 @@ struct SigmoidDistance {
                                      hps->p_max); 
             float lscore; 
             if(data[dpi].link) {
-                lscore = logf(p); 
+                lscore = MYLOG(p); 
             } else { 
-                lscore = logf(1 - p); 
+                lscore = MYLOG(1 - p); 
             }
             score += lscore; 
 
@@ -1024,9 +1024,9 @@ struct LinearDistance {
 
             float lscore; 
             if(data[dpi].link) {
-                lscore = logf(p); 
+                lscore = MYLOG(p); 
             } else { 
-                lscore = logf(1 - p); 
+                lscore = MYLOG(1 - p); 
             }
             score += lscore; 
 
@@ -1133,7 +1133,7 @@ struct GammaPoisson {
         float alpha_z = im.first; 
         float beta_z = im.second; 
         
-        return lgammaf(alpha_z + val) - lgammaf(alpha_z) - alpha_z * logf(beta_z) + (alpha_z + val) * logf(1.0 / (1.0 + 1./beta_z)) - log_factorial(val);
+        return lgammaf(alpha_z + val) - lgammaf(alpha_z) - alpha_z * MYLOG(beta_z) + (alpha_z + val) * MYLOG(1.0 / (1.0 + 1./beta_z)) - log_factorial(val);
 
     }
 
@@ -1328,9 +1328,9 @@ struct NormalDistanceFixedWidth {
 
             float lscore; 
             if(data[dpi].link) {
-                lscore = logf(p); 
+                lscore = MYLOG(p); 
             } else { 
-                lscore = logf(1 - p); 
+                lscore = MYLOG(1 - p); 
             }
             score += lscore; 
 
@@ -1525,9 +1525,9 @@ struct SquareDistanceBump {
 
             float lscore; 
             if(data[dpi].link) {
-                lscore = logf(p); 
+                lscore = MYLOG(p); 
             } else { 
-                lscore = logf(1 - p); 
+                lscore = MYLOG(1 - p); 
             }
             score += lscore; 
 
@@ -2030,9 +2030,9 @@ struct NormalInverseChiSq {
         float mu_n, kappa_n, sigmasq_n, nu_n; 
         std::tie(mu_n, kappa_n, sigmasq_n, nu_n) = intermediates(hps, ss); 
         return lgammaf(nu_n/2.0f) - lgammaf(hps->nu/2.0) + 
-            0.5f * logf(hps->kappa / kappa_n) + 
-            (0.5f * hps->nu) * logf(hps->nu * hps->sigmasq) - 
-            (0.5f * nu_n) * logf(nu_n * sigmasq_n) -
+            0.5f * MYLOG(hps->kappa / kappa_n) + 
+            (0.5f * hps->nu) * MYLOG(hps->nu * hps->sigmasq) - 
+            (0.5f * nu_n) * MYLOG(nu_n * sigmasq_n) -
             ss->count/2.0 * 1.1447298858493991; 
      
     }
@@ -2188,7 +2188,7 @@ struct MixtureModelDistribution {
                 float pi = ss->pi[k]; 
                 float sigmasq = ss->var[k]; 
                 float s = log_norm_dist(val[n], mu, sigmasq); 
-                s += logf(pi); 
+                s += MYLOG(pi); 
                 score = log_sum_exp(score, s); 
             }
             tot_score += score; 
