@@ -274,6 +274,11 @@ def plot_chains_hypers(f, chains, data):
             for p in ['rate_scale_hp', 'mu_hp', 'lambda']:
                 per_r_hp[r].append(p)
                 hp_n +=1 
+        elif m == 'NormalInverseChiSq':
+            for p in ['mu', 'kappa', 'nu', 'sigmasq']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
+
         else:
             raise RuntimeError("Unknown model'%s'" % m)
     pos = 1
