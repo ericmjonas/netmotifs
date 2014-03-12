@@ -159,8 +159,9 @@ def anneal(model, rng, anneal_config,
 
     set_temp(model, cur_temp)
 
-    do_inference(model, rng)
+    res = do_inference(model, rng)
     set_temp(model, 1.0)
+    return res
 
 def domain_hp_grid(model, rng, grid):
     for domain_name, domain in model.domains.iteritems():

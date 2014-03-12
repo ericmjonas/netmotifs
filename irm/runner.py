@@ -67,7 +67,8 @@ def do_inference(irm_model, rng, kernel_config, iteration,
     be resolved at some point 
     """
     step = 1
-    res = None
+    res = {'kernel_times' : []}
+
     if reverse:
         step = -1
     for kernel_name, params in kernel_config[::step]:
@@ -119,11 +120,17 @@ def do_inference(irm_model, rng, kernel_config, iteration,
         elif kernel_name == "anneal":
             temp_sched = params['anneal_sched']
             subkernels = params['subkernels']
+            # i know this is gross, I don't care
+            
 
-            kernels.anneal(irm_model, rng, temp_sched, 
-                           iteration, 
-                           model.IRM.set_temp, 
-                           lambda x, y: do_inference(x, y, subkernels, iteration))
+            sub_res = kernels.anneal(irm_model, rng, temp_sched, 
+                                     iteration, 
+                                     model.IRM.set_temp, 
+                                     lambda x, y: do_inference(x, y, subkernels,
+                                                               iteration))
+            for v in sub_res['kernel_times']:
+                res['kernel_times'].append(v)
+
         elif kernel_name == "domain_hp_grid":
             grid = params['grid']
             kernels.domain_hp_grid(irm_model, rng, grid)
@@ -135,6 +142,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
         else:
             raise Exception("Malformed kernel config, unknown kernel %s" % kernel_name)
         t2 = time.time()
+        res['kernel_times'].append((kernel_name, t2-t1))
         print "kernels:", kernel_name, "%3.2f sec" % (t2-t1)
     return res
 
@@ -178,16 +186,17 @@ class Runner(object):
         Run for N iters, per the kernel config
         """
         for i in range(N):
+            res = None
             if self.PT :
                 self.chain_states = do_inference(self.model, self.rng,
                                                  self.kernel_config, self.iters,
                                                  states_at_temps = self.chain_states)
             else:
-                do_inference(self.model, self.rng, self.kernel_config, self.iters)
+                res = do_inference(self.model, self.rng, self.kernel_config, self.iters)
             self.iters += 1
 
             if logger:
-                logger(self.iters, self.model)
+                logger(self.iters, self.model, res)
 
     def get_state(self, include_ss=True):
         return irmio.get_latent(self.model, include_ss)

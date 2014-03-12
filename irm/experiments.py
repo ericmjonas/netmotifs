@@ -64,9 +64,9 @@ def create_init(latent_filename, data_filename, out_filenames,
         # generate new suffstats, recompute suffstats in light of new assignment
 
         irm.irmio.set_model_latent(irm_model, latent, rng)
-        print "estimating suffstats"
+        print "estimating suffstats for %s" % out_f
         irm.irmio.estimate_suffstats(irm_model, rng, ITERS=2)
-
+        print "ss estimation done for ", out_f
 
         pickle.dump(irm.irmio.get_latent(irm_model), open(out_f, 'w'))
 
