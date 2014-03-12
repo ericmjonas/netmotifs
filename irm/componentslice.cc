@@ -431,6 +431,12 @@ void slice_sample_exec<MixtureModelDistribution>
         width = 1.0; 
     }
     assert(hps->comp_k == ss->var.size()); 
+    // std::cout << hps->var_scale << " " << hps->dir_alpha << std::endl; 
+
+    // for(int k = 0; k < hps->comp_k; ++k) { 
+    //     std::cout << "before var[" << k << "]= " <<  ss->var[k] 
+    //               << " mu=" << ss->mu[k] << std::endl; 
+    // }
 
     for(int k = 0; k < hps->comp_k; ++k) { 
         // std::cout << "before var[" << k << "]= " <<  ss->var[k] 
