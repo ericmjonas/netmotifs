@@ -90,6 +90,8 @@ private:
 
     inline void
     set_dp_group_coords(dppos_t dp, const group_coords_t &  gc) { 
+        datapoints_per_group_cache_valid_ = false; 
+
          datapoint_groups_[dp] = gc; 
     }
     
@@ -98,6 +100,8 @@ private:
     }
     
     inline void set_entity_group(domainpos_t domain, entitypos_t ep, groupid_t g) { 
+        datapoints_per_group_cache_valid_ = false; 
+
         domain_entity_assignment_[domain][ep] = g; 
     }
 
@@ -109,8 +113,10 @@ private:
         return true; 
 
     }
- 
+    bool datapoints_per_group_cache_valid_; 
     
+    group_dp_map_t datapoints_per_group_cache_; 
+
     
 
 }; 

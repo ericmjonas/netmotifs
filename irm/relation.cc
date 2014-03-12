@@ -15,7 +15,8 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
     group_ids_(DOMAINN_), 
     datapoint_groups_(pCC_->dpcount()), 
     datapoint_entity_index_(pCC_->dpcount()), 
-    domain_groups_(DOMAINN_)
+    domain_groups_(DOMAINN_), 
+    datapoints_per_group_cache_valid_(false)
 {
 
     for (int d = 0; d < DOMAINN_; ++d) { 
@@ -112,6 +113,8 @@ groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
 
     group_ids_[domain].pop_back(); 
 
+    datapoints_per_group_cache_valid_ = false; 
+
     return new_gid; 
 }
 
@@ -136,6 +139,8 @@ void Relation::delete_group(domainpos_t domain, groupid_t gid)
 
     // put it back on the stack
     group_ids_[domain].push_back(gid); 
+
+    datapoints_per_group_cache_valid_ = false; 
 }
 
 std::vector<groupid_t> Relation::get_all_groups(domainpos_t di)
@@ -172,6 +177,9 @@ float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id,
     }
 
     set_entity_group(domain, entity_pos, group_id); 
+
+    datapoints_per_group_cache_valid_ = false; 
+
     return score; 
 }
 
@@ -196,6 +204,9 @@ void Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid,
         set_dp_group_coords(dp, new_group_coords); 
     }
     set_entity_group(domain, entity_pos, NOT_ASSIGNED); 
+
+    datapoints_per_group_cache_valid_ = false; 
+
 }
 
 
@@ -238,26 +249,33 @@ void Relation::set_component(bp::tuple group_coords,
     for(int i = 0; i < bp::len(group_coords); ++i) { 
         gc[i] = bp::extract<int>(group_coords[i]); 
     }
+
+    datapoints_per_group_cache_valid_ = false; 
+
     return pCC_->set_component(gc, val); 
+
 }
 
 group_dp_map_t Relation::get_datapoints_per_group()
 {
-    group_dp_map_t out; 
-    
-    for(size_t i = 0; i < datapoint_groups_.size(); ++i) { 
+    if(!datapoints_per_group_cache_valid_) { 
+        datapoints_per_group_cache_.clear(); 
         
-        group_coords_t gc = get_dp_group_coords(i); 
-
-        if (fully_assigned(gc)) { 
-            if(out.find(gc) == out.end()){ 
-                out.insert(std::make_pair(gc, std::vector<dppos_t>())); 
+        for(size_t i = 0; i < datapoint_groups_.size(); ++i) { 
+            
+            group_coords_t gc = get_dp_group_coords(i); 
+            
+            if (fully_assigned(gc)) { 
+                if(datapoints_per_group_cache_.find(gc) == 
+                   datapoints_per_group_cache_.end()){ 
+                    datapoints_per_group_cache_.insert(std::make_pair(gc, std::vector<dppos_t>())); 
+                }
+                datapoints_per_group_cache_[gc].push_back(i); 
             }
-            out[gc].push_back(i); 
         }
+        datapoints_per_group_cache_valid_ = true;         
     }
-    return out; 
-
+    return datapoints_per_group_cache_; 
 }
 
 
