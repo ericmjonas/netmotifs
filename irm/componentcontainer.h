@@ -139,7 +139,7 @@ public:
         float score = CM::post_pred(&(components_[gp].ss), &hps_, val, 
                                     dp_pos, data_.begin());
 
-        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos); 
         components_[gp].count++; 
         return score/temp_; 
     }
@@ -149,7 +149,7 @@ public:
         typename CM::value_t val = data_[dp_pos]; 
 
 
-        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos); 
         components_[gp].count++; 
         
     }
@@ -160,7 +160,7 @@ public:
 
         typename CM::value_t val = data_[dp_pos]; 
 
-        CM::ss_rem(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        CM::ss_rem(&(components_[gp].ss), &hps_, val, dp_pos); 
         components_[gp].count--; 
         
     }

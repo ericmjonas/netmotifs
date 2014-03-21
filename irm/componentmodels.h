@@ -44,18 +44,17 @@ struct BetaBernoulli {
         ss->heads = 0; 
         ss->tails = 0; 
     }
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         if(val) { 
             ss->heads++; 
         } else { 
             ss->tails++; 
         }
     }
-    template<typename RandomAccessIterator>
+
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         if(val) { 
             ss->heads--; 
         } else { 
@@ -142,16 +141,15 @@ struct AccumModel {
         ss->count = 0; 
     }
      
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val,
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->sum += val; 
         ss->count++; 
     }
 
-    template<typename RandomAccessIterator>
+
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->sum -= val; 
         ss->count--; 
         
@@ -230,16 +228,14 @@ struct BetaBernoulliNonConj {
         ss->datapoint_pos_.reserve(20); 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->datapoint_pos_.push_back(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         // FIXME linear search
         auto i = std::find(ss->datapoint_pos_.begin(), 
                            ss->datapoint_pos_.end(), dp_pos); 
@@ -410,16 +406,15 @@ struct LogisticDistance {
         ss->lambda = params.second; 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
+
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -603,16 +598,14 @@ struct LogisticDistanceFixedLambda {
         ss->p_scale = params.second; 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -790,14 +783,12 @@ struct SigmoidDistance {
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
     }
 
 
@@ -971,16 +962,14 @@ struct LinearDistance {
     
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -1102,16 +1091,17 @@ struct GammaPoisson {
         ss->sum = 0; 
         ss->log_prod = 0.0; 
     }
-    template<typename RandomAccessIterator>
+
+
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->n++; 
         ss->sum += val; 
         ss->log_prod += log_factorial(val); 
     }
-    template<typename RandomAccessIterator>
+
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->n--; 
         ss->sum -= val; 
         ss->log_prod -= log_factorial(val);
@@ -1275,16 +1265,14 @@ struct NormalDistanceFixedWidth {
     
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -1467,16 +1455,14 @@ struct SquareDistanceBump {
     
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -1666,14 +1652,12 @@ struct ExponentialDistancePoisson {
     
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos){ 
     }
 
 
@@ -1835,16 +1819,14 @@ struct LogisticDistancePoisson {
         ss->rate_scale = params.second; 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.insert(dp_pos); 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         //ss->datapoint_pos_.erase(dp_pos); 
     }
 
@@ -1963,18 +1945,18 @@ struct NormalInverseChiSq {
         ss->var = 0.0; 
 
     }
-    template<typename RandomAccessIterator>
+
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         ss->count++; 
         float delta = val - ss->mean; 
         ss->mean += delta/ss->count; 
         ss->var += delta * (val - ss->mean); 
 
     }
-    template<typename RandomAccessIterator>
+
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
         float total = ss->mean * ss->count; 
         float delta = val - ss->mean; 
         ss->count--; 
@@ -2136,15 +2118,13 @@ struct MixtureModelDistribution {
         
     }
 
-    template<typename RandomAccessIterator>
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
 
     }
 
-    template<typename RandomAccessIterator>
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
-                       dppos_t dp_pos, RandomAccessIterator data) {
+                       dppos_t dp_pos) { 
     }
 
     template<typename RandomAccessIterator>
