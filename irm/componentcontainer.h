@@ -69,9 +69,9 @@ public:
         }
 
         components_.resize(s); 
-        for(int i = 0; i < s; i++) { 
-            components_[i] = 0; 
-        }
+        // for(int i = 0; i < s; i++) { 
+        //     components_[i] = 0; 
+        // }
 
         size_t data_size = 1; 
         for(int i = 0; i < NDIM_; i++) { 
@@ -93,20 +93,18 @@ public:
     void create_component(const group_coords_t &  group_coords, 
                           rng_t & rng) { 
         group_hash_t gp = hash_coords(group_coords); 
-        // auto i = components_.find(gp); 
-        // assert(i == components_.end()); 
+
         
         sswrapper_t * ssw = new sswrapper_t; 
-        CM::ss_sample_new(&(ssw->ss), &hps_, rng); 
-        ssw->count = 0; 
-        components_[gp] =  ssw; 
+        CM::ss_sample_new(&(components_[gp].ss), &hps_, rng); 
+        components_[gp].count = 0; 
     }
 
     void delete_component(const group_coords_t &  group_coords) {
         group_hash_t gp = hash_coords(group_coords); 
         
-        delete components_[gp]; 
-        components_[gp] = 0; 
+        // delete components_[gp]; 
+        // components_[gp] = 0; 
     }
     
     float total_score(const group_dp_map_t & dpmap) {
@@ -115,9 +113,8 @@ public:
         float score = 0.0; 
         for(; i != dpmap.end(); ++i) { 
             auto gp = hash_coords(i->first); 
-            sswrapper_t * ssw = components_[gp];
-            if(ssw->count > 0) { 
-                score += CM::score(&(ssw->ss), &hps_, 
+            if(components_[gp].count > 0) { 
+                score += CM::score(&(components_[gp].ss), &hps_, 
                                    data_.begin(), i->second); 
             }
         }
@@ -130,8 +127,8 @@ public:
     {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
-        sswrapper_t * ssw = components_[gp];
-        return CM::post_pred(&(ssw->ss), &hps_, val, 
+
+        return CM::post_pred(&(components_[gp].ss), &hps_, val, 
                              dp_pos, data_.begin()) / temp_; 
     }
 
@@ -139,12 +136,11 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
-        sswrapper_t * ssw = components_[gp]; 
-        float score = CM::post_pred(&(ssw->ss), &hps_, val, 
+        float score = CM::post_pred(&(components_[gp].ss), &hps_, val, 
                                     dp_pos, data_.begin());
 
-        CM::ss_add(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
-        ssw->count++; 
+        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        components_[gp].count++; 
         return score/temp_; 
     }
     
@@ -152,9 +148,9 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
-        sswrapper_t * ssw = components_[gp]; 
-        CM::ss_add(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
-        ssw->count++; 
+
+        CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        components_[gp].count++; 
         
     }
 
@@ -163,10 +159,9 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
 
         typename CM::value_t val = data_[dp_pos]; 
-        sswrapper_t * ssw = components_[gp]; 
 
-        CM::ss_rem(&(ssw->ss), &hps_, val, dp_pos, data_.begin()); 
-        ssw->count--; 
+        CM::ss_rem(&(components_[gp].ss), &hps_, val, dp_pos, data_.begin()); 
+        components_[gp].count--; 
         
     }
 
@@ -190,9 +185,8 @@ public:
             float width = bp::extract<float>(config["width"]); 
             for(auto c : dppos) { 
                 group_hash_t gh = hash_coords(c.first); 
-                sswrapper_t * ssw = components_[gh]; 
                 slice_sample_exec<CM>(rng, width, 
-                                      &(ssw->ss), 
+                                      &(components_[gh].ss), 
                                       &hps_, data_.begin(), 
                                       c.second, temp_); 
             }
@@ -202,9 +196,9 @@ public:
             float max = bp::extract<float>(config["log_scale_max"]); 
             for(auto c : dppos) { 
                 group_hash_t gh = hash_coords(c.first); 
-                sswrapper_t * ssw = components_[gh]; 
+
                 continuous_mh_sample_exec<CM>(rng, iters, min, max, 
-                                      &(ssw->ss), 
+                                      &(components_[gh].ss), 
                                       &hps_, data_.begin(), 
                                       c.second, temp_); 
             }
@@ -218,15 +212,13 @@ public:
     bp::dict get_component(const group_coords_t &  gc) { 
         group_hash_t gh = hash_coords(gc); 
 
-        sswrapper_t * ssw = components_[gh]; 
-        return CM::ss_to_dict(&(ssw->ss)); 
+        return CM::ss_to_dict(&( components_[gh].ss)); 
     }
 
     void set_component(const group_coords_t &  gc, bp::dict val) {
         group_hash_t gh = hash_coords(gc); 
 
-        sswrapper_t * ssw = components_[gh]; 
-        CM::ss_from_dict(&(ssw->ss), val); 
+        CM::ss_from_dict(&( components_[gh].ss), val); 
         
     }
 
@@ -235,7 +227,7 @@ public:
     }
 
 private:
-    typedef std::vector<sswrapper_t *> components_t; 
+    typedef std::vector<sswrapper_t> components_t; 
 
     const int NDIM_;
     std::vector<size_t> data_shape_; 
