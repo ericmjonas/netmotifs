@@ -128,16 +128,15 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
-        return CM::post_pred(&(components_[gp].ss), &hps_, val, 
-                             dp_pos, data_.begin()) / temp_; 
+        return CM::post_pred(&(components_[gp].ss), &hps_, val) / temp_; 
+
     }
 
     float add_dp_post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) {
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
-        float score = CM::post_pred(&(components_[gp].ss), &hps_, val, 
-                                    dp_pos, data_.begin());
+        float score = CM::post_pred(&(components_[gp].ss), &hps_, val); 
 
         CM::ss_add(&(components_[gp].ss), &hps_, val, dp_pos); 
         components_[gp].count++; 

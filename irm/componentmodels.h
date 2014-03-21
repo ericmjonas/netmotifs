@@ -63,9 +63,8 @@ struct BetaBernoulli {
         
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
+                          
         float heads = ss->heads; 
         float tails = ss->tails; 
         float alpha = hps->alpha; 
@@ -155,9 +154,7 @@ struct AccumModel {
         
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
         return val; 
         
     }
@@ -243,9 +240,8 @@ struct BetaBernoulliNonConj {
         ss->datapoint_pos_.pop_back(); 
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
         float p = ss->p; 
         if (val) { 
             return MYLOG(p); 
@@ -419,9 +415,9 @@ struct LogisticDistance {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
+
         float mu = ss->mu; 
         float lambda = ss->lambda; 
         
@@ -610,9 +606,7 @@ struct LogisticDistanceFixedLambda {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
         float mu = ss->mu; 
         float p_scale = ss->p_scale; 
         
@@ -792,9 +786,9 @@ struct SigmoidDistance {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
+        
         float mu = ss->mu; 
         float lambda = ss->lambda; 
         
@@ -974,9 +968,7 @@ struct LinearDistance {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
 
         float p = linear_prob(val.distance, ss->mu, ss->p, 
                               hps->p_min); 
@@ -1115,9 +1107,8 @@ struct GammaPoisson {
         return std::make_pair(alpha_n, beta_n); 
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
         
         auto im = intermediates(hps, ss); 
         float alpha_z = im.first; 
@@ -1277,9 +1268,7 @@ struct NormalDistanceFixedWidth {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
 
         float p = norm_prob(val.distance, ss->mu, ss->p, 
                             hps->p_min, hps->width); 
@@ -1467,9 +1456,8 @@ struct SquareDistanceBump {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
 
         float p = square_prob(val.distance, ss->mu, ss->p, 
                               hps->p_min); 
@@ -1661,9 +1649,7 @@ struct ExponentialDistancePoisson {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
 
         float rate = exp_rate(val.distance, ss->mu, ss->rate_scale); 
 
@@ -1831,9 +1817,8 @@ struct LogisticDistancePoisson {
     }
 
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
+
         float mu = ss->mu; 
         float rate_scale = ss->rate_scale; 
         
@@ -1991,9 +1976,7 @@ struct NormalInverseChiSq {
 
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) { 
         float mu_n, kappa_n, sigmasq_n, nu_n; 
         std::tie(mu_n, kappa_n, sigmasq_n, nu_n) = intermediates(hps, ss); 
         return log_t_pdf(
@@ -2127,11 +2110,11 @@ struct MixtureModelDistribution {
                        dppos_t dp_pos) { 
     }
 
-    template<typename RandomAccessIterator>
-    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val, 
-                           dppos_t dp_pos, RandomAccessIterator data) {
+
+    static float post_pred(suffstats_t * ss, hypers_t * hps, value_t val) {
+
         // Gets a single row of observations
-        return data_prob_mm(data[dp_pos], ss); 
+        return data_prob_mm(val, ss); 
         
     }
 
@@ -2185,7 +2168,7 @@ struct MixtureModelDistribution {
     {
         float score = 0.0; 
         for(auto pos : dppos) { 
-            score += post_pred(ss, hps, data[pos], pos, data); 
+            score += post_pred(ss, hps, data[pos]); 
         }
         return score; 
 
