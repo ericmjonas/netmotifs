@@ -44,8 +44,9 @@ typedef std::set<groupid_t> group_set_t;
 
 
 typedef fast_static_vector<entitypos_t, 2> entity_coords_t; 
+const static int MAX_GROUPS_PER_DOMAIN_BITS = 8; 
+const static int MAX_GROUPS_PER_DOMAIN = (1<<MAX_GROUPS_PER_DOMAIN_BITS); 
 
-const static int MAX_GROUPS_PER_DOMAIN = 256; 
 #define NOT_ASSIGNED -1
 
 
