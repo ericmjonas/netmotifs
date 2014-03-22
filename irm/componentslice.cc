@@ -44,6 +44,7 @@ void slice_sample_exec<BetaBernoulliNonConj>
  BetaBernoulliNonConj::suffstats_t * ss, 
  BetaBernoulliNonConj::hypers_t * hps, 
  std::vector<BetaBernoulliNonConj::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp){
     if (width == 0.0) { 
@@ -51,9 +52,9 @@ void slice_sample_exec<BetaBernoulliNonConj>
     }
 
     auto p = slice_sample2_double(
-                                 [&ss, &hps, data, &dppos, temp](float x) -> float{
+                                 [&ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                      ss->p = x; 
-                                     return BetaBernoulliNonConj::score(ss, hps, data, dppos)/temp;
+                                     return BetaBernoulliNonConj::score(ss, hps, data, observed, dppos)/temp;
                                  }, ss->p, width, rng); 
     
     ss->p = p; 
@@ -66,6 +67,7 @@ void slice_sample_exec<LogisticDistance>
  LogisticDistance::suffstats_t * ss, 
  LogisticDistance::hypers_t * hps, 
  std::vector<LogisticDistance::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
     if (width == 0.0) {
@@ -77,20 +79,21 @@ void slice_sample_exec<LogisticDistance>
 
 
     }
+
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return LogisticDistance::score(ss, hps, data, 
-                                                                     dppos) /temp;
+                                                                     observed, dppos) /temp;
                                   }, ss->mu, width, rng); 
     
     ss->mu = mu; 
 
     auto lambda = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->lambda = x; 
                                           return LogisticDistance::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->lambda, 
                                       width, rng); 
     
@@ -105,6 +108,7 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
  LogisticDistanceFixedLambda::suffstats_t * ss, 
  LogisticDistanceFixedLambda::hypers_t * hps, 
  std::vector<LogisticDistanceFixedLambda::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
     if (width == 0.0) {
@@ -118,10 +122,10 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
     }
     try { 
         auto mu = slice_sample2_double(
-                                       [ss, &hps, data, &dppos, temp](float x) -> float{
+                                       [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                            ss->mu = x; 
                                            return LogisticDistanceFixedLambda::score(ss, hps, data, 
-                                                                     dppos) /temp;
+                                                                     observed, dppos) /temp;
                                        }, ss->mu, width, rng); 
         
         ss->mu = mu; 
@@ -137,10 +141,10 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
     }
     try { 
     auto p_scale = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->p_scale = x; 
                                           return LogisticDistanceFixedLambda::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->p_scale, 
                                       0.1, rng); 
     
@@ -158,6 +162,7 @@ void slice_sample_exec<SigmoidDistance>
  SigmoidDistance::suffstats_t * ss, 
  SigmoidDistance::hypers_t * hps, 
  std::vector<SigmoidDistance::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp){
     if (width == 0.0) {
@@ -165,20 +170,20 @@ void slice_sample_exec<SigmoidDistance>
     }
 
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                      ss->mu = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
-                                                                    dppos)/temp;
+                                                                    observed, dppos)/temp;
                                   }, ss->mu, width, rng); 
     
     ss->mu = mu; 
 
 
     auto lambda = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                      ss->lambda = x; 
                                      return SigmoidDistance::score(ss, hps, data, 
-                                                                    dppos)/temp;
+                                                                    observed, dppos)/temp;
                                       }, ss->lambda, width, rng); 
 
     ss->lambda = lambda; 
@@ -191,6 +196,7 @@ template<> void slice_sample_exec<LinearDistance>
  LinearDistance::suffstats_t * ss, 
  LinearDistance::hypers_t * hps, 
  std::vector<LinearDistance::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -199,10 +205,10 @@ template<> void slice_sample_exec<LinearDistance>
     }
 
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return LinearDistance::score(ss, hps, data, 
-                                                                     dppos) /temp;
+                                                                     observed, dppos) /temp;
                                   }, ss->mu, width, rng); 
     
     ss->mu = mu; 
@@ -210,10 +216,10 @@ template<> void slice_sample_exec<LinearDistance>
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
     auto p = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return LinearDistance::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->p, 0.5, rng); 
 
     
@@ -227,6 +233,7 @@ void slice_sample_exec<BetaBernoulli>
  BetaBernoulli::suffstats_t * ss, 
  BetaBernoulli::hypers_t * hps, 
  std::vector<BetaBernoulli::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp){
     // Doesn't do anything because the model is conjugate
@@ -239,6 +246,7 @@ void slice_sample_exec<NormalInverseChiSq>
  NormalInverseChiSq::suffstats_t * ss, 
  NormalInverseChiSq::hypers_t * hps, 
  std::vector<NormalInverseChiSq::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp){
     // Doesn't do anything because the model is conjugate
@@ -251,6 +259,7 @@ void slice_sample_exec<GammaPoisson>
  GammaPoisson::suffstats_t * ss, 
  GammaPoisson::hypers_t * hps, 
  std::vector<GammaPoisson::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp){
     // Doesn't do anything because the model is conjugate
@@ -262,6 +271,7 @@ template<> void slice_sample_exec<NormalDistanceFixedWidth>
  NormalDistanceFixedWidth::suffstats_t * ss, 
  NormalDistanceFixedWidth::hypers_t * hps, 
  std::vector<NormalDistanceFixedWidth::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -270,10 +280,10 @@ template<> void slice_sample_exec<NormalDistanceFixedWidth>
     }
 
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return NormalDistanceFixedWidth::score(ss, hps, data, 
-                                                                     dppos) /temp;
+                                                                     observed, dppos) /temp;
                                   }, ss->mu, width, rng);
     
     ss->mu = mu; 
@@ -281,10 +291,10 @@ template<> void slice_sample_exec<NormalDistanceFixedWidth>
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
     auto p = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return NormalDistanceFixedWidth::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->p, 0.5, rng); 
     
     ss->p = p; 
@@ -296,6 +306,7 @@ template<> void slice_sample_exec<SquareDistanceBump>
  SquareDistanceBump::suffstats_t * ss, 
  SquareDistanceBump::hypers_t * hps, 
  std::vector<SquareDistanceBump::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -303,10 +314,10 @@ template<> void slice_sample_exec<SquareDistanceBump>
         width = hps->mu_hp* 2.0; 
     }
     auto mu = slice_sample2_double(
-                                  [ss, &hps, data, &dppos, temp](float x) -> float{
+                                  [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                       ss->mu = x; 
                                       return SquareDistanceBump::score(ss, hps, data, 
-                                                                     dppos) /temp;
+                                                                     observed, dppos) /temp;
                                   }, ss->mu,  width, rng); 
     
     ss->mu = mu; 
@@ -315,10 +326,10 @@ template<> void slice_sample_exec<SquareDistanceBump>
     // the width for this is always 0.1 because we're always sampling 
     // on [0, 1]
     auto p = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->p = x; 
                                           return SquareDistanceBump::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->p, 0.5, rng); 
 
     
@@ -331,6 +342,7 @@ template<> void slice_sample_exec<ExponentialDistancePoisson>
  ExponentialDistancePoisson::suffstats_t * ss, 
  ExponentialDistancePoisson::hypers_t * hps, 
  std::vector<ExponentialDistancePoisson::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -344,14 +356,14 @@ template<> void slice_sample_exec<ExponentialDistancePoisson>
     }
     //std::cout << "EDP : slice sampling mu, mu_width=" << mu_width << std::endl; 
     auto mu = slice_sample2_double(
-                            [ss, &hps, data, &dppos, temp](float x) -> float{
+                            [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                 ss->mu = x; 
                                 if(x > 1e50) { 
                                     throw std::runtime_error("mu the hell do you think you are?"); 
                                 }
 
                                 return ExponentialDistancePoisson::score(ss, hps, data, 
-                                                                         dppos) /temp;
+                                                                         observed, dppos) /temp;
                             }, ss->mu, mu_width, rng); 
     
     ss->mu = mu; 
@@ -360,10 +372,10 @@ template<> void slice_sample_exec<ExponentialDistancePoisson>
     //std::cout << "EDP : slice sampling rate_scale, rate_scale_width=" << rate_scale_width << std::endl; 
 
     auto rate_scale = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->rate_scale = x; 
                                           return ExponentialDistancePoisson::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->rate_scale, rate_scale_width, rng); 
 
     
@@ -377,6 +389,7 @@ template<> void slice_sample_exec<LogisticDistancePoisson>
  LogisticDistancePoisson::suffstats_t * ss, 
  LogisticDistancePoisson::hypers_t * hps, 
  std::vector<LogisticDistancePoisson::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -390,14 +403,14 @@ template<> void slice_sample_exec<LogisticDistancePoisson>
     }
     //std::cout << "EDP : slice sampling mu, mu_width=" << mu_width << std::endl; 
     auto mu = slice_sample2_double(
-                            [ss, &hps, data, &dppos, temp](float x) -> float{
+                            [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                 ss->mu = x; 
                                 if(x > 1e50) { 
                                     throw std::runtime_error("mu the hell do you think you are?"); 
                                 }
 
                                 return LogisticDistancePoisson::score(ss, hps, data, 
-                                                                         dppos) /temp;
+                                                                         observed, dppos) /temp;
                             }, ss->mu, mu_width, rng); 
     
     ss->mu = mu; 
@@ -406,10 +419,10 @@ template<> void slice_sample_exec<LogisticDistancePoisson>
     //std::cout << "EDP : slice sampling rate_scale, rate_scale_width=" << rate_scale_width << std::endl; 
 
     auto rate_scale = slice_sample2_double(
-                                      [ss, &hps, data, &dppos, temp](float x) -> float{
+                                      [ss, &hps, data, &observed, &dppos, temp](float x) -> float{
                                           ss->rate_scale = x; 
                                           return LogisticDistancePoisson::score(ss, hps, data, 
-                                                                         dppos)/temp;
+                                                                         observed, dppos)/temp;
                                       }, ss->rate_scale, rate_scale_width, rng); 
 
     
@@ -424,6 +437,7 @@ void slice_sample_exec<MixtureModelDistribution>
  MixtureModelDistribution::suffstats_t * ss, 
  MixtureModelDistribution::hypers_t * hps, 
  std::vector<MixtureModelDistribution::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp){
 
@@ -443,20 +457,20 @@ void slice_sample_exec<MixtureModelDistribution>
         //           << " mu=" << ss->mu[k] << std::endl; 
 
         auto mu = slice_sample2_double(
-                                       [ss, k, &hps, data, &dppos, temp](float x) -> float{
+                                       [ss, k, &hps, data, &observed, &dppos, temp](float x) -> float{
                                            ss->mu[k] = x; 
                                            return MixtureModelDistribution::score(ss, hps, data, 
-                                                                                  dppos) /temp;
+                                                                                  observed, dppos) /temp;
                                        }, ss->mu[k], width, rng); 
     
         ss->mu[k] = mu; 
         // std::cout << "before var[" << k << "]= " <<  ss->var[k] << std::endl; 
         
         auto var = slice_sample2_double(
-                                       [ss, k, &hps, data, &dppos, temp](float x) -> float{
+                                       [ss, k, &hps, data, &observed, &dppos, temp](float x) -> float{
                                            ss->var[k] = x; 
                                            return MixtureModelDistribution::score(ss, hps, data, 
-                                                                                  dppos) /temp;
+                                                                                  observed, dppos) /temp;
                                        }, ss->var[k], width, rng); 
         ss->var[k] = var; 
         // std::cout << "var[" << k << "]= " <<  var << std::endl; 
@@ -468,9 +482,9 @@ void slice_sample_exec<MixtureModelDistribution>
     // sample dirichlet and do MH
     auto oldpi = ss->pi; 
 
-    float oldscore = MixtureModelDistribution::score(ss, hps, data, dppos)/temp; 
+    float oldscore = MixtureModelDistribution::score(ss, hps, data, observed, dppos)/temp; 
     ss->pi = symmetric_dirichlet_sample(hps->comp_k, hps->dir_alpha, rng); 
-    float newscore = MixtureModelDistribution::score(ss, hps, data, dppos)/temp; 
+    float newscore = MixtureModelDistribution::score(ss, hps, data, observed, dppos)/temp; 
     if (uniform_01(rng) < exp(newscore - oldscore)) { 
         // accept
     } else { 

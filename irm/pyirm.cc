@@ -21,60 +21,61 @@ std::string helloworld() {
 }
 
 IComponentContainer * create_component_container(std::string data, bp::tuple data_dims, 
-                                               std::string modeltype) 
+                                                 std::string observed, 
+                                                 std::string modeltype) 
 {
     auto data_dims_v = extract_vect<size_t>(data_dims); 
     
     if(modeltype == "BetaBernoulli") { 
-        IComponentContainer * cc = new ComponentContainer<BetaBernoulli>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<BetaBernoulli>(data, data_dims_v, observed);  
         return cc; 
      } else    if(modeltype == "GammaPoisson") { 
 
-        IComponentContainer * cc = new ComponentContainer<GammaPoisson>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<GammaPoisson>(data, data_dims_v, observed);  
         return cc; 
      } else    if(modeltype == "NormalInverseChiSq") { 
 
-        IComponentContainer * cc = new ComponentContainer<NormalInverseChiSq>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<NormalInverseChiSq>(data, data_dims_v, observed);  
         return cc; 
     }     else if(modeltype == "BetaBernoulliNonConj") { 
-        IComponentContainer * cc = new ComponentContainer<BetaBernoulliNonConj>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<BetaBernoulliNonConj>(data, data_dims_v, observed);  
         return cc; 
     } else if(modeltype == "AccumModel") { 
-        IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<AccumModel>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "LogisticDistanceFixedLambda") { 
-        IComponentContainer * cc = new ComponentContainer<LogisticDistanceFixedLambda>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<LogisticDistanceFixedLambda>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "LogisticDistance") { 
-        IComponentContainer * cc = new ComponentContainer<LogisticDistance>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<LogisticDistance>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "SigmoidDistance") { 
-        IComponentContainer * cc = new ComponentContainer<SigmoidDistance>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<SigmoidDistance>(data, data_dims_v, observed);  
         return cc; 
     } else if(modeltype == "LinearDistance") { 
-        IComponentContainer * cc = new ComponentContainer<LinearDistance>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<LinearDistance>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "NormalDistanceFixedWidth") { 
-        IComponentContainer * cc = new ComponentContainer<NormalDistanceFixedWidth>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<NormalDistanceFixedWidth>(data, data_dims_v, observed);  
         return cc; 
     } else if(modeltype == "SquareDistanceBump") { 
-        IComponentContainer * cc = new ComponentContainer<SquareDistanceBump>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<SquareDistanceBump>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "ExponentialDistancePoisson") { 
-        IComponentContainer * cc = new ComponentContainer<ExponentialDistancePoisson>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<ExponentialDistancePoisson>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "LogisticDistancePoisson") { 
-        IComponentContainer * cc = new ComponentContainer<LogisticDistancePoisson>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<LogisticDistancePoisson>(data, data_dims_v, observed);  
         return cc; 
 
     } else if(modeltype == "MixtureModelDistribution") { 
-        IComponentContainer * cc = new ComponentContainer<MixtureModelDistribution>(data, data_dims_v); 
+        IComponentContainer * cc = new ComponentContainer<MixtureModelDistribution>(data, data_dims_v, observed);  
         return cc; 
 
     } else { 

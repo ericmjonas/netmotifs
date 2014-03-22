@@ -29,6 +29,7 @@ void slice_sample_exec
  typename T::suffstats_t * ss, 
  typename T::hypers_t * hps, 
  typename std::vector<typename T::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp)
 {
@@ -42,6 +43,7 @@ void slice_sample_exec<BetaBernoulliNonConj>
  BetaBernoulliNonConj::suffstats_t * ss, 
  BetaBernoulliNonConj::hypers_t * hps, 
  std::vector<BetaBernoulliNonConj::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -52,6 +54,7 @@ void slice_sample_exec<LogisticDistance>
  LogisticDistance::suffstats_t * ss, 
  LogisticDistance::hypers_t * hps, 
  std::vector<LogisticDistance::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -61,6 +64,7 @@ void slice_sample_exec<LogisticDistanceFixedLambda>
  LogisticDistanceFixedLambda::suffstats_t * ss, 
  LogisticDistanceFixedLambda::hypers_t * hps, 
  std::vector<LogisticDistanceFixedLambda::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -71,6 +75,7 @@ void slice_sample_exec<SigmoidDistance>
  SigmoidDistance::suffstats_t * ss, 
  SigmoidDistance::hypers_t * hps, 
  std::vector<SigmoidDistance::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -81,6 +86,7 @@ void slice_sample_exec<LinearDistance>
  LinearDistance::suffstats_t * ss, 
  LinearDistance::hypers_t * hps, 
  std::vector<LinearDistance::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -90,6 +96,7 @@ void slice_sample_exec<BetaBernoulli>
  BetaBernoulli::suffstats_t * ss, 
  BetaBernoulli::hypers_t * hps, 
  std::vector<BetaBernoulli::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -99,6 +106,7 @@ void slice_sample_exec<GammaPoisson>
  GammaPoisson::suffstats_t * ss, 
  GammaPoisson::hypers_t * hps, 
  std::vector<GammaPoisson::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -109,6 +117,7 @@ void slice_sample_exec<NormalDistanceFixedWidth>
  NormalDistanceFixedWidth::suffstats_t * ss, 
  NormalDistanceFixedWidth::hypers_t * hps, 
  std::vector<NormalDistanceFixedWidth::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -119,6 +128,7 @@ void slice_sample_exec<SquareDistanceBump>
  SquareDistanceBump::suffstats_t * ss, 
  SquareDistanceBump::hypers_t * hps, 
  std::vector<SquareDistanceBump::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -129,6 +139,7 @@ void slice_sample_exec<ExponentialDistancePoisson>
  ExponentialDistancePoisson::suffstats_t * ss, 
  ExponentialDistancePoisson::hypers_t * hps, 
  std::vector<ExponentialDistancePoisson::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -139,6 +150,7 @@ void slice_sample_exec<LogisticDistancePoisson>
  LogisticDistancePoisson::suffstats_t * ss, 
  LogisticDistancePoisson::hypers_t * hps, 
  std::vector<LogisticDistancePoisson::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 
@@ -148,6 +160,7 @@ void slice_sample_exec<NormalInverseChiSq>
  NormalInverseChiSq::suffstats_t * ss, 
  NormalInverseChiSq::hypers_t * hps, 
  std::vector<NormalInverseChiSq::value_t>::iterator data,
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos, 
  float temp);
 
@@ -158,6 +171,7 @@ void slice_sample_exec<MixtureModelDistribution>
  MixtureModelDistribution::suffstats_t * ss, 
  MixtureModelDistribution::hypers_t * hps, 
  std::vector<MixtureModelDistribution::value_t>::iterator data, 
+ const std::vector<char>::iterator observed, 
  const std::vector<dppos_t> & dppos,
  float temp);
 

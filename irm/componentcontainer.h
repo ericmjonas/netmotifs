@@ -57,7 +57,8 @@ class  ComponentContainer : public IComponentContainer, boost::noncopyable
 
 public:
     ComponentContainer(const std::string & data, 
-                       std::vector<size_t> data_shape) :
+                       std::vector<size_t> data_shape, 
+                       const std::string & observed ) :
         NDIM_(data_shape.size()), 
         data_shape_(data_shape) ,
         temp_(1.0)
@@ -78,8 +79,12 @@ public:
             data_size *= data_shape_[i]; 
         }
         data_.resize(data_size); 
+        observed_.resize(data_size); 
+        
         memcpy(&(data_[0]), data.c_str(), 
                sizeof(typename CM::value_t)*data_size); 
+        memcpy(&(observed_[0]), observed.c_str(), 
+               data_size); 
         
     }
     
@@ -95,7 +100,6 @@ public:
         group_hash_t gp = hash_coords(group_coords); 
 
         
-        sswrapper_t * ssw = new sswrapper_t; 
         CM::ss_sample_new(&(components_[gp].ss), &hps_, rng); 
         components_[gp].count = 0; 
     }
@@ -115,7 +119,8 @@ public:
             auto gp = hash_coords(i->first); 
             if(components_[gp].count > 0) { 
                 score += CM::score(&(components_[gp].ss), &hps_, 
-                                   data_.begin(), i->second); 
+                                   data_.begin(), observed_.begin(), 
+                                   i->second); 
             }
         }
         return score/temp_; 
@@ -186,7 +191,7 @@ public:
                 group_hash_t gh = hash_coords(c.first); 
                 slice_sample_exec<CM>(rng, width, 
                                       &(components_[gh].ss), 
-                                      &hps_, data_.begin(), 
+                                      &hps_, data_.begin(), observed_.begin(), 
                                       c.second, temp_); 
             }
         } else if(name == "continuous_mh") { 
@@ -197,9 +202,10 @@ public:
                 group_hash_t gh = hash_coords(c.first); 
 
                 continuous_mh_sample_exec<CM>(rng, iters, min, max, 
-                                      &(components_[gh].ss), 
-                                      &hps_, data_.begin(), 
-                                      c.second, temp_); 
+                                              &(components_[gh].ss), 
+                                              &hps_, data_.begin(), 
+                                              observed_.begin(), 
+                                              c.second, temp_); 
             }
         } else { 
             throw std::runtime_error("unknown kernel name"); 
@@ -232,6 +238,7 @@ private:
     std::vector<size_t> data_shape_; 
 
     std::vector< typename CM::value_t> data_; 
+    std::vector<char> observed_; 
     components_t components_; 
 
 

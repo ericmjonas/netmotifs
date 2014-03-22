@@ -3,7 +3,7 @@ import pyirm
 import models
 
 class Relation(object):
-    def __init__(self, relation_def, data, modeltype = None):
+    def __init__(self, relation_def, data, modeltype = None, observed=None):
 
         self.conjugate = False
         if isinstance(modeltype, models.BetaBernoulli):
@@ -50,9 +50,12 @@ class Relation(object):
         else:
             raise NotImplementedError()
         self.modeltypestr = modeltypestr
+        if observed == None:
+            observed = np.ones(data.shape, dtype=np.uint8)
 
         self.compcontainer = pyirm.create_component_container(data.tostring(), 
                                                               data.shape, 
+                                                              observed.tostring(), 
                                                               modeltypestr)
         self.domain_mapper = {}
         self.domain_sizes = []

@@ -20,7 +20,8 @@ int main()
 
     std::string data(ENTITY_N * ENTITY_N*sizeof(LogisticDistance::value_t), 0); 
     std::vector<size_t> shape = {ENTITY_N, ENTITY_N}; 
-    ComponentContainer<LogisticDistance> cc_bb(data, shape); 
+    std::string observed(ENTITY_N * ENTITY_N, 1); 
+    ComponentContainer<LogisticDistance> cc_bb(data, shape, observed); 
 
     axesdef_t axes_def = {0, 0}; 
     domainsizes_t domainsizes = {ENTITY_N}; 

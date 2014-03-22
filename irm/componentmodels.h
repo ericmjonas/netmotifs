@@ -79,9 +79,10 @@ struct BetaBernoulli {
         
     }
 
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data,
+                       RandomAccessIterator2 observed,
                        const std::vector<dppos_t> & dppos) { 
         float heads = ss->heads; 
         float tails = ss->tails; 
@@ -159,9 +160,10 @@ struct AccumModel {
         
     }
 
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos) { 
         return ss->sum + hps->offset; 
     }
@@ -263,9 +265,10 @@ struct BetaBernoulliNonConj {
         return MYLOG(boost::math::pdf(dist, ss->p)); 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, 
                                   RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
                                   const std::vector<dppos_t> & dppos)
     {
         // int heads = 0; 
@@ -285,21 +288,24 @@ struct BetaBernoulliNonConj {
         // return logf(boost::math::pdf(dist, heads)); 
         float score = 0.0; 
         for(auto dpi : dppos) { 
-            if(data[dpi]) {
-                score += MYLOG(ss->p); 
-            } else { 
-                score += MYLOG(1 - ss->p); 
+            if(observed[dpi]) { 
+                if(data[dpi]) {
+                    score += MYLOG(ss->p); 
+                } else { 
+                    score += MYLOG(1 - ss->p); 
+                }
             }
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos) { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, data, dppos); 
+        float likelihood_score = score_likelihood(ss, data, observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -442,36 +448,41 @@ struct LogisticDistance {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
-                                          ss->lambda, hps->p_min, 
-                                          hps->p_max); 
-            //p = p * p_range + hps->p_min;  // already calculated
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+            if(observed[dpi]) { 
+                float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
+                                              ss->lambda, hps->p_min, 
+                                              hps->p_max); 
+                //p = p * p_range + hps->p_min;  // already calculated
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, observed, 
+                                                  dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -639,36 +650,41 @@ struct LogisticDistanceFixedLambda {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
-                                          hps->lambda, hps->p_min, 
-                                          ss->p_scale); 
-            //p = p * p_range + hps->p_min;  // already calculated
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+            if(observed[dpi]) { 
+                float p = rev_logistic_scaled(data[dpi].distance, ss->mu, 
+                                              hps->lambda, hps->p_min, 
+                                              ss->p_scale); 
+                //p = p * p_range + hps->p_min;  // already calculated
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, observed, 
+                                                  dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -813,34 +829,39 @@ struct SigmoidDistance {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
         for(auto dpi : dppos) { 
-            float p = sigmoid_scaled(data[dpi].distance, ss->mu, 
-                                     ss->lambda, hps->p_min, 
-                                     hps->p_max); 
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+            if (observed[dpi]) { 
+                float p = sigmoid_scaled(data[dpi].distance, ss->mu, 
+                                         ss->lambda, hps->p_min, 
+                                         hps->p_max); 
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -993,35 +1014,40 @@ struct LinearDistance {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float p = linear_prob(data[dpi].distance, ss->mu, 
-                                  ss->p, hps->p_min); 
+            if(observed[dpi]) { 
+                float p = linear_prob(data[dpi].distance, ss->mu, 
+                                      ss->p, hps->p_min); 
 
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
 
         return prior_score + likelihood_score; 
     }
@@ -1118,9 +1144,10 @@ struct GammaPoisson {
 
     }
 
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data,
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos) { 
         auto im = intermediates(hps, ss); 
         float alpha_z = im.first; 
@@ -1293,35 +1320,40 @@ struct NormalDistanceFixedWidth {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float p = norm_prob(data[dpi].distance, ss->mu, 
-                                  ss->p, hps->p_min, hps->width); 
+            if (observed[dpi]) { 
+                float p = norm_prob(data[dpi].distance, ss->mu, 
+                                    ss->p, hps->p_min, hps->width); 
 
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -1487,35 +1519,40 @@ struct SquareDistanceBump {
         return score + p_score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float p = square_prob(data[dpi].distance, ss->mu, 
-                                  ss->p, hps->p_min); 
+            if(observed[dpi]) { 
+                float p = square_prob(data[dpi].distance, ss->mu, 
+                                      ss->p, hps->p_min); 
 
-            float lscore; 
-            if(data[dpi].link) {
-                lscore = MYLOG(p); 
-            } else { 
-                lscore = MYLOG(1 - p); 
+                float lscore; 
+                if(data[dpi].link) {
+                    lscore = MYLOG(p); 
+                } else { 
+                    lscore = MYLOG(1 - p); 
+                }
+                score += lscore; 
             }
-            score += lscore; 
-
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -1669,29 +1706,35 @@ struct ExponentialDistancePoisson {
         return score; 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
+            if (observed[dpi]) { 
                 
-            float rate = exp_rate(data[dpi].distance, ss->mu, 
-                                          ss->rate_scale); 
-            float lscore = log_poisson_dist(data[dpi].link, rate); 
-            score += lscore; 
+                float rate = exp_rate(data[dpi].distance, ss->mu, 
+                                      ss->rate_scale); 
+                float lscore = log_poisson_dist(data[dpi].link, rate); 
+                score += lscore; 
+            }
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -1843,32 +1886,37 @@ struct LogisticDistancePoisson {
 
     }
     
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
-                                  RandomAccessIterator data, const std::vector<dppos_t> & dppos)
+                                  RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
+                                  const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
 
         for(auto dpi : dppos) { 
-            float rate = rev_logistic_scaled(data[dpi].distance, ss->mu, 
-                                             hps->lambda, hps->rate_min, 
-                                             ss->rate_scale); 
-            //p = p * p_range + hps->p_min;  // already calculated
-            float lscore = log_poisson_dist(data[dpi].link, rate); 
+            if (observed[dpi]) { 
+                float rate = rev_logistic_scaled(data[dpi].distance, ss->mu, 
+                                                 hps->lambda, hps->rate_min, 
+                                                 ss->rate_scale); 
+                //p = p * p_range + hps->p_min;  // already calculated
+                float lscore = log_poisson_dist(data[dpi].link, rate); 
 
-            score += lscore; 
-
+                score += lscore; 
+            }
         }
         return score; 
     }
     
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data, 
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos)
     { 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, 
+                                                  observed, dppos); 
         return prior_score + likelihood_score; 
     }
 
@@ -1988,9 +2036,10 @@ struct NormalInverseChiSq {
         
     }
 
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data,
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos) { 
         float mu_n, kappa_n, sigmasq_n, nu_n; 
         std::tie(mu_n, kappa_n, sigmasq_n, nu_n) = intermediates(hps, ss); 
@@ -2161,26 +2210,30 @@ struct MixtureModelDistribution {
     }
 
 
-    template<typename RandomAccessIterator> 
+    template<typename RandomAccessIterator, typename RandomAccessIterator2> 
     static float score_likelihood(suffstats_t * ss, hypers_t * hps, 
                                   RandomAccessIterator data, 
+                                  RandomAccessIterator2 observed, 
                                   const std::vector<dppos_t> & dppos)
     {
         float score = 0.0; 
         for(auto pos : dppos) { 
-            score += post_pred(ss, hps, data[pos]); 
+            if(observed[pos]) { 
+                score += post_pred(ss, hps, data[pos]); 
+            }
         }
         return score; 
 
     }
 
-    template<typename RandomAccessIterator>
+    template<typename RandomAccessIterator, typename RandomAccessIterator2>
     static float score(suffstats_t * ss, hypers_t * hps, 
                        RandomAccessIterator data,
+                       RandomAccessIterator2 observed, 
                        const std::vector<dppos_t> & dppos) { 
 
         float prior_score = score_prior(ss, hps); 
-        float likelihood_score = score_likelihood(ss, hps, data, dppos); 
+        float likelihood_score = score_likelihood(ss, hps, data, observed, dppos); 
         return prior_score + likelihood_score; 
 
     }
