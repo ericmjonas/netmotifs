@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(irm)
 
-set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11" )
+set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11 -lpthread" )
 
 # boost requirements
 if(APPLE)
@@ -32,6 +32,10 @@ add_executable(benchmark
    benchmark.cc
 )
 
+add_executable(futuretest
+   futuretest.cc
+)
+
 add_executable(disttest
         disttest.cc
 )
@@ -53,6 +57,7 @@ add_library(pyirm SHARED
 
 
 TARGET_LINK_LIBRARIES( benchmark ${Boost_LIBRARIES} irm ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES( futuretest ${Boost_LIBRARIES} irm ${PYTHON_LIBRARIES})
 
 TARGET_LINK_LIBRARIES( pyirm irm ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
 

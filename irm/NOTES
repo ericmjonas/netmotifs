@@ -132,12 +132,16 @@ from python we will be calling this as:
 
 Building attempt 2
 
-
-./bootstrap.sh --prefix=/Users/jonas/anaconda/
-./b2 toolset=gcc=c11
-./b2 toolset=gcc-c11  install
+in ./boost_1_55_0/tools/build/v2/user-config.jam
+add
 using gcc
    : c11
    : "/usr/local/bin/g++-4.7" # your path to the C++0x compiler
    : <cxxflags>-std=c++11
    ;
+
+
+./bootstrap.sh --prefix=/Users/jonas/anaconda/
+./b2 toolset=gcc-c11
+./b2 toolset=gcc-c11  install
+

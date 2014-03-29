@@ -23,7 +23,7 @@ MODELS =  [
 
            'ExponentialDistancePoisson',
            'LogisticDistancePoisson', 
-    'NormalInverseChiSq'
+    'NormalInverseChiSq',
     #'SquareDistanceBump',  # NOTE THIS IS SO NOT READY FOR PRODUCTION the delta prob is broken
     "MixtureModelDistribution"
 ]
