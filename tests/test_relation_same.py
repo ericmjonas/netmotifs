@@ -12,7 +12,7 @@ from irm import pyirm
 
 RELATIONS = [
              ('cpp', irm.pyirmutil.Relation), 
-             ('cpp2', irm.pyirmutil.Relation)]
+             ('parcpp', irm.pyirmutil.ParRelation)]
 
 
 def gen_fake_data(m, N):
@@ -273,10 +273,8 @@ def test_postpred_T1_T1():
 
                 
             compare_post_pred(postpred['cpp'], 
-                              postpred['cpp2'])
-            print postpred['cpp']
-            print postpred_map['cpp']
+                              postpred['parcpp'])
 
-            compare_post_pred(postpred['cpp'], 
-                              postpred_map['cpp'])
+            compare_post_pred(postpred['parcpp'], 
+                              postpred_map['parcpp'])
 
