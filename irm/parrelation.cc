@@ -1,4 +1,5 @@
 #include <boost/assign.hpp>
+#include <future>
 
 #include "parrelation.h"
 
@@ -220,17 +221,57 @@ float ParRelation::post_pred(domainpos_t domain, groupid_t group_id,
 
 }
 
+float ParRelation::post_pred_combined(domainpos_t domain, groupid_t group_id, 
+                          entitypos_t entity_pos) const
+{
+
+    /////////////////////////////
+    // this is the add remove phase
+
+    const auto & axispos_for_domain = get_axispos_for_domain(domain); 
+
+    float score = 0.0; 
+
+    for(auto dp :  datapoints_for_entity(domain, entity_pos)) { 
+        const auto & current_group_coords = get_dp_group_coords(dp); 
+        auto new_group_coords = current_group_coords; 
+        const auto & dp_entity_pos = get_dp_entity_coords(dp); 
+        
+        for(auto axis_pos :  axispos_for_domain) { 
+            if(dp_entity_pos[axis_pos] == entity_pos) { 
+                new_group_coords[axis_pos] = group_id; 
+            }
+        }
+        if (fully_assigned(new_group_coords) and !fully_assigned(current_group_coords))
+            {
+                score += pCC_->post_pred(new_group_coords, dp); 
+            }
+
+        //set_dp_group_coords(dp, new_group_coords); 
+    }
+    return score; 
+
+
+}
+
 
 bp::list ParRelation::post_pred_map(domainpos_t domain, bp::list group_ids, 
                           entitypos_t entity_pos)
 {
     bp::list out; 
+    // convert into vector
+    std::vector<std::future<float> > results; 
+
     for(int i = 0; i < bp::len(group_ids); i++) { 
         groupid_t group_id = bp::extract<groupid_t>(group_ids[i]); 
         
-        float score = add_entity_to_group(domain, group_id, entity_pos); 
-        remove_entity_from_group(domain, group_id, entity_pos); 
-        out.append(score); 
+        results.push_back(std::async(std::launch::async,
+                                     &ParRelation::post_pred_combined, 
+                                     this, 
+                                     domain, group_id, entity_pos)) ;
+    }
+    for(int i = 0; i < results.size(); ++i) { 
+        out.append(results[i].get()); 
     }
     return out; 
 

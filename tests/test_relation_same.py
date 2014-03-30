@@ -9,6 +9,7 @@ from irm import util
 from irm import model
 from irm import Relation
 from irm import pyirm
+import time
 
 RELATIONS = [
              ('cpp', irm.pyirmutil.Relation), 
@@ -278,3 +279,86 @@ def test_postpred_T1_T1():
             compare_post_pred(postpred['parcpp'], 
                               postpred_map['parcpp'])
 
+            compare_post_pred(postpred['cpp'], 
+                              postpred_map['parcpp'])
+
+def test_postpred_T1_T1_speed():
+    """ 
+    Hack speed test
+    """
+
+    rng = pyirm.RNG()
+    np.random.seed(0)
+    for modelstr in ['LogisticDistance', 'ExponentialDistancePoisson']:
+        
+        for T1_N in [1000]:
+            GROUP_N = 30 
+            data = {'domains' : {'d1': {'N' : T1_N}}, 
+                    'relations' : {'r1' : {'relation' : ('d1', 'd1'), 
+                                           'model' : modelstr}}}
+
+            latent = {'domains' : 
+                      {'d1' : 
+                       {'assignment' : np.random.permutation(T1_N) % GROUP_N}}}
+
+            n_latent, n_data = irm.data.synth.prior_generate(latent, data)
+
+
+            m =  models.NAMES[modelstr]()
+
+            postpred = {}
+            postpred_map = {}
+            map_times = {}
+            for relation_name, relation_class in RELATIONS:
+
+                rel_data = n_data['relations']['r1']['data']
+
+                if rel_data.dtype == np.bool:
+                    rel_data = rel_data.astype(np.uint8)
+
+
+                rel_hps = n_latent['relations']['r1']['hps']
+
+                r = relation_class([('d1', T1_N), ('d1', T1_N)], 
+                                   rel_data, m)
+                r.set_hps(rel_hps)
+
+                d_groups = relation_r_set(r, n_latent, rng)
+
+                if not m.conjugate():
+                    relation_r_set_comps(r, 
+                                         n_data['relations']['r1']['relation'], 
+                                         n_latent['relations']['r1']['ss'], 
+                                         d_groups)
+
+                # for each entity, we remove it, compute the post-pred across both each
+                
+                # invert
+                new_old = {v : k for k, v in d_groups['d1'].iteritems()}
+                # group individually 
+                rpp = {}
+                rpp_map = {}
+                rmap_times = []
+                for ei in range(T1_N):
+                    orig_grp = latent['domains']['d1']['assignment'][ei]
+                    gi = d_groups['d1'][orig_grp]
+                    r.remove_entity_from_group('d1', gi, ei)
+
+                    # order
+                    gs = new_old.keys()
+                    t1 = time.time()
+                    rpp_map[ei]= dict(zip([new_old[g] for g in gs], 
+                                          r.post_pred_map('d1', 
+                                                          gs, 
+                                          ei)))
+
+                    rmap_times.append(time.time()-t1)
+                    # put it back
+                    r.add_entity_to_group('d1', gi, ei)
+                postpred_map[relation_name] = rpp_map
+                map_times[relation_name] = rmap_times
+
+
+                
+            print 'cpp time=', np.sum(map_times['cpp'])
+            print 'parcpp time=', np.sum(map_times['parcpp'])

@@ -692,7 +692,10 @@ class ExponentialDistancePoisson(object):
         return [('link',  np.int32), 
                 ('distance', np.float32)]
 
-    
+
+    def conjugate(self):
+        return False
+
     def sample_hps(self):
         """
         draw a sample of the HPs from some prior
@@ -707,7 +710,7 @@ class ExponentialDistancePoisson(object):
         """
         mu = np.random.exponential(hps['mu_hp'])
         rate_scale = np.random.exponential(hps['rate_scale_hp'])
-        print "PARAMETERS SAMPLED FROM HPS:", mu, rate_scale
+
         return {'rate_scale' : rate_scale, 
                 'mu' : mu}
 
