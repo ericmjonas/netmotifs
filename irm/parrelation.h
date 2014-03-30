@@ -1,5 +1,5 @@
-#ifndef __IRM_RELATION_H__
-#define __IRM_RELATION_H__
+#ifndef __IRM_PARRELATION_H__
+#define __IRM_PARRELATION_H__
 
 #include <boost/timer/timer.hpp>
 
@@ -8,7 +8,7 @@
 
 namespace irm { 
 
-class Relation
+class ParRelation
 {
 /*
   Domains are numbered, and axes are a list of domain integers. So for a T1xT1 
@@ -17,9 +17,9 @@ class Relation
   
 */
 public:
-    Relation(axesdef_t axes_def, domainsizes_t domainsizes, 
+    ParRelation(axesdef_t axes_def, domainsizes_t domainsizes, 
              IComponentContainer * cm); 
-    ~Relation() ; 
+    ~ParRelation() ; 
     void assert_unassigned(); 
     void assert_assigned();
     size_t assigned_dp_count();

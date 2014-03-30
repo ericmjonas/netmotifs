@@ -42,6 +42,7 @@ add_executable(disttest
 
 add_library(irm 
    relation.cc
+   parrelation.cc
    componentmodels.cc
    componentslice.cc
    componentmh.cc

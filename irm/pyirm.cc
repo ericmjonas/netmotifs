@@ -5,6 +5,7 @@
 #include <boost/utility.hpp>
 #include "util.h"
 #include "relation.h"
+#include "parrelation.h"
 #include "componentcontainer.h"
 #include "componentmodels.h"
 #include "pyirm_helpers.h"
@@ -104,6 +105,24 @@ bp::list get_all_groups_helper(Relation * rel, int d)
     return out;
 }
 
+ParRelation * pr_create_relation(bp::list axesdef, bp::list domainsizes, 
+                           IComponentContainer * cm) {
+
+    auto ad = extract_vect<int>(axesdef); 
+    auto ds = extract_vect<size_t>(domainsizes); 
+    return new ParRelation(ad, ds, cm); 
+
+}
+
+bp::list pr_get_all_groups_helper(ParRelation * rel, int d)
+{
+    bp::list out; 
+    for(auto v : rel->get_all_groups(d)) { 
+        out.append(v); 
+    }
+    return out;
+}
+
 void set_seed(rng_t & rng, int seed) { 
     rng.seed(seed); 
 }
@@ -139,10 +158,26 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("add_entity_to_group", &Relation::add_entity_to_group)
       .def("remove_entity_from_group", &Relation::remove_entity_from_group)
       .def("post_pred", &Relation::post_pred)
+      .def("post_pred_map", &Relation::post_pred_map)
       .def("total_score", &Relation::total_score)
       .def("get_component", &Relation::get_component) 
       .def("set_component", &Relation::set_component)
       .def("get_datapoints_per_group", &Relation::get_datapoints_per_group)
+      ; 
+
+  class_<ParRelation, boost::noncopyable>("PyParRelation", no_init)
+      .def( "__init__", bp::make_constructor( &pr_create_relation))
+      .def("create_group", &ParRelation::create_group)
+      .def("delete_group", &ParRelation::delete_group)
+      .def("get_all_groups", &pr_get_all_groups_helper)
+      .def("add_entity_to_group", &ParRelation::add_entity_to_group)
+      .def("remove_entity_from_group", &ParRelation::remove_entity_from_group)
+      .def("post_pred", &ParRelation::post_pred)
+      .def("post_pred_map", &ParRelation::post_pred_map)
+      .def("total_score", &ParRelation::total_score)
+      .def("get_component", &ParRelation::get_component) 
+      .def("set_component", &ParRelation::set_component)
+      .def("get_datapoints_per_group", &ParRelation::get_datapoints_per_group)
       ; 
 
   def("slice_sample", &slice_sampler_wrapper); 

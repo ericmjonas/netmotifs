@@ -1,11 +1,11 @@
 #include <boost/assign.hpp>
 
-#include "relation.h"
+#include "parrelation.h"
 
 
 namespace irm { 
 
-Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes, 
+ParRelation::ParRelation(axesdef_t axes_def, domainsizes_t domainsizes, 
                    IComponentContainer * cm) :
     axes_(axes_def), 
     pCC_(cm), 
@@ -72,25 +72,25 @@ Relation::Relation(axesdef_t axes_def, domainsizes_t domainsizes,
 }
 
 
-void Relation::assert_unassigned() { 
+void ParRelation::assert_unassigned() { 
 
 
 }
 
 
-void Relation::assert_assigned() {
+void ParRelation::assert_assigned() {
     
 
 }
 
-size_t Relation::assigned_dp_count()
+size_t ParRelation::assigned_dp_count()
 {
     // FIXME: implement
     return 0; 
 }
 
 
-groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
+groupid_t ParRelation::create_group(domainpos_t domain, rng_t & rng)
 {
     if(group_ids_[domain].empty()) { 
         throw std::runtime_error("too many groups!"); 
@@ -118,7 +118,7 @@ groupid_t Relation::create_group(domainpos_t domain, rng_t & rng)
     return new_gid; 
 }
 
-void Relation::delete_group(domainpos_t domain, groupid_t gid)
+void ParRelation::delete_group(domainpos_t domain, groupid_t gid)
 {
     // FIXME: god this is inefficient
     std::vector<group_set_t > domains_as_axes; 
@@ -143,14 +143,14 @@ void Relation::delete_group(domainpos_t domain, groupid_t gid)
     datapoints_per_group_cache_valid_ = false; 
 }
 
-std::vector<groupid_t> Relation::get_all_groups(domainpos_t di)
+std::vector<groupid_t> ParRelation::get_all_groups(domainpos_t di)
 {
     return std::vector<groupid_t>(domain_groups_[di].begin(), 
                                   domain_groups_[di].end());
 }
 
 // FIXME come up with some way of caching the mutated components
-float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id, 
+float ParRelation::add_entity_to_group(domainpos_t domain, groupid_t group_id, 
                                     entitypos_t entity_pos)
 {
 
@@ -183,7 +183,7 @@ float Relation::add_entity_to_group(domainpos_t domain, groupid_t group_id,
     return score; 
 }
 
-void Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid, 
+void ParRelation::remove_entity_from_group(domainpos_t domain, groupid_t groupid, 
                                         entitypos_t entity_pos)
 {
 
@@ -210,7 +210,7 @@ void Relation::remove_entity_from_group(domainpos_t domain, groupid_t groupid,
 }
 
 
-float Relation::post_pred(domainpos_t domain, groupid_t group_id, 
+float ParRelation::post_pred(domainpos_t domain, groupid_t group_id, 
                           entitypos_t entity_pos)
 {
     float score = add_entity_to_group(domain, group_id, entity_pos); 
@@ -221,7 +221,7 @@ float Relation::post_pred(domainpos_t domain, groupid_t group_id,
 }
 
 
-bp::list Relation::post_pred_map(domainpos_t domain, bp::list group_ids, 
+bp::list ParRelation::post_pred_map(domainpos_t domain, bp::list group_ids, 
                           entitypos_t entity_pos)
 {
     bp::list out; 
@@ -237,19 +237,19 @@ bp::list Relation::post_pred_map(domainpos_t domain, bp::list group_ids,
 
 }
 
-float Relation::total_score()
+float ParRelation::total_score()
 {
 
     return pCC_->total_score(get_datapoints_per_group()); 
 
 }
 
-Relation::~Relation()
+ParRelation::~ParRelation()
 {
 
 }
 
-bp::dict Relation::get_component(bp::tuple group_coords)
+bp::dict ParRelation::get_component(bp::tuple group_coords)
 {
     group_coords_t gc(DIMS_); 
     for(int i = 0; i < bp::len(group_coords); ++i) { 
@@ -259,7 +259,7 @@ bp::dict Relation::get_component(bp::tuple group_coords)
 }
 
 
-void Relation::set_component(bp::tuple group_coords, 
+void ParRelation::set_component(bp::tuple group_coords, 
                                  bp::dict val)
 {
     group_coords_t gc(DIMS_); 
@@ -273,7 +273,7 @@ void Relation::set_component(bp::tuple group_coords,
 
 }
 
-group_dp_map_t Relation::get_datapoints_per_group()
+group_dp_map_t ParRelation::get_datapoints_per_group()
 {
     if(!datapoints_per_group_cache_valid_) { 
         datapoints_per_group_cache_.clear(); 

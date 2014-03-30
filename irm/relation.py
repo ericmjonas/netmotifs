@@ -420,3 +420,9 @@ class Relation(object):
 
     def set_hps(self, hps):
         self.hps = hps
+    
+    def get_component(self, group_coords):
+        return copy.deepcopy(self.suffstats[group_coords])
+
+    def set_component(self, group_coords, val):
+        self.suffstats[group_coords] = val

@@ -17,6 +17,9 @@ class BetaBernoulli(object):
         return {'alpha' :  np.random.gamma(1, 2), 
                 'beta' : np.random.gamma(1, 2)}
 
+    def conjugate(self):
+        return True
+
     def sample_param(self, hps):
         """
         draw a sample 
@@ -187,6 +190,9 @@ class BetaBernoulliNonConj(object):
         """
         return {'alpha' : 1.0, 'beta': 1.0}
 
+    def conjugate(self):
+        return False
+
     def sample_from_prior(self, hps):
         return np.random.beta(hps['alpha'], hps['beta'])
 
@@ -286,7 +292,9 @@ class LogisticDistance(object):
         return [('link',  np.bool), 
                 ('distance', np.float32)]
 
-    
+    def conjugate(self):
+        return False
+
     def sample_hps(self):
         """
         draw a sample of the HPs from some prior
@@ -295,6 +303,18 @@ class LogisticDistance(object):
                 'mu_hp' : np.random.gamma(1.2, 4), 
                 'p_min' : np.random.uniform(0.01, 0.1), 
                 'p_max' : np.random.uniform(0.9, 0.99)}
+
+    def create_ss(self, hps):
+        """
+        """
+        return {'lambda' : 0.0, 'mu' : 0.0}
+
+    def ss_add(self, ss, hp, datum):
+        pass
+
+    def ss_rem(self, ss, hp, datum):
+        pass
+
 
     def sample_param(self, hps):
         """

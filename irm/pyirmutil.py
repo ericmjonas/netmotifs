@@ -97,6 +97,10 @@ class Relation(object):
     def post_pred(self, domainname, gid, ep):
         return self.relation.post_pred(self.domain_mapper[domainname],
                                     gid, int(ep))
+
+    def post_pred_map(self, domainname, gids, ep):
+        return self.relation.post_pred_map(self.domain_mapper[domainname], 
+                                           gids, ep)
         
     def total_score(self):
         return self.relation.total_score()
