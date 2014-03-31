@@ -257,3 +257,5 @@ class ParRelation(object):
     def set_component(self, group_coords, val): 
         return self.relation.set_component(group_coords, val)
 
+    def score_at_hps(self, hplist):
+        return self.relation.score_at_hps(hplist)

@@ -2,6 +2,7 @@ import numpy as np
 import gridgibbshps
 import irmio
 import util
+import pyirmutil
 
 def tempered_transitions(model, rng, temps,
                          latent_get, latent_set,
@@ -190,15 +191,23 @@ def relation_hp_grid(model, rng, grids):
         else:
             raise RuntimeError("model %s is not in the provided grids" % model_name)
 
-        def set_func(val):
-            relation.set_hps(val)
 
-        def get_score():
-            return relation.total_score()
-        if grid == None:
-            continue
+        if isinstance(relation, pyirmutil.Relation):
+            ## THIS IS A TOTAL HACK we should not be dispatching this way
+            ## fix in later version once we obsolte old code
+            def set_func(val):
+                relation.set_hps(val)
 
-        gridgibbshps.grid_gibbs(set_func, get_score, grid)
+            def get_score():
+                return relation.total_score()
+            if grid == None:
+                continue
+
+            gridgibbshps.grid_gibbs(set_func, get_score, grid)
+        else:
+            scores = relation.score_at_hps(grid)
+            i = util.sample_from_scores(scores)
+            relation.set_hps(grid[i])
 
 def sequential_init(model, rng, M=10):
     """

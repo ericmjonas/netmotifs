@@ -44,7 +44,7 @@ def benchmark_params(): # the _a is just for filtering
     np.random.seed(0)
 
     for GROUP_N in  [5, 10, 20, 30]:
-        for ENTITIES_PER_GROUP in [10, 20, 100]: # , 40, 80]:
+        for ENTITIES_PER_GROUP in [10, 20, 50, 100]: # 100]:
             N = GROUP_N * ENTITIES_PER_GROUP
 
 

@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <boost/utility.hpp>
 #include <boost/python.hpp>
+#include <future> 
 
 #include "util.h"
 
@@ -24,7 +25,11 @@ typedef std::map<group_coords_t, std::vector<dppos_t> > group_dp_map_t;
 class IComponentContainer {
 public:
     virtual size_t dpcount() = 0; 
-    virtual float total_score(const group_dp_map_t & gm) = 0; 
+    virtual float total_score(const group_dp_map_t & gm)  = 0; 
+
+    virtual bp::list total_score_hps_list(const group_dp_map_t & gm, 
+                                          bp::list hps) = 0; 
+
     virtual void create_component(const group_coords_t &  group_coords, 
                                   rng_t & rng) = 0; 
     virtual void delete_component(const group_coords_t &  group_coords) = 0; 
@@ -116,20 +121,66 @@ public:
         // components_[gp] = 0; 
     }
     
-    float total_score(const group_dp_map_t & dpmap) {
+
+    float total_score_at_hps(const group_dp_map_t & dpmap, 
+                             typename CM::hypers_t * hps_t) {
         typename group_dp_map_t::const_iterator i = dpmap.begin(); 
+
 
         float score = 0.0; 
         for(; i != dpmap.end(); ++i) { 
             auto gp = hash_coords(i->first); 
             if(components_[gp].count > 0) { 
-                score += CM::score(&(components_[gp].ss), &hps_, 
+                score += CM::score(&(components_[gp].ss), hps_t, 
                                    data_.begin(), observed_.begin(), 
                                    i->second); 
             }
         }
         return score/temp_; 
            
+    }
+
+    float total_score(const group_dp_map_t & dpmap)  {
+        return total_score_at_hps(dpmap, & hps_); 
+    }
+
+    bp::list total_score_hps_list(const group_dp_map_t & dpmap, 
+                                            bp::list hps)  { 
+        /* 
+           For a list of HPs, evaluate the score and return the result
+           as a vector
+
+           this takes in a python list and does the conversion 
+           internally because of where we cut the static/dynamic typing
+           boundary. I'm sorry. 
+        */
+        bp::list scores; 
+        int N = bp::len(hps); 
+        std::vector<typename CM::hypers_t> hps_vect(N); 
+        for(int i = 0; i < N; ++i) { 
+            bp::dict hp_dict = bp::extract<bp::dict>(hps[i]); 
+            hps_vect[i] = CM::bp_dict_to_hps(hp_dict); 
+        }
+
+
+        std::vector<std::future<float> > results; 
+
+        
+        // We should be more granular here
+        for(int i = 0; i < N; ++i) { 
+            
+            results.push_back(std::async(std::launch::async, 
+                                         &ComponentContainer::total_score_at_hps, this, dpmap, &(hps_vect[i]))); 
+
+        }
+        for(int i = 0; i < N; ++i) { 
+            scores.append(results[i].get()); 
+        }
+            
+        return scores; 
+
+
+
     }
     
 

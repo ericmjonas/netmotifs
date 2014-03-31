@@ -40,6 +40,7 @@ public:
 
     float post_pred_combined_nomutate(domainpos_t, groupid_t, entitypos_t) const; 
 
+
     // postpred across all groups
     bp::list post_pred_map(domainpos_t, 
                            bp::list groups, 
@@ -48,6 +49,8 @@ public:
     group_dp_map_t get_datapoints_per_group(); 
 
     float total_score(); 
+    bp::list score_at_hps(bp::list hps); 
+
     bp::dict get_component(bp::tuple group_coords); 
     void set_component(bp::tuple group_coords, bp::dict params); 
 

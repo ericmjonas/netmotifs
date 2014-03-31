@@ -353,4 +353,13 @@ group_dp_map_t ParRelation::get_datapoints_per_group()
 }
 
 
+bp::list ParRelation::score_at_hps(bp::list hps)
+{
+
+    return pCC_->total_score_hps_list(get_datapoints_per_group(), 
+                                      hps); 
+
+}
+
+
 }
