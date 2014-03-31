@@ -28,7 +28,8 @@ inline float betaln(float x, float y) {
 
 struct BetaBernoulli { 
     typedef unsigned char value_t; 
-    
+    static const bool is_addrem_mutating = true; 
+
     struct suffstats_t { 
         uint32_t heads; 
         uint32_t tails; 
@@ -125,6 +126,7 @@ struct BetaBernoulli {
 
 struct AccumModel { 
     typedef float value_t; 
+    static const bool is_addrem_mutating = true; 
     
     struct suffstats_t { 
         float sum; 
@@ -200,10 +202,10 @@ struct AccumModel {
 
 struct BetaBernoulliNonConj { 
     typedef unsigned char value_t; 
+    static const bool is_addrem_mutating = false; 
     
     class suffstats_t { 
     public:
-        std::vector<uint32_t> datapoint_pos_; 
         float p; 
     }; 
 
@@ -224,22 +226,17 @@ struct BetaBernoulliNonConj {
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
                               rng_t & rng) { 
         ss->p = sample_from_prior(hps, rng); 
-        ss->datapoint_pos_.reserve(20); 
+
     }
 
     static void ss_add(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos) { 
-        ss->datapoint_pos_.push_back(dp_pos); 
 
     }
 
     static void ss_rem(suffstats_t * ss, hypers_t * hps, value_t val, 
                        dppos_t dp_pos) { 
         // FIXME linear search
-        auto i = std::find(ss->datapoint_pos_.begin(), 
-                           ss->datapoint_pos_.end(), dp_pos); 
-        *i = ss->datapoint_pos_.back(); 
-        ss->datapoint_pos_.pop_back(); 
     }
 
 
@@ -344,6 +341,8 @@ struct LogisticDistance {
         char link; 
         float distance; 
     } __attribute__((packed)); 
+
+    static const bool is_addrem_mutating = false; 
     
     class suffstats_t { 
     public:
@@ -529,6 +528,8 @@ struct LogisticDistanceFixedLambda {
         float distance; 
     } __attribute__((packed)); 
     
+    static const bool is_addrem_mutating = false; 
+
     class suffstats_t { 
     public:
         float mu; 
@@ -733,6 +734,8 @@ struct SigmoidDistance {
         char link; 
         float distance; 
     } __attribute__((packed)); 
+
+    static const bool is_addrem_mutating = false; 
     
     class suffstats_t { 
     public:
@@ -908,6 +911,9 @@ struct LinearDistance {
         float distance; 
     } __attribute__((packed)); 
     
+    static const bool is_addrem_mutating = false; 
+
+
     class suffstats_t { 
     public:
         //std::unordered_set<uint32_t> datapoint_pos_; 
@@ -1091,7 +1097,8 @@ struct LinearDistance {
 
 struct GammaPoisson { 
     typedef uint32_t value_t; 
-    
+    static const bool is_addrem_mutating = true; 
+
     struct suffstats_t { 
         uint32_t n; 
         uint32_t sum; 
@@ -1204,6 +1211,8 @@ struct NormalDistanceFixedWidth {
         char link; 
         float distance; 
     } __attribute__((packed)); 
+
+    static const bool is_addrem_mutating = false; 
     
     class suffstats_t { 
     public:
@@ -1402,6 +1411,8 @@ struct SquareDistanceBump {
         float distance; 
     } __attribute__((packed)); 
     
+    static const bool is_addrem_mutating = false; 
+
     class suffstats_t { 
     public:
         //std::unordered_set<uint32_t> datapoint_pos_; 
@@ -1611,6 +1622,8 @@ struct ExponentialDistancePoisson {
         float distance; 
     } __attribute__((packed)); 
     
+    static const bool is_addrem_mutating = false; 
+
     class suffstats_t { 
     public:
         //std::unordered_set<uint32_t> datapoint_pos_; 
@@ -1778,6 +1791,8 @@ struct LogisticDistancePoisson {
         float distance; 
     } __attribute__((packed)); 
     
+    static const bool is_addrem_mutating = false; 
+
     class suffstats_t { 
     public:
         float mu; 
@@ -1957,6 +1972,8 @@ struct LogisticDistancePoisson {
 
 struct NormalInverseChiSq { 
     typedef float value_t; 
+
+    static const bool is_addrem_mutating = true; 
     
     struct suffstats_t { 
         uint32_t count; 
@@ -2107,7 +2124,7 @@ struct MixtureModelDistribution {
 
         }
     }; 
-
+    static const bool is_addrem_mutating = false; 
 
     static constexpr float CHI_VAL = 1.0 ; 
     static constexpr   float EPSILON = 0.0001; 

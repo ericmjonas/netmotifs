@@ -42,6 +42,7 @@ public:
     virtual bp::dict get_component(const group_coords_t &  gc) = 0; 
     virtual void set_component(const group_coords_t &  gc, bp::dict val) = 0; 
     virtual void set_temp(float ) = 0; 
+    virtual bool is_addrem_mutating() const = 0; 
 }; 
    
 template<typename CM>
@@ -94,7 +95,11 @@ public:
         // }
         
     }
-        
+
+    bool is_addrem_mutating() const { 
+        return CM::is_addrem_mutating; 
+    }
+
     void create_component(const group_coords_t &  group_coords, 
                           rng_t & rng) { 
         group_hash_t gp = hash_coords(group_coords); 

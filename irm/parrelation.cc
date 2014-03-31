@@ -221,12 +221,17 @@ float ParRelation::post_pred(domainpos_t domain, groupid_t group_id,
 
 }
 
-float ParRelation::post_pred_combined(domainpos_t domain, groupid_t group_id, 
-                          entitypos_t entity_pos) const
+float ParRelation::post_pred_combined_nomutate(domainpos_t domain, 
+                                               groupid_t group_id, 
+                                               entitypos_t entity_pos) const
 {
 
-    /////////////////////////////
-    // this is the add remove phase
+    /*
+      Post pred with no mutation of the suffstats or other state
+      only useful for models where add/rem does not mutate
+      (such as nonconjugate models with explicit parameter representations)
+      
+     */
 
     const auto & axispos_for_domain = get_axispos_for_domain(domain); 
 
@@ -264,11 +269,22 @@ bp::list ParRelation::post_pred_map(domainpos_t domain, bp::list group_ids,
 
     for(int i = 0; i < bp::len(group_ids); i++) { 
         groupid_t group_id = bp::extract<groupid_t>(group_ids[i]); 
-        
-        results.push_back(std::async(std::launch::async,
-                                     &ParRelation::post_pred_combined, 
-                                     this, 
-                                     domain, group_id, entity_pos)) ;
+
+        if(pCC_->is_addrem_mutating()) { 
+            results.push_back(std::async(std::launch::deferred,
+                                         &ParRelation::post_pred, 
+                                         this, 
+                                         domain, group_id, entity_pos)) ;
+
+        }  else {
+            // Add/remove operations are NOT mutating 
+            // THUS we can do post-pred all in parallel with no consequence
+            
+            results.push_back(std::async(std::launch::async,
+                                         &ParRelation::post_pred_combined_nomutate, 
+                                         this, 
+                                         domain, group_id, entity_pos)) ;
+        }
     }
     for(int i = 0; i < results.size(); ++i) { 
         out.append(results[i].get()); 

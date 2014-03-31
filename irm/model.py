@@ -161,6 +161,38 @@ class DomainInterface(object):
             
         return np.sum(scores) + prior_score/self.temp
 
+    def post_pred_map(self, groups, entity_pos):
+        """
+        Combines likelihood and the CRP
+        """
+        # can't post-pred an assigned row
+        assert self.assignments[entity_pos] == NOT_ASSIGNED
+
+        assigned_entity_N = self._assigned_entity_count()
+
+        
+        scores = np.zeros(len(groups))
+        rel_group_ids = np.zeros((len(self.relations), len(groups)), 
+                                 dtype=np.int)
+        sizes = np.zeros(len(groups))
+        for gi, g in enumerate(groups):
+            rel_group_ids[:, gi] = self.gid_mapping[g]
+
+            gc = self.group_size(g)
+
+            if not self.fixed_k:
+                prior_score = util.crp_post_pred(gc, assigned_entity_N+1, self.alpha)
+            else:
+                prior_score = util.dm_post_pred(gc, assigned_entity_N+1, self.alpha, 
+                                                self.group_count())
+            scores[gi] += prior_score / self.temp
+
+        for ri, (t, r) in enumerate(self.relations):
+            scores += r.post_pred_map(t, rel_group_ids[ri].tolist(),
+                                      entity_pos)
+            
+        return scores
+
 class IRM(object):
     def __init__(self, domains, relations):
         """

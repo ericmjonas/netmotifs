@@ -20,9 +20,7 @@ def gibbs_sample_type(domain_inf, rng, impotent=False):
 
 
         groups = domain_inf.get_groups()
-        scores = np.zeros(len(groups))
-        for gi, group_id in enumerate(groups):
-            scores[gi] = domain_inf.post_pred(group_id, entity_pos)
+        scores = domain_inf.post_pred_map(groups, entity_pos)
         #print entity_pos, scores
         sample_i = util.sample_from_scores(scores)
         new_group = groups[sample_i]
@@ -64,10 +62,10 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
             extra_groups.append(domain_inf.create_group(rng))
 
         groups = domain_inf.get_groups()
-        scores = np.zeros(len(groups))
-        for gi, group_id in enumerate(groups):
-            scores[gi] = domain_inf.post_pred(group_id, entity_pos)
+        scores = domain_inf.post_pred_map(groups, entity_pos)
+
             # correct the score for the empty groups
+        for gi, group_id in enumerate(groups):
             if group_id in extra_groups:
                 scores[gi] -= np.log(M)
         #print entity_pos, scores

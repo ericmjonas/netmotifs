@@ -5,6 +5,8 @@ import gibbs
 import irmio
 import kernels, models, model, gridgibbshps
 import pyirm
+import pyirmutil
+
 import sys
 import copy
 
@@ -148,7 +150,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
 
 class Runner(object):
     def __init__(self, latent, data, kernel_config, seed=None, 
-                 fixed_k = False):
+                 fixed_k = False, relation_class = pyirmutil.Relation):
 
         # FIXME add seed
         print "FIXED_K=", fixed_k
@@ -158,7 +160,8 @@ class Runner(object):
             pyirm.set_seed(self.rng, seed)
         
         self.model = irmio.create_model_from_data(data, rng=self.rng, 
-                                                  fixed_k = fixed_k)
+                                                  fixed_k = fixed_k, 
+                                                  relation_class=relation_class)
         irmio.set_model_latent(self.model, latent, self.rng)
         self.iters = 0
         

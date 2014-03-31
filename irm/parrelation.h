@@ -38,7 +38,7 @@ public:
 
     float post_pred(domainpos_t, groupid_t, entitypos_t); 
 
-    float post_pred_combined(domainpos_t, groupid_t, entitypos_t) const; 
+    float post_pred_combined_nomutate(domainpos_t, groupid_t, entitypos_t) const; 
 
     // postpred across all groups
     bp::list post_pred_map(domainpos_t, 

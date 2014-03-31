@@ -1,6 +1,6 @@
 import numpy as np
 import irm
-from irm import runner, irmio
+from irm import runner, irmio, pyirmutil
 import copy
 from ruffus import * 
 import cPickle as pickle
@@ -37,13 +37,14 @@ KERNELS = {#'default_nonconj' : irm.runner.default_kernel_nonconj_config(),
 }
 
 
-
+RELATION_CLASSES = { 'relation' :  pyirmutil.Relation, 
+                     'parrelation':  pyirmutil.ParRelation}
 
 def benchmark_params(): # the _a is just for filtering
     np.random.seed(0)
 
-    for GROUP_N in  [5, 20, 30]:
-        for ENTITIES_PER_GROUP in [10, 20, 40, 60, 80, 100]: # , 40, 80]:
+    for GROUP_N in  [5, 10, 20, 30]:
+        for ENTITIES_PER_GROUP in [10, 20, 100]: # , 40, 80]:
             N = GROUP_N * ENTITIES_PER_GROUP
 
 
@@ -55,27 +56,28 @@ def benchmark_params(): # the _a is just for filtering
             np.random.seed(0)
             for model_name in MODELS:
                 for kernel_name, kernel_config in KERNELS.iteritems():
+                    for relclass, rc in RELATION_CLASSES.iteritems():
+                    
+                        data = {'domains' : {'d1' : {'N' : N}}, 
+                                'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
+                                                       'model' : model_name}}}
+                        infile = None
 
-
-                    data = {'domains' : {'d1' : {'N' : N}}, 
-                            'relations' : {'R1' : {'relation' : ('d1', 'd1'), 
-                                                   'model' : model_name}}}
-                    infile = None
-
-                    outfile = "benchmark.%s.%s.%d.%d.pickle" % (model_name, kernel_name, GROUP_N, ENTITIES_PER_GROUP)
-                    seed = np.random.randint(0, 10000)
-                    yield infile, outfile, model_name, latent, data, seed, kernel_name, ITERS_TO_RUN, GROUP_N, ENTITIES_PER_GROUP
+                        outfile = "benchmark.%s.%s.%d.%d.%s.pickle" % (model_name, kernel_name, GROUP_N, ENTITIES_PER_GROUP, relclass)
+                        seed = np.random.randint(0, 10000)
+                        yield infile, outfile, model_name, latent, data, seed, kernel_name, ITERS_TO_RUN, GROUP_N, ENTITIES_PER_GROUP, relclass
 
 
 @files(benchmark_params)
-def run_benchmark(infile, outfile, model_name, latent, data, seed, kernel_name, iters_to_run, GROUP_N, ENTITIES_PER_GROUP):
+def run_benchmark(infile, outfile, model_name, latent, data, seed, kernel_name, iters_to_run, GROUP_N, ENTITIES_PER_GROUP, relclass):
 
     kernel_config = KERNELS[kernel_name]
     np.random.seed(seed)
     new_latent, new_data = irm.data.synth.prior_generate(latent, data)
     # estimate suffstats from the data
 
-    run_truth = runner.Runner(new_latent, new_data, kernel_config, seed=0)
+    run_truth = runner.Runner(new_latent, new_data, kernel_config,
+                              seed=0, relation_class=RELATION_CLASSES[relclass])
 
     irmio.estimate_suffstats(run_truth.model, run_truth.rng)
 
@@ -86,6 +88,7 @@ def run_benchmark(infile, outfile, model_name, latent, data, seed, kernel_name, 
         out = {'model_name' : model_name, 
                'iter' : iters, 
                'seed' : seed, 'kernel_name' : kernel_name, 
+               'relclass' : relclass, 
                'group_n' : GROUP_N, 'entities_per_group' : ENTITIES_PER_GROUP}
 
         for t, ti in iter_res['kernel_times']:
@@ -109,4 +112,4 @@ def merge_benchmarks(infiles, outfile):
 
         
 if __name__ == "__main__":
-    pipeline_run([run_benchmark, merge_benchmarks], multiprocess=2)
+    pipeline_run([run_benchmark, merge_benchmarks])#  no multiprocess, , multiprocess=2)

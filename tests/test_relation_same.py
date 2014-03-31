@@ -201,7 +201,8 @@ def test_postpred_T1_T1():
 
     rng = pyirm.RNG()
     np.random.seed(0)
-    for modelstr in ['BetaBernoulliNonConj', 'LogisticDistance']:
+    for modelstr in ['BetaBernoulliNonConj', 'LogisticDistance', 
+                     'BetaBernoulli']:
         
         for T1_N in [4]:
             data = {'domains' : {'d1': {'N' : T1_N}}, 
