@@ -31,7 +31,7 @@ def create_model_from_data(data, relation_class=pyirmutil.Relation,
         m = models.NAMES[rel_config['model']]()
 
         rel = relation_class(domaindef, relations_config[rel_name]['data'], 
-                             m)
+                             m, relations_config[rel_name].get('observed', None))
         relations[rel_name] = rel
         # set because we only want to add each relation once to a domain
         for tn in set(rel_config['relation']):
