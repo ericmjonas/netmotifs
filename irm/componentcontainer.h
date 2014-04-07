@@ -186,7 +186,13 @@ public:
 
     float post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) 
     {
+
+        if(observed_[dp_pos] == 0 ) { 
+            return 0.0; 
+        }
+
         group_hash_t gp = hash_coords(group_coords); 
+
         typename CM::value_t val = data_[dp_pos]; 
 
         return CM::post_pred(&(components_[gp].ss), &hps_, val) / temp_; 
@@ -194,6 +200,11 @@ public:
     }
 
     float add_dp_post_pred(const group_coords_t &  group_coords, dppos_t dp_pos) {
+
+        if(observed_[dp_pos] == 0 ) { 
+            return 0.0; 
+        }
+
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
@@ -205,6 +216,12 @@ public:
     }
     
     void add_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {
+
+        if(observed_[dp_pos] == 0 ) { 
+            return; 
+        }
+
+
         group_hash_t gp = hash_coords(group_coords); 
         typename CM::value_t val = data_[dp_pos]; 
 
@@ -216,6 +233,10 @@ public:
 
 
     void rem_dp(const group_coords_t &  group_coords, dppos_t dp_pos) {
+        if(observed_[dp_pos] == 0 ) { 
+            return; 
+        }
+
         group_hash_t gp = hash_coords(group_coords); 
 
         typename CM::value_t val = data_[dp_pos]; 

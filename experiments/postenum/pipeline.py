@@ -17,7 +17,7 @@ from irm import relation
 import util as putil
 
 SAMPLE_SETS = 20
-SAMPLES_N = 400
+SAMPLES_N = 1000
 ITERS_PER_SAMPLE = 10
 # SAMPLE_SETS = 4
 # SAMPLES_N = 100
@@ -71,7 +71,7 @@ def create_data_t1t2(inputfile, (latent_filename, data_filename),
     pickle.dump(latent, open(latent_filename, 'w'))
 
 def t1_t1_datasets():
-    T1_N = 4
+    T1_N = 8
     for mc in MODEL_CLASSES:
         for seed in range(SEEDS):
             for observed in [0, 1]:
@@ -120,15 +120,14 @@ def dump_kernel_configs(infile, outfile, kc, key):
 
 
 def score_params():
-    #for a in (list(t1_t2_datasets()) + list(t1_t1_datasets())):
-    for a in (list(t1_t1_datasets())):
+    for a in (list(t1_t2_datasets()) + list(t1_t1_datasets())):
         latent_filename = a[1][0]
         data_filename = a[1][1]
         outfilename = latent_filename[:-(len("latent"))] + 'scores'
         if 'conj' in latent_filename:
             yield (latent_filename, data_filename), outfilename
 
-#@follows(t1_t2_datasets)
+@follows(t1_t2_datasets)
 @follows(t1_t1_datasets)
 @files(score_params)
 def score((latent_filename, data_filename), outfilename):
@@ -162,8 +161,8 @@ def score((latent_filename, data_filename), outfilename):
     pickle.dump(scores, open(outfilename, 'w'))
     
 def run_samples_params():
-    #for a in (list(t1_t1_datasets()) + list(t1_t2_datasets())):
-    for a in (list(t1_t1_datasets())): #  + list(t1_t2_datasets())):
+    for a in (list(t1_t1_datasets()) + list(t1_t2_datasets())):
+    #for a in (list(t1_t1_datasets())): #  + list(t1_t2_datasets())):
         latent_filename = a[1][0]
         data_filename = a[1][1]
         for kc_name in KERNEL_CONFIGS:
@@ -319,7 +318,7 @@ def summarize(infiles, (kl_summary_file, dist_summary_file) , x):
 #     pylab.savefig(dist_summary_file)
 
 if __name__ == "__main__":
-    pipeline_run([#create_data_t1t2, 
+    pipeline_run([create_data_t1t2, 
                   create_data_t1t1, 
                   dump_kernel_configs, score, 
                   run_samples, summarize])
