@@ -221,16 +221,17 @@ float Relation::post_pred(domainpos_t domain, groupid_t group_id,
 }
 
 
-bp::list Relation::post_pred_map(domainpos_t domain, bp::list group_ids, 
-                          entitypos_t entity_pos)
+std::vector<float> Relation::post_pred_map(domainpos_t domain, 
+                                           const std::vector<groupid_t> &  group_ids, 
+                                           entitypos_t entity_pos)
 {
-    bp::list out; 
-    for(int i = 0; i < bp::len(group_ids); i++) { 
-        groupid_t group_id = bp::extract<groupid_t>(group_ids[i]); 
-        
+    std::vector<float> out; 
+    out.reserve(group_ids.size()); 
+
+    for(auto group_id : group_ids) { 
         float score = add_entity_to_group(domain, group_id, entity_pos); 
         remove_entity_from_group(domain, group_id, entity_pos); 
-        out.append(score); 
+        out.push_back(score); 
     }
     return out; 
 

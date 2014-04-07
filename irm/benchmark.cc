@@ -5,6 +5,7 @@
 #include "componentcontainer.h"
 #include "componentmodels.h"
 #include "relation.h"
+#include "parrelation.h"
 
 using namespace irm; 
 
@@ -13,7 +14,7 @@ int main()
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
-    const int ENTITY_N = 1000; 
+    const int ENTITY_N = 2000; 
     const int GROUPS = 32; 
 
     rng_t rng; 
@@ -32,7 +33,7 @@ int main()
     // hps["p_min"] = 0.1; 
     // hps["p_max"] = 0.9; 
     //cc_bb.set_hps(hps); 
-    Relation rel(axes_def, domainsizes, &cc_bb); 
+    ParRelation rel(axes_def, domainsizes, &cc_bb); 
 
     std::vector<groupid_t> assignments(ENTITY_N); 
     std::vector<groupid_t> groups(GROUPS +1); 
@@ -64,9 +65,7 @@ int main()
             groups[GROUPS] = rel.create_group(0, rng); 
 
             // now compute post pred
-            for(auto gid : groups) { 
-                totalscore += rel.post_pred(0, gid, ei); 
-            }
+            std::vector<float> scores = rel.post_pred_map(0, groups, ei); 
             
             rel.add_entity_to_group(0, init_gid, ei); 
             rel.delete_group(0, groups[GROUPS]); 

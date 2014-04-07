@@ -42,9 +42,9 @@ public:
 
 
     // postpred across all groups
-    bp::list post_pred_map(domainpos_t, 
-                           bp::list groups, 
-                           entitypos_t); 
+    std::vector<float>  post_pred_map(domainpos_t, 
+                                      const std::vector<groupid_t> & groups, 
+                                      entitypos_t); 
 
     group_dp_map_t get_datapoints_per_group(); 
 

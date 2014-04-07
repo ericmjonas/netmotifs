@@ -260,15 +260,17 @@ float ParRelation::post_pred_combined_nomutate(domainpos_t domain,
 }
 
 
-bp::list ParRelation::post_pred_map(domainpos_t domain, bp::list group_ids, 
-                          entitypos_t entity_pos)
+std::vector<float> 
+ParRelation::post_pred_map(domainpos_t domain, 
+                           const std::vector<groupid_t> & group_ids, 
+                           entitypos_t entity_pos)
 {
-    bp::list out; 
+    std::vector<float> out; 
+    out.reserve(group_ids.size()); 
     // convert into vector
     std::vector<std::future<float> > results; 
 
-    for(int i = 0; i < bp::len(group_ids); i++) { 
-        groupid_t group_id = bp::extract<groupid_t>(group_ids[i]); 
+    for(auto group_id : group_ids) { 
 
         if(pCC_->is_addrem_mutating()) { 
             results.push_back(std::async(std::launch::deferred,
@@ -287,7 +289,7 @@ bp::list ParRelation::post_pred_map(domainpos_t domain, bp::list group_ids,
         }
     }
     for(int i = 0; i < results.size(); ++i) { 
-        out.append(results[i].get()); 
+        out.push_back(results[i].get()); 
     }
     return out; 
 
