@@ -17,7 +17,8 @@ ParRelation::ParRelation(axesdef_t axes_def, domainsizes_t domainsizes,
     datapoint_groups_(pCC_->dpcount()), 
     datapoint_entity_index_(pCC_->dpcount()), 
     domain_groups_(DOMAINN_), 
-    datapoints_per_group_cache_valid_(false)
+    datapoints_per_group_cache_valid_(false), 
+    tp_(16)
 {
 
     for (int d = 0; d < DOMAINN_; ++d) { 
@@ -291,6 +292,37 @@ ParRelation::post_pred_map(domainpos_t domain,
     for(int i = 0; i < results.size(); ++i) { 
         out.push_back(results[i].get()); 
     }
+    return out; 
+
+
+}
+
+std::vector<float> 
+ParRelation::post_pred_map_pool(domainpos_t domain, 
+                           const std::vector<groupid_t> & group_ids, 
+                           entitypos_t entity_pos)
+{
+    std::vector<float> out(group_ids.size()); 
+    int outpos = 0; 
+    for(auto group_id : group_ids) { 
+        if(pCC_->is_addrem_mutating()) { 
+            out[outpos] = post_pred(domain, group_id, entity_pos); 
+
+        }  else {
+            // Add/remove operations are NOT mutating 
+            // THUS we can do post-pred all in parallel with no consequence
+            
+            tp_.schedule([&out, outpos, domain, group_id, entity_pos, this](){
+                    out[outpos] = post_pred_combined_nomutate(domain, group_id, entity_pos);}); 
+            
+            
+        }
+        outpos++; 
+        
+    }
+
+    tp_.wait();
+
     return out; 
 
 

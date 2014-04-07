@@ -65,7 +65,7 @@ int main()
             groups[GROUPS] = rel.create_group(0, rng); 
 
             // now compute post pred
-            std::vector<float> scores = rel.post_pred_map(0, groups, ei); 
+            std::vector<float> scores = rel.post_pred_map_pool(0, groups, ei); 
             
             rel.add_entity_to_group(0, init_gid, ei); 
             rel.delete_group(0, groups[GROUPS]); 
