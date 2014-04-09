@@ -161,7 +161,7 @@ class DomainInterface(object):
             
         return np.sum(scores) + prior_score/self.temp
 
-    def post_pred_map(self, groups, entity_pos):
+    def post_pred_map(self, groups, entity_pos, threadpool = None):
         """
         Combines likelihood and the CRP
         """
@@ -189,7 +189,7 @@ class DomainInterface(object):
 
         for ri, (t, r) in enumerate(self.relations):
             scores += r.post_pred_map(t, rel_group_ids[ri].tolist(),
-                                      entity_pos)
+                                      entity_pos, threadpool)
             
         return scores
 

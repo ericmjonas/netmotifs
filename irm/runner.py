@@ -59,7 +59,8 @@ def default_kernel_anneal(start_temp = 32.0, iterations=100):
               
 def do_inference(irm_model, rng, kernel_config, iteration,
                  reverse=False, 
-                 states_at_temps = None):
+                 states_at_temps = None, 
+                 threadpool = None):
 
     """
     By default we do all domains, all relations. 
@@ -88,7 +89,8 @@ def do_inference(irm_model, rng, kernel_config, iteration,
                 gibbs.gibbs_sample_type_nonconj(domain_inf, 
                                                 params.get("M", 10), 
                                                 rng, 
-                                                params.get("impotent", False))
+                                                params.get("impotent", False), 
+                                                threadpool=threadpool)
         elif kernel_name == "slice_params":
             for relation_name, relation in irm_model.relations.iteritems():
                 relation.apply_comp_kernel("slice_sample", rng, params)
@@ -129,7 +131,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
                                      iteration, 
                                      model.IRM.set_temp, 
                                      lambda x, y: do_inference(x, y, subkernels,
-                                                               iteration))
+                                                               iteration, threadpool=threadpool))
             for v in sub_res['kernel_times']:
                 res['kernel_times'].append(v)
 
@@ -138,7 +140,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
             kernels.domain_hp_grid(irm_model, rng, grid)
         elif kernel_name == "relation_hp_grid":
             grids = params['grids']
-            kernels.relation_hp_grid(irm_model, rng, grids)
+            kernels.relation_hp_grid(irm_model, rng, grids, threadpool)
             
 
         else:
@@ -150,7 +152,8 @@ def do_inference(irm_model, rng, kernel_config, iteration,
 
 class Runner(object):
     def __init__(self, latent, data, kernel_config, seed=None, 
-                 fixed_k = False, relation_class = pyirmutil.Relation):
+                 fixed_k = False, relation_class = pyirmutil.Relation, 
+                 threadpool = None):
 
         # FIXME add seed
         print "FIXED_K=", fixed_k
@@ -176,6 +179,9 @@ class Runner(object):
             for t in kernel_config[0][1]['temps']:
                 self.chain_states.append(irmio.get_latent(self.model))
 
+        self.threadpool = threadpool
+
+
     def init(self, init_type):
         if init_type == "sequential": # Fixme we really should propagate params through here someday
             print "RUNNING SEQUENTIAL INIT" 
@@ -195,7 +201,8 @@ class Runner(object):
                                                  self.kernel_config, self.iters,
                                                  states_at_temps = self.chain_states)
             else:
-                res = do_inference(self.model, self.rng, self.kernel_config, self.iters)
+                res = do_inference(self.model, self.rng, self.kernel_config, self.iters, 
+                                   threadpool = self.threadpool)
             self.iters += 1
 
             if logger:

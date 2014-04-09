@@ -127,6 +127,41 @@ void set_seed(rng_t & rng, int seed) {
     rng.seed(seed); 
 }
 
+template<class T>
+bp::list post_pred_map_helper(T * rel, domainpos_t dp, bp::list groupids, 
+                              entitypos_t entitypos, 
+                              boost::threadpool::pool * tp) 
+{
+    bp::list out; 
+    std::vector<groupid_t> gids; 
+    for(int i =0; i < bp::len(groupids); ++i) { 
+        gids.push_back(bp::extract<groupid_t>(groupids[i])); 
+    }
+
+    std::vector<float> scores = rel->post_pred_map(dp, gids, entitypos, tp); 
+    for(int i =0 ; i < scores.size(); ++i) { 
+        out.append(scores[i]); 
+    }
+    return out; 
+
+    
+}
+
+template bp::list
+post_pred_map_helper<Relation> (Relation * rel, domainpos_t dp, 
+                                         bp::list groupids, 
+                                         entitypos_t entitypos, 
+                                         boost::threadpool::pool * tp); 
+
+template bp::list
+post_pred_map_helper<ParRelation> (ParRelation * rel, domainpos_t dp, 
+                                         bp::list groupids, 
+                                         entitypos_t entitypos, 
+                                         boost::threadpool::pool * tp); 
+
+//template post_pred_map_helper<ParRelation>; 
+
+
 
 BOOST_PYTHON_MODULE(pyirm)
 {
@@ -158,7 +193,7 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("add_entity_to_group", &Relation::add_entity_to_group)
       .def("remove_entity_from_group", &Relation::remove_entity_from_group)
       .def("post_pred", &Relation::post_pred)
-      .def("post_pred_map", &Relation::post_pred_map)
+      .def("post_pred_map", &post_pred_map_helper<Relation>)
       .def("total_score", &Relation::total_score)
       .def("get_component", &Relation::get_component) 
       .def("set_component", &Relation::set_component)
@@ -173,7 +208,7 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("add_entity_to_group", &ParRelation::add_entity_to_group)
       .def("remove_entity_from_group", &ParRelation::remove_entity_from_group)
       .def("post_pred", &ParRelation::post_pred)
-      .def("post_pred_map", &ParRelation::post_pred_map)
+      .def("post_pred_map", &post_pred_map_helper<ParRelation>)
       .def("score_at_hps", &ParRelation::score_at_hps)
       .def("total_score", &ParRelation::total_score)
       .def("get_component", &ParRelation::get_component) 
@@ -181,6 +216,8 @@ BOOST_PYTHON_MODULE(pyirm)
       .def("get_datapoints_per_group", &ParRelation::get_datapoints_per_group)
       ; 
 
+  class_<boost::threadpool::pool>("ThreadPool", init<size_t>()); 
+  
   def("slice_sample", &slice_sampler_wrapper); 
   def("continuous_mh_sample", &continuous_mh_sampler_wrapper); 
   def("uniform_01", &uniform_01); 

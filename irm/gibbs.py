@@ -33,7 +33,8 @@ def gibbs_sample_type(domain_inf, rng, impotent=False):
             assert domain_inf.group_size(temp_group) == 0
             domain_inf.delete_group(temp_group)
 
-def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
+def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False, 
+                              threadpool = None):
     """
     Radford neal Algo 8 for non-conj models
     
@@ -62,7 +63,8 @@ def gibbs_sample_type_nonconj(domain_inf, M, rng, impotent=False):
             extra_groups.append(domain_inf.create_group(rng))
 
         groups = domain_inf.get_groups()
-        scores = domain_inf.post_pred_map(groups, entity_pos)
+        scores = domain_inf.post_pred_map(groups, entity_pos, 
+                                          threadpool)
 
             # correct the score for the empty groups
         for gi, group_id in enumerate(groups):

@@ -43,8 +43,8 @@ RELATION_CLASSES = { 'relation' :  pyirmutil.Relation,
 def benchmark_params(): # the _a is just for filtering
     np.random.seed(0)
 
-    for GROUP_N in  [5, 10, 20, 30]:
-        for ENTITIES_PER_GROUP in [10, 20, 50, 100]: # 100]:
+    for GROUP_N in  [5, 10, 20, 30, 50]:
+        for ENTITIES_PER_GROUP in [10, 20, 50]: # 100]:
             N = GROUP_N * ENTITIES_PER_GROUP
 
 
@@ -76,8 +76,15 @@ def run_benchmark(infile, outfile, model_name, latent, data, seed, kernel_name, 
     new_latent, new_data = irm.data.synth.prior_generate(latent, data)
     # estimate suffstats from the data
 
+    if relclass == 'relation':
+        threadpool = None
+    else:
+        threadpool = irm.ThreadPool(8)
+
     run_truth = runner.Runner(new_latent, new_data, kernel_config,
-                              seed=0, relation_class=RELATION_CLASSES[relclass])
+                              seed=0, 
+                              relation_class=RELATION_CLASSES[relclass], 
+                              threadpool = threadpool)
 
     irmio.estimate_suffstats(run_truth.model, run_truth.rng)
 

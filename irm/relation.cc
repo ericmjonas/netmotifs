@@ -223,7 +223,8 @@ float Relation::post_pred(domainpos_t domain, groupid_t group_id,
 
 std::vector<float> Relation::post_pred_map(domainpos_t domain, 
                                            const std::vector<groupid_t> &  group_ids, 
-                                           entitypos_t entity_pos)
+                                           entitypos_t entity_pos, 
+                                           boost::threadpool::pool * tp)
 {
     std::vector<float> out; 
     out.reserve(group_ids.size()); 

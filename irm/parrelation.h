@@ -45,16 +45,14 @@ public:
     // postpred across all groups
     std::vector<float>  post_pred_map(domainpos_t, 
                                       const std::vector<groupid_t> & groups, 
-                                      entitypos_t); 
-
-    std::vector<float>  post_pred_map_pool(domainpos_t, 
-                                           const std::vector<groupid_t> & groups, 
-                                           entitypos_t); 
+                                      entitypos_t, 
+                                      boost::threadpool::pool * tp); 
 
     group_dp_map_t get_datapoints_per_group(); 
 
     float total_score(); 
-    bp::list score_at_hps(bp::list hps); 
+    bp::list score_at_hps(bp::list hps, 
+                          boost::threadpool::pool * tp); 
 
     bp::dict get_component(bp::tuple group_coords); 
     void set_component(bp::tuple group_coords, bp::dict params); 
@@ -133,7 +131,6 @@ private:
     
     group_dp_map_t datapoints_per_group_cache_; 
     
-    boost::threadpool::pool tp_; 
     
 
 }; 

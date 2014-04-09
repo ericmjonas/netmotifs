@@ -17,8 +17,7 @@ ParRelation::ParRelation(axesdef_t axes_def, domainsizes_t domainsizes,
     datapoint_groups_(pCC_->dpcount()), 
     datapoint_entity_index_(pCC_->dpcount()), 
     domain_groups_(DOMAINN_), 
-    datapoints_per_group_cache_valid_(false), 
-    tp_(16)
+    datapoints_per_group_cache_valid_(false)
 {
 
     for (int d = 0; d < DOMAINN_; ++d) { 
@@ -264,55 +263,21 @@ float ParRelation::post_pred_combined_nomutate(domainpos_t domain,
 std::vector<float> 
 ParRelation::post_pred_map(domainpos_t domain, 
                            const std::vector<groupid_t> & group_ids, 
-                           entitypos_t entity_pos)
-{
-    std::vector<float> out; 
-    out.reserve(group_ids.size()); 
-    // convert into vector
-    std::vector<std::future<float> > results; 
-
-    for(auto group_id : group_ids) { 
-
-        if(pCC_->is_addrem_mutating()) { 
-            results.push_back(std::async(std::launch::deferred,
-                                         &ParRelation::post_pred, 
-                                         this, 
-                                         domain, group_id, entity_pos)) ;
-
-        }  else {
-            // Add/remove operations are NOT mutating 
-            // THUS we can do post-pred all in parallel with no consequence
-            
-            results.push_back(std::async(std::launch::async,
-                                         &ParRelation::post_pred_combined_nomutate, 
-                                         this, 
-                                         domain, group_id, entity_pos)) ;
-        }
-    }
-    for(int i = 0; i < results.size(); ++i) { 
-        out.push_back(results[i].get()); 
-    }
-    return out; 
-
-
-}
-
-std::vector<float> 
-ParRelation::post_pred_map_pool(domainpos_t domain, 
-                           const std::vector<groupid_t> & group_ids, 
-                           entitypos_t entity_pos)
+                           entitypos_t entity_pos, 
+                           boost::threadpool::pool * tp)
 {
     std::vector<float> out(group_ids.size()); 
     int outpos = 0; 
     for(auto group_id : group_ids) { 
-        if(pCC_->is_addrem_mutating()) { 
+        if(pCC_->is_addrem_mutating() or (tp == NULL)) { 
+            // for situations where things are mutating OR we don't
+            // have a real threadpool
             out[outpos] = post_pred(domain, group_id, entity_pos); 
 
         }  else {
             // Add/remove operations are NOT mutating 
             // THUS we can do post-pred all in parallel with no consequence
-            
-            tp_.schedule([&out, outpos, domain, group_id, entity_pos, this](){
+            tp->schedule([&out, outpos, domain, group_id, entity_pos, this](){
                     out[outpos] = post_pred_combined_nomutate(domain, group_id, entity_pos);}); 
             
             
@@ -320,8 +285,9 @@ ParRelation::post_pred_map_pool(domainpos_t domain,
         outpos++; 
         
     }
-
-    tp_.wait();
+    if(tp != NULL) { 
+        tp->wait();
+    }
 
     return out; 
 
@@ -387,11 +353,12 @@ group_dp_map_t ParRelation::get_datapoints_per_group()
 }
 
 
-bp::list ParRelation::score_at_hps(bp::list hps)
+bp::list ParRelation::score_at_hps(bp::list hps, 
+                                   boost::threadpool::pool * tp)
 {
 
     return pCC_->total_score_hps_list(get_datapoints_per_group(), 
-                                      hps); 
+                                      hps, tp); 
 
 }
 

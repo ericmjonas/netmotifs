@@ -5,6 +5,7 @@
 
 #include "util.h"
 #include "componentcontainer.h"
+#include "threadpool.hpp"
 
 namespace irm { 
 
@@ -40,7 +41,9 @@ public:
     // postpred across all groups
     std::vector<float> post_pred_map(domainpos_t, 
                                      const std::vector<groupid_t> & , 
-                                     entitypos_t); 
+                                     entitypos_t, 
+                                     boost::threadpool::pool * tp
+                                     ); 
 
     group_dp_map_t get_datapoints_per_group(); 
 

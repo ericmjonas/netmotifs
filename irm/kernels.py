@@ -175,7 +175,7 @@ def domain_hp_grid(model, rng, grid):
 
         gridgibbshps.grid_gibbs(set_func, get_score, grid)
 
-def relation_hp_grid(model, rng, grids):
+def relation_hp_grid(model, rng, grids, threadpool=None):
     """ add the ability to have per-relation grids 
 
     If the grid is 'None', don't do inference 
@@ -205,7 +205,7 @@ def relation_hp_grid(model, rng, grids):
 
             gridgibbshps.grid_gibbs(set_func, get_score, grid)
         else:
-            scores = relation.score_at_hps(grid)
+            scores = relation.score_at_hps(grid, threadpool)
             i = util.sample_from_scores(scores)
             relation.set_hps(grid[i])
 
@@ -244,7 +244,7 @@ def sequential_init(model, rng, M=10):
     
     for domain_name, entity_pos in all_ent:
         domain_obj = model.domains[domain_name]
-        print "group count", len(domain_obj.get_groups())
+
         extra_groups = [domain_obj.create_group(rng) for _ in range(M)]
 
         groups = domain_obj.get_groups()

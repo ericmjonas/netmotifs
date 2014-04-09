@@ -13,6 +13,7 @@
 
 #include "componentslice.h"
 #include "componentmh.h"
+#include "threadpool.hpp"
 
 namespace bp=boost::python; 
 
@@ -28,7 +29,8 @@ public:
     virtual float total_score(const group_dp_map_t & gm)  = 0; 
 
     virtual bp::list total_score_hps_list(const group_dp_map_t & gm, 
-                                          bp::list hps) = 0; 
+                                          bp::list hps, 
+                                          boost::threadpool::pool * p) = 0; 
 
     virtual void create_component(const group_coords_t &  group_coords, 
                                   rng_t & rng) = 0; 
@@ -145,7 +147,8 @@ public:
     }
 
     bp::list total_score_hps_list(const group_dp_map_t & dpmap, 
-                                            bp::list hps)  { 
+                                  bp::list hps, 
+                                  boost::threadpool::pool * tp)  { 
         /* 
            For a list of HPs, evaluate the score and return the result
            as a vector
@@ -163,18 +166,26 @@ public:
         }
 
 
-        std::vector<std::future<float> > results; 
+        std::vector<float> out(N); 
 
         
         // We should be more granular here
         for(int i = 0; i < N; ++i) { 
-            
-            results.push_back(std::async(std::launch::async, 
-                                         &ComponentContainer::total_score_at_hps, this, dpmap, &(hps_vect[i]))); 
+            if(tp) { 
+                tp->schedule([&out, i, &dpmap, &hps_vect, this]() {
+                        out[i] = this->total_score_at_hps(dpmap, &(hps_vect[i])); 
+                    }); 
+            } else { 
 
+                out[i] = total_score_at_hps(dpmap, &(hps_vect[i])); 
+            }
         }
+        if(tp) { 
+            tp->wait(); 
+        }
+
         for(int i = 0; i < N; ++i) { 
-            scores.append(results[i].get()); 
+            scores.append(out[i]); 
         }
             
         return scores; 

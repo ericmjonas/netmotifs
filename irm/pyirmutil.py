@@ -98,9 +98,10 @@ class Relation(object):
         return self.relation.post_pred(self.domain_mapper[domainname],
                                     gid, int(ep))
 
-    def post_pred_map(self, domainname, gids, ep):
+    def post_pred_map(self, domainname, gids, ep, threadpool_ignored):
+
         return self.relation.post_pred_map(self.domain_mapper[domainname], 
-                                           gids, ep)
+                                           gids, ep, None)
         
     def total_score(self):
         return self.relation.total_score()
@@ -226,9 +227,9 @@ class ParRelation(object):
         return self.relation.post_pred(self.domain_mapper[domainname],
                                     gid, int(ep))
 
-    def post_pred_map(self, domainname, gids, ep):
+    def post_pred_map(self, domainname, gids, ep, threadpool=None):
         return self.relation.post_pred_map(self.domain_mapper[domainname], 
-                                           gids, ep)
+                                           gids, ep, threadpool)
         
     def total_score(self):
         return self.relation.total_score()
@@ -257,5 +258,5 @@ class ParRelation(object):
     def set_component(self, group_coords, val): 
         return self.relation.set_component(group_coords, val)
 
-    def score_at_hps(self, hplist):
-        return self.relation.score_at_hps(hplist)
+    def score_at_hps(self, hplist, threadpool):
+        return self.relation.score_at_hps(hplist, threadpool)
