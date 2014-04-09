@@ -224,7 +224,7 @@ if __name__ == "__main__":
     config = pickle.load(open(config_filename))
     
     run = Runner(latent, data, config)
-    def logger(iter, model):
+    def logger(iter, model, res):
         print iter, model.get_score()
 
     run.run_iters(iters, logger)
