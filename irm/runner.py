@@ -219,11 +219,21 @@ if __name__ == "__main__":
     data_filename = sys.argv[2]
     config_filename = sys.argv[3]
     iters = int(sys.argv[4])
+
+
     latent = pickle.load(open(latent_filename))
     data = pickle.load(open(data_filename))
     config = pickle.load(open(config_filename))
-    
-    run = Runner(latent, data, config)
+
+    if len(sys.argv) > 5:
+        cores = int(sys.argv[5])
+        tp = pyirm.ThreadPool(cores)
+
+        run = Runner(latent, data, config, threadpool=tp, 
+                     relation_class=pyirmutil.ParRelation)
+
+    else:
+        run = Runner(latent, data, config)
     def logger(iter, model, res):
         print iter, model.get_score()
 
