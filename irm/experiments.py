@@ -195,11 +195,11 @@ def to_bucket(filename, VOLUME):
     take the filename on disk and put it in the VOLUME
     
     """
-    vol = multyvac.volume.get(volume)
+    vol = multyvac.volume.get(VOLUME)
     vol.put_file(filename, filename)
 
 def from_bucket(filename, VOLUME):
-    vol = multyvac.volume.get(volume)
+    vol = multyvac.volume.get(VOLUME)
     return pickle.load(StringIO.StringIO(vol.get_contents(filename)))
 
 def inference_run(latent_filename, 
