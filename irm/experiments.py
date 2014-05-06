@@ -3,7 +3,7 @@ import numpy as np
 import copy
 import os, glob
 import time
-
+import cStringIO as StringIO
 import irm
 import irm.data
 import util
@@ -195,6 +195,8 @@ def to_bucket(filename, VOLUME):
     take the filename on disk and put it in the VOLUME
     
     """
+    print "putting VOLUME=", VOLUME, "filename =", filename
+    
     vol = multyvac.volume.get(VOLUME)
     vol.put_file(filename, filename)
 
@@ -204,7 +206,8 @@ def from_bucket(filename, VOLUME):
 
 def inference_run(latent_filename, 
                   data_filename, 
-                  kernel_config,  ITERS, seed, VOLUME_NAME, init_type=None, 
+                  kernel_config_filename,  
+                  ITERS, seed, VOLUME_NAME, init_type=None, 
                   fixed_k = False, 
                   latent_samp_freq=20, 
                   relation_class = None, 
@@ -215,7 +218,7 @@ def inference_run(latent_filename,
 
     latent = from_bucket(latent_filename, VOLUME_NAME)
     data = from_bucket(data_filename, VOLUME_NAME)
-
+    kernel_config = from_bucket(kernel_config_filename, VOLUME_NAME)
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 
                                      fixed_k = fixed_k, 
                                      relation_class = relation_class,
