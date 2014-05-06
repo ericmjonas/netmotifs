@@ -190,26 +190,36 @@ def cluster_z_matrix(z, INIT_GROUPS=100, crp_alpha=5.0, beta=0.1,
     return irm.util.canonicalize_assignment(state['domains']['d1']['assignment'])
 
 
-def to_bucket(filename, BUCKET_BASE):
-    cloud.bucket.sync_to_cloud(filename, os.path.join(BUCKET_BASE, filename))
+def to_bucket(filename, VOLUME):
+    """ 
+    take the filename on disk and put it in the VOLUME
+    
+    """
+    vol = multyvac.volume.get(volume)
+    vol.put_file(filename, filename)
 
-def from_bucket(filename, BUCKET_BASE):
-    return pickle.load(cloud.bucket.getf(os.path.join(BUCKET_BASE, filename)))
+def from_bucket(filename, VOLUME):
+    vol = multyvac.volume.get(volume)
+    return pickle.load(StringIO.StringIO(vol.get_contents(filename)))
 
 def inference_run(latent_filename, 
                   data_filename, 
-                  kernel_config,  ITERS, seed, BUCKET_BASE, init_type=None, 
+                  kernel_config,  ITERS, seed, VOLUME_NAME, init_type=None, 
                   fixed_k = False, 
-                  latent_samp_freq=20):
+                  latent_samp_freq=20, 
+                  relation_class = None, 
+                  threadpool = None):
     """
     For running on the cloud
     """
 
-    latent = from_bucket(latent_filename, BUCKET_BASE)
-    data = from_bucket(data_filename, BUCKET_BASE)
+    latent = from_bucket(latent_filename, VOLUME_NAME)
+    data = from_bucket(data_filename, VOLUME_NAME)
 
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 
-                                     fixed_k = fixed_k)
+                                     fixed_k = fixed_k, 
+                                     relation_class = relation_class,
+                                     threadpool = threadpool)
 
     if init_type != None:
         chain_runner.init(init_type)

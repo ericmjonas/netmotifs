@@ -152,7 +152,7 @@ def do_inference(irm_model, rng, kernel_config, iteration,
 
 class Runner(object):
     def __init__(self, latent, data, kernel_config, seed=None, 
-                 fixed_k = False, relation_class = pyirmutil.Relation, 
+                 fixed_k = False, relation_class = None, 
                  threadpool = None):
 
         # FIXME add seed
@@ -162,6 +162,9 @@ class Runner(object):
         if seed != None:
             pyirm.set_seed(self.rng, seed)
         
+        if relation_class == None:
+            relation_class = pyirmutil.Relation
+
         self.model = irmio.create_model_from_data(data, rng=self.rng, 
                                                   fixed_k = fixed_k, 
                                                   relation_class=relation_class)
