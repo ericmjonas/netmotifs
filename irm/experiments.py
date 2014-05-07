@@ -231,10 +231,11 @@ def inference_run(latent_filename,
     scores = []
     times = []
     latents = {}
-    def logger(iter, model):
+    def logger(iter, model, res_data):
         print "Iter", iter
         scores.append(model.total_score())
         times.append(time.time())
+
         if iter % latent_samp_freq == 0:
             latents[iter] = chain_runner.get_state(include_ss=False)
     chain_runner.run_iters(ITERS, logger)
