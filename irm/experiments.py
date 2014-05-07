@@ -202,7 +202,8 @@ def to_bucket(filename, VOLUME):
 
 def from_bucket(filename, VOLUME):
     vol = multyvac.volume.get(VOLUME)
-    return pickle.load(StringIO.StringIO(vol.get_contents(filename)))
+    cont = vol.get_contents(filename)
+    return pickle.loads(cont['contents'])
 
 def inference_run(latent_filename, 
                   data_filename, 
