@@ -212,7 +212,7 @@ def inference_run(latent_filename,
                   fixed_k = False, 
                   latent_samp_freq=20, 
                   relation_class = "Relation"
-                  threadpool = None):
+                  cores = 1):
     """
     For running on the cloud
     """
@@ -226,6 +226,12 @@ def inference_run(latent_filename,
         relation_class = irm.ParRelation
     else:
         raise NotImplementedError("unknown relation class %s" % relation_class)
+
+    if cores == 1:
+        threadpool = None
+    else:
+        threadpool = irm.pyirm.ThreadPool(cores)
+
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 
                                      fixed_k = fixed_k, 
                                      relation_class = relation_class,
