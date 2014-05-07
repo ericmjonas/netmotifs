@@ -211,7 +211,7 @@ def inference_run(latent_filename,
                   ITERS, seed, VOLUME_NAME, init_type=None, 
                   fixed_k = False, 
                   latent_samp_freq=20, 
-                  relation_class = "Relation"
+                  relation_class = "Relation", 
                   cores = 1):
     """
     For running on the cloud
