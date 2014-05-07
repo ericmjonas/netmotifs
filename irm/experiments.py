@@ -211,7 +211,7 @@ def inference_run(latent_filename,
                   ITERS, seed, VOLUME_NAME, init_type=None, 
                   fixed_k = False, 
                   latent_samp_freq=20, 
-                  relation_class = None, 
+                  relation_class = "Relation"
                   threadpool = None):
     """
     For running on the cloud
@@ -220,6 +220,12 @@ def inference_run(latent_filename,
     latent = from_bucket(latent_filename, VOLUME_NAME)
     data = from_bucket(data_filename, VOLUME_NAME)
     kernel_config = from_bucket(kernel_config_filename, VOLUME_NAME)
+    if relation_class == "Relation":
+        relation_class = irm.Relation
+    elif relation_class == "ParRelation":
+        relation_class = irm.ParRelation
+    else:
+        raise NotImplementedError("unknown relation class %s" % relation_class)
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 
                                      fixed_k = fixed_k, 
                                      relation_class = relation_class,

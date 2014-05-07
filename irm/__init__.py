@@ -1,5 +1,6 @@
 from pyirm import *
 from pyirmutil import Relation
+from pyirmutil import ParRelation
 import irmio
 import model
 import models
