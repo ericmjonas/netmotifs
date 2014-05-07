@@ -230,6 +230,7 @@ def inference_run(latent_filename,
     if cores == 1:
         threadpool = None
     else:
+        print "Creating threadpool with", cores, "cores"
         threadpool = irm.pyirm.ThreadPool(cores)
 
     chain_runner = irm.runner.Runner(latent, data, kernel_config, seed, 

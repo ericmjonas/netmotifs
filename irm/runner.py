@@ -165,6 +165,7 @@ class Runner(object):
         if relation_class == None:
             relation_class = pyirmutil.Relation
 
+        print "Running with relation_class=", relation_class
         self.model = irmio.create_model_from_data(data, rng=self.rng, 
                                                   fixed_k = fixed_k, 
                                                   relation_class=relation_class)
