@@ -196,8 +196,6 @@ def to_bucket(filename, VOLUME):
     take the filename on disk and put it in the VOLUME
     
     """
-    print "putting VOLUME=", VOLUME, "filename =", filename
-    
     vol = multyvac.volume.get(VOLUME)
     #check size of file 
     if os.path.getsize(filename) < 2.5e6:
@@ -213,9 +211,9 @@ def from_bucket(filename, VOLUME):
 
     fid = tempfile.NamedTemporaryFile()
     n = fid.name
-    print "syncing down"
+
     vol.sync_down(filename, n)
-    print "reading"
+
     read_fid = open(n, 'r')
     data = read_fid.read()
 
@@ -227,6 +225,7 @@ def from_bucket_unpickle(filename, VOLUME):
     assumes we are getting a pickled object. Whoops.
     """
     obj = pickle.loads(from_bucket(filename, VOLUME))
+    return obj
 
 def inference_run(latent_filename, 
                   data_filename, 
