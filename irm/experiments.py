@@ -7,6 +7,7 @@ import cStringIO as StringIO
 import irm
 import irm.data
 import util
+import tempfile
 
 import multyvac
 
@@ -198,12 +199,34 @@ def to_bucket(filename, VOLUME):
     print "putting VOLUME=", VOLUME, "filename =", filename
     
     vol = multyvac.volume.get(VOLUME)
-    vol.put_file(filename, filename)
+    check size of file 
+    if os.path.getsize(filename) < 2.5e6:
+       vol.put_file(filename, filename)
+    else:
+        vol.sync_up(filename, filename)
 
 def from_bucket(filename, VOLUME):
+    """
+
+    """
     vol = multyvac.volume.get(VOLUME)
-    cont = vol.get_contents(filename)
-    return pickle.loads(cont['contents'])
+
+    fid = tempfile.NamedTemporaryFile()
+    n = fid.name
+    print "syncing down"
+    vol.sync_down(filename, n)
+    print "reading"
+    read_fid = open(n, 'r')
+    data = read_fid.read()
+
+    
+    return data
+
+def from_bucket_unpickle(filename, VOLUME):
+    """
+    assumes we are getting a pickled object. Whoops.
+    """
+    obj = pickle.loads(from_bucket(filename, VOLUME))
 
 def inference_run(latent_filename, 
                   data_filename, 
@@ -217,9 +240,9 @@ def inference_run(latent_filename,
     For running on the cloud
     """
 
-    latent = from_bucket(latent_filename, VOLUME_NAME)
-    data = from_bucket(data_filename, VOLUME_NAME)
-    kernel_config = from_bucket(kernel_config_filename, VOLUME_NAME)
+    latent = from_bucket_unpickle(latent_filename, VOLUME_NAME)
+    data = from_bucket_unpickle(data_filename, VOLUME_NAME)
+    kernel_config = from_bucket_unpickle(kernel_config_filename, VOLUME_NAME)
     if relation_class == "Relation":
         relation_class = irm.Relation
     elif relation_class == "ParRelation":
