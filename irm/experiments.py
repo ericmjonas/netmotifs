@@ -199,7 +199,7 @@ def to_bucket(filename, VOLUME):
     print "putting VOLUME=", VOLUME, "filename =", filename
     
     vol = multyvac.volume.get(VOLUME)
-    check size of file 
+    #check size of file 
     if os.path.getsize(filename) < 2.5e6:
        vol.put_file(filename, filename)
     else:
