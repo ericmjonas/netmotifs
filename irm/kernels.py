@@ -191,6 +191,8 @@ def relation_hp_grid(model, rng, grids, threadpool=None):
         else:
             raise RuntimeError("model %s is not in the provided grids" % model_name)
 
+        if grid == None:
+            continue
 
         if isinstance(relation, pyirmutil.Relation):
             ## THIS IS A TOTAL HACK we should not be dispatching this way
