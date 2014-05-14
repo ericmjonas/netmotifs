@@ -16,7 +16,6 @@ def dist(a, b):
     return np.sqrt(np.sum((b-a)**2))
 
 
-import cloud
 
 BUCKET_BASE="srm/experiments/regirmfail"
 
@@ -24,9 +23,9 @@ BUCKET_BASE="srm/experiments/regirmfail"
 EXPERIMENTS = [('trivial', 'fixed_4_10', 'default50'), 
                ('trivial', 'fixed_4_10', 'default_anneal_400'), 
                ('class_compare', 'fixed_10_40', 'default_anneal_400'),
-               ('class_compare_gen', 'fixed_10_40', 'default_anneal_400'),
-               ('class_compare_frac', 'fixed_10_40', 'default_anneal_400'),
-               ('class_compare_big', 'fixed_10_40', 'default_anneal_400')
+               #('class_compare_gen', 'fixed_10_40', 'default_anneal_400'),
+               #('class_compare_frac', 'fixed_10_40', 'default_anneal_400'),
+               #('class_compare_big', 'fixed_10_40', 'default_anneal_400')
            ]
 
 INIT_CONFIGS = {'fixed_4_10' : {'N' : 4, 
@@ -572,7 +571,10 @@ def merge_results(exp_results, merge_filename):
     pickle.dump(df, open(merge_filename, 'w'))
 
 PLOT_DATASETS = ['class_compare', 'class_compare_big']
-@files(merge_results, [('%s.rand.pdf' % c, '%s.ari.pdf' % c, 
+#@follows(merge_results) # messing with this to just debug plotting
+# without running all experiments
+
+@files("merge.pickle", [('%s.rand.pdf' % c, '%s.ari.pdf' % c, 
                         '%s.spatial_variance.pdf' % c) for c in PLOT_DATASETS])
 def plot_results(infile, outfiles):
     df = pickle.load(open(infile, 'r'))
@@ -591,8 +593,8 @@ def plot_results(infile, outfiles):
                    'ld' : 'r'}
         f = pylab.figure(figsize=(4, 3))
         ax = f.add_subplot(1, 1, 1)
-        labels = {'bb' : "iSBM", 
-                  'ld' : "iSRM"}
+        labels = {'bb' : "conn only", 
+                  'ld' : "conn + dist"}
         for g_idx, g in a.groupby(['model']):
             ax.scatter(g.index.get_level_values('class_n'), g['empirical_class_n'], c=colors[g_idx],
                           edgecolor='none', label= labels[g_idx])
@@ -601,8 +603,15 @@ def plot_results(infile, outfiles):
         ax.set_ylabel("estimated type number")
         ax.set_xticks([1, 2, 4, 8, 16])
         ax.legend(loc="upper left", fontsize=10)
-                  
+        ax.set_yticks([0, 70])
+        ax.set_ylim([-2, 70])
+        for tic in ax.yaxis.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
+
         f.tight_layout()
+        for tic in ax.xaxis.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
+
         f.savefig(plot_files[0])
 
 
@@ -623,7 +632,7 @@ def plot_results(infile, outfiles):
             ax.bar(np.arange(N)*CLASS_SPACE + offsets[g_idx], h['ari'], width=WIDTH, 
                     color=colors[g_idx])
             ax.errorbar(np.arange(N)*CLASS_SPACE + offsets[g_idx] + WIDTH/2, 
-                        h['ari'], yerr= herr['ari'], capsize=0,elinewidth=3, linewidth=0, ecolor='grey')
+                        h['ari'], yerr= herr['ari'], capsize=0,elinewidth=2, linewidth=0, ecolor='black')
         #ax.plot([1, 16], [1, 1], c='k')
         ax.set_xlabel("true type number")
         ax.set_ylabel("adjusted Rand index")
@@ -631,6 +640,8 @@ def plot_results(infile, outfiles):
         ax.set_yticks([0.0, 1.0])
         ax.set_xticks(np.arange(N)*CLASS_SPACE + 1)
         ax.set_xticklabels([1, 2, 4, 8, 16])
+        for tic in ax.xaxis.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
         f.tight_layout()
         f.savefig(plot_files[1])
 
@@ -640,6 +651,7 @@ def plot_results(infile, outfiles):
         def cluster_var(row):
             assign = row['assign']
             true_assign = row['true_assign']
+            print type(row['node_pos'])
             node_pos = row['node_pos']
             def node_to_df(assign, nodes):
                 return pandas.DataFrame({'cluster' : assign, 'x' : node_pos[:, 0], 
@@ -661,7 +673,7 @@ def plot_results(infile, outfiles):
         #                    'side_n', 'seed', 'truth']).apply(lambda group: group.sort_index(by='score', ascending=False).head(1))
         df_vars = []
         for rid, r in a.iterrows():
-            cv = cluster_var(r)
+            cv = cluster_var(r.to_dict())
             cv['model'] = r['model']
             cv['seed'] = r['seed']
             cv['class_n'] = r['class_n']
@@ -687,21 +699,29 @@ def plot_results(infile, outfiles):
             df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==True)]
             hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
             print "Histogram=", hist
-            ax.plot(bins[:-1] + bin_width/2.0, hist*bin_width, c='k', linewidth=4, 
+            ax.plot(bins[:-1] + bin_width/2.0, hist*bin_width, c='k', linewidth=2, 
                     label='truth')
             ax.set_yticks([0.0, 1.0])
-            ax.set_ylim(0.0, 1.1)
+            ax.set_ylim(0.0, 1.05)
             ax.set_ylabel("frac (class=%d)" % class_n)
+            ax.set_xticks([0.0, 3.5])
             if i == 0:
                 handles, labels = ax.get_legend_handles_labels()
                 ax.legend(handles, [    'Ground Truth', 
-                                        'iSBM', 
-                                        'iSRM', 
+                                        'conn only', 
+                                        'conn + dist', 
                                     ], 
                           loc='upper left', 
                           fontsize=12)
             if i < 2:
                 ax.set_xticklabels([])
+
+            for tic in ax.xaxis.get_major_ticks():
+                tic.tick1On = tic.tick2On = False
+            for tic in ax.yaxis.get_major_ticks():
+                tic.tick1On = tic.tick2On = False
+
+
         ax.set_xlabel("size of clusters (2D std dev)")
         f.tight_layout()
         f.savefig(plot_files[2])
@@ -772,8 +792,10 @@ def plot_results_many_gen(infile, outfiles):
     f.savefig(outfiles[1])
 
 if __name__ == "__main__":
-    pipeline_run([dataset_connectivity_matrix, create_inits, run_exp, 
-                  get_results, plot_latent, merge_results, 
-                  plot_results, plot_results_many_gen
+    pipeline_run([#dataset_connectivity_matrix, create_inits, run_exp, 
+                  #get_results, plot_latent,
+        #merge_results, 
+        plot_results, 
+        #plot_results_many_gen
               ], multiprocess=3)
 

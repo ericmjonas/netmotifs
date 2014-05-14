@@ -117,6 +117,9 @@ ax.imshow(syn_pro_hist, interpolation='nearest', cmap=pylab.cm.Greys)
 
 ax.set_xticks([])
 ax.set_yticks([])
+for i in np.argwhere(np.diff(c_class) != 0).flatten():
+    ax.axhline(i + 0.5)
+ax.set_aspect(0.5)
 f.savefig("source.f1.synprof.pdf")
 
 f = pylab.figure()
@@ -126,10 +129,11 @@ ax.imshow(syn_pro_hist[ai], interpolation='nearest', cmap=pylab.cm.Greys)
 
 ax.set_xticks([])
 ax.set_yticks([])
+ax.set_aspect(0.5)
 f.savefig("source.f1.synprof.raw.pdf")
 
 
-f = pylab.figure(figsize=(3, 6))
+f = pylab.figure(figsize=(2, 6))
 ax = f.add_subplot(1, 1, 1)
 ax.scatter(soma_depth, 
            np.arange(len(c_class)), edgecolor='none', c='k')
@@ -137,10 +141,12 @@ ax.set_xlim(0, 1)
 ax.set_ylim(len(c_class), 0)
 ax.set_xticks([])
 ax.set_yticks([])
+for i in np.argwhere(np.diff(c_class) != 0).flatten():
+    ax.axhline(i + 0.5)
 f.savefig("source.f1.somadepth.pdf")
 
 
-f = pylab.figure(figsize=(3, 6))
+f = pylab.figure(figsize=(2, 6))
 ax = f.add_subplot(1, 1, 1)
 ax.scatter(soma_depth[ai], 
            np.arange(len(c_class)), edgecolor='none', c='k')
@@ -229,7 +235,7 @@ circos_p.add_class_ribbons(ribbons)
 circos_p.add_plot('scatter', {'r0' : '1.0r', 
                               'r1' : '1.15r', 
                               'min' : 0, 
-                              'max' : 1., 
+                              'max' : 1.1, 
                               'glyph' : 'circle', 
                               'glyph_size' : 12, 
                               'color' : 'black',
@@ -239,7 +245,7 @@ circos_p.add_plot('scatter', {'r0' : '1.0r',
                   {'backgrounds' : [('background', {'color': 'vvlgrey', 
                                                     'y0' : 0.0, 
                                                     'y1' : 1.0})],  
-                   'axes': [('axis', {'color' : 'vgrey', 
+                   'axes': [('axis', {'color' : 'vlgrey', 
                                       'thickness' : 1, 
                                       'spacing' : '%fr' % 0.1})]})
 

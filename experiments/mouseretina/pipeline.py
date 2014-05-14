@@ -134,7 +134,7 @@ def dist(a, b):
 
 def create_tholds():
     """
-    systematicaly vary the threshold for "synapse" and whether or not
+    systematicaly vary the bthreshold for "synapse" and whether or not
     we use the z-axis
     """
     infiles = ['conn.areacount.pickle', 
