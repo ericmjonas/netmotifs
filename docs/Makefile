@@ -32,6 +32,8 @@ arxiv.pdf: paper.tex
 arxiv.tar.gz: arxiv.pdf arxiv.tex
 	tar czvf arxiv.tar.gz arxiv.tex arxiv.bbl 00README.XXX `python getgraphics.py paper.tex` mos6502.clusters.pdf
 
+MOUSERETINA_TGT= # path to filename base to use as the mouseretina target
+
 
 
 
