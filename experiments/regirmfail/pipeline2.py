@@ -611,6 +611,9 @@ def plot_results(infile, outfiles):
         f.tight_layout()
         for tic in ax.xaxis.get_major_ticks():
             tic.tick1On = tic.tick2On = False
+        spines_to_remove = ['top', 'right']
+        for spine in spines_to_remove:
+            ax.spines[spine].set_visible(False)
 
         f.savefig(plot_files[0])
 
@@ -642,6 +645,10 @@ def plot_results(infile, outfiles):
         ax.set_xticklabels([1, 2, 4, 8, 16])
         for tic in ax.xaxis.get_major_ticks():
             tic.tick1On = tic.tick2On = False
+        spines_to_remove = ['top', 'right']
+        for spine in spines_to_remove:
+            ax.spines[spine].set_visible(False)
+
         f.tight_layout()
         f.savefig(plot_files[1])
 
@@ -683,24 +690,29 @@ def plot_results(infile, outfiles):
         df_vars['std'] = np.sqrt(df_vars['x'] + df_vars['y'])
 
         f = pylab.figure(figsize=(4.0, 6.5))
+        bins = np.linspace(0, 3.5, 20)
+        
+        bin_width = (bins[1] - bins[0])
+        bar_width = bin_width/4.0
+        bar_space = bin_width/3.
+
         for i, class_n in enumerate([4, 8, 16]):
             ax = f.add_subplot(3, 1, i + 1)
-            bins = np.linspace(0, 3.5, 20)
 
-            bin_width = (bins[1] - bins[0])
-            for model, color in [('bb', 'b'), 
-                                 ('ld', 'r'),]:
+            for model_i, (model, color) in enumerate([('bb', 'b'), 
+                                                      ('ld', 'r'),]):
                 df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==False)]
                 hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
-                ax.bar(bins[:-1], hist*bin_width, width=bin_width, color=color, 
-                       label=model)
+                ax.bar(bins[:-1] + model_i * bar_space, hist*bin_width, width=bar_width, color=color, 
+                       label=model, linewidth=0.0)
                        
 
             df2 = df_vars[(df_vars['model'] == model) & (df_vars['class_n']==class_n) & (df_vars['truth']==True)]
             hist, _ = np.histogram(df2.dropna()['std'], bins=bins, density=True)
             print "Histogram=", hist
-            ax.plot(bins[:-1] + bin_width/2.0, hist*bin_width, c='k', linewidth=2, 
-                    label='truth')
+            ax.bar(bins[:-1] + 2*bar_space, hist*bin_width,
+                   width=bar_width, color='k', 
+                   label='truth',  linewidth=0.0)
             ax.set_yticks([0.0, 1.0])
             ax.set_ylim(0.0, 1.05)
             ax.set_ylabel("frac (class=%d)" % class_n)
@@ -720,6 +732,9 @@ def plot_results(infile, outfiles):
                 tic.tick1On = tic.tick2On = False
             for tic in ax.yaxis.get_major_ticks():
                 tic.tick1On = tic.tick2On = False
+            spines_to_remove = ['top', 'right']
+            for spine in spines_to_remove:
+                ax.spines[spine].set_visible(False)
 
 
         ax.set_xlabel("size of clusters (2D std dev)")
