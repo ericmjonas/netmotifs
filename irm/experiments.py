@@ -328,6 +328,10 @@ def plot_chains_hypers(f, chains, data):
             for p in ['mu', 'kappa', 'nu', 'sigmasq']:
                 per_r_hp[r].append(p)
                 hp_n +=1 
+        elif m == 'MixtureModelDistribution':
+            for p in ['comp_k', 'dir_alpha', 'var_scale']:
+                per_r_hp[r].append(p)
+                hp_n +=1 
 
         else:
             raise RuntimeError("Unknown model'%s'" % m)
