@@ -1,0 +1,20 @@
+Examples showing fully-synthetic data generation, create the resulting 
+data set, and move on 
+
+
+1. create synthetic connectivity matrix
+2. create synthetic soma positions
+3. create synthetic density profiles
+
+4. create the latents
+5. run the latents for a long time
+6. measure the results
+
+
+# create 10 synthetic datasets
+# initialize each to random init from 20 chains
+# run run run 
+# do we recover truth? 
+
+
+
