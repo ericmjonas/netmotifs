@@ -8,7 +8,6 @@ import irm
 import irm.data
 import util
 import tempfile
-
 import multyvac
 
 """
@@ -290,6 +289,12 @@ def plot_chains_hypers(f, chains, data):
         per_r_hp[r] = []
         per_r_hp_ax[r] = []
         if m == 'BetaBernoulli':
+            per_r_hp[r].append('alpha')
+            hp_n +=1 
+            per_r_hp[r].append('beta')
+            hp_n +=1 
+
+        elif m == 'BetaBernoulliNonConj':
             per_r_hp[r].append('alpha')
             hp_n +=1 
             per_r_hp[r].append('beta')

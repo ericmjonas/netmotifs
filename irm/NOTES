@@ -61,7 +61,7 @@ Performance:
 1. init to ground truth -- how's our log score? 
 
 
-CXX=g++-4.7 cmake -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
+CXX=g++-4.9 cmake -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
 
 Building boost: 
 ./bootstrap.sh --prefix=$USER/anaconda/
@@ -136,12 +136,12 @@ in ./boost_1_55_0/tools/build/v2/user-config.jam
 add
 using gcc
    : c11
-   : "/usr/local/bin/g++-4.7" # your path to the C++0x compiler
+   : "/usr/local/bin/g++-4.9" # your path to the C++0x compiler
    : <cxxflags>-std=c++11
    ;
 
 
 ./bootstrap.sh --prefix=/Users/jonas/anaconda/
-./b2 toolset=gcc-c11
+./b2 toolset=gcc-c11 link=shared
 ./b2 toolset=gcc-c11  install
 

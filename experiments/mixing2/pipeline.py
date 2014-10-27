@@ -37,6 +37,9 @@ INIT_CONFIGS = {'fixed_20_100' : {'N' : 20,
                 'fixed_4_100' : {'N' : 4, 
                                   'config' : {'type' : 'fixed', 
                                               'group_num' : 100}}, 
+                'fixed_20_100' : {'N' : 20, 
+                                  'config' : {'type' : 'fixed', 
+                                              'group_num' : 100}}, 
                 'debug_2_100' : {'N' : 2, 
                                  'config' : {'type' : 'fixed', 
                                              'group_num' : 100}}, 
@@ -52,7 +55,7 @@ slow_anneal[0][1]['anneal_sched']['iterations'] = 300
 slow_anneal[0][1]['subkernels'][-1][1]['grids']['MixtureModelDistribution'] = None
 
 
-long_anneal = irm.runner.default_kernel_anneal(64, 900)
+long_anneal = irm.runner.default_kernel_anneal(64, 800)
 long_anneal[0][1]['subkernels'][-1][1]['grids']['MixtureModelDistribution'] = None
 
 xlong_anneal = irm.runner.default_kernel_anneal(128, 3900)
@@ -66,6 +69,8 @@ KERNEL_CONFIGS = {
                          'kernels' : slow_anneal},
     'anneal_long_1000' : {'ITERS' : 1000, 
                          'kernels' : long_anneal},
+    'anneal_long_4000' : {'ITERS' : 4000, 
+                         'kernels' : long_anneal},
     'anneal_xlong_10000' : {'ITERS' : 10000, 
                          'kernels' : xlong_anneal},
 
@@ -74,9 +79,9 @@ KERNEL_CONFIGS = {
 
 EXPERIMENTS = [
     ('test', 'debug_2_100', 'debug_20'), 
-    #('test', 'fixed_20_100', 'anneal_slow_400'), 
-    #('test', 'fixed_4_100', 'anneal_long_1000'), 
-    ('test', 'fixed_4_100', 'anneal_xlong_10000'), 
+    ('test', 'fixed_20_100', 'anneal_long_1000'), 
+    ('test', 'fixed_20_100', 'anneal_long_4000'), 
+    ('test', 'fixed_20_100', 'anneal_xlong_10000'), 
 
     #('retina.xsoma' , 'fixed_20_100', 'anneal_slow_400'), 
     #('retina.xsoma' , 'fixed_20_100', 'anneal_slow_400'), 

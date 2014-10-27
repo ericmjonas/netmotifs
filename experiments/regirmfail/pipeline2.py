@@ -638,7 +638,7 @@ def plot_results(infile, outfiles):
                         h['ari'], yerr= herr['ari'], capsize=0,elinewidth=2, linewidth=0, ecolor='black')
         #ax.plot([1, 16], [1, 1], c='k')
         ax.set_xlabel("true type number")
-        ax.set_ylabel("adjusted Rand index")
+        ax.set_ylabel("Cluster accuracy (ARI)")
         ax.set_ylim(0, 1.0)
         ax.set_yticks([0.0, 1.0])
         ax.set_xticks(np.arange(N)*CLASS_SPACE + 1)
@@ -719,9 +719,10 @@ def plot_results(infile, outfiles):
             ax.set_xticks([0.0, 3.5])
             if i == 0:
                 handles, labels = ax.get_legend_handles_labels()
-                ax.legend(handles, [    'Ground Truth', 
-                                        'conn only', 
-                                        'conn + dist', 
+                ax.legend(handles, [   
+                    'conn only', 
+                    'conn + dist', 
+                    'Ground Truth', 
                                     ], 
                           loc='upper left', 
                           fontsize=12)
