@@ -1,0 +1,15 @@
+Metadata-Version: 1.0
+Name: irm
+Version: 1.0
+Summary: a summary
+Home-page: http://www.ericjonas.com
+Author: Eric Jonas
+Author-email: jonas@eecs.berkeley.edu
+License: Apache License, Version 2.0
+Description: =======
+             lalalalala
+
+Keywords: mongo,mongodb,pymongo,gridfs,bson
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+

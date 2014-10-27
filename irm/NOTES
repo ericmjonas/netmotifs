@@ -145,3 +145,11 @@ using gcc
 ./b2 toolset=gcc-c11 link=shared
 ./b2 toolset=gcc-c11  install
 
+
+
+CXX=g++-4.9 cmake -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
+
+
+# then to build egg
+
+CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=EGG -DCMAKE_INSTALL_PREFIX=$HOME/anaconda -DBOOST_ROOT=/Users/jonas/anaconda/ ../
