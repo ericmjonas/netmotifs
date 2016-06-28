@@ -21,3 +21,11 @@ $ANACONDA_ROOT
 note there is a chance you will have to set LD_LIBRARY_PATH to `$ANACONDA_ROOT/lib`
 
 To validate, try running `tests/modelexample.ipynb` from an ipython notebook
+
+# osx build instructions
+Honestly, don't even try, getting brew to install the right gcc and boost
+and cmake to interoperate with anaconda is enough of a challenge that,
+unless you're doing local develoment, it's not worth it. 
+
+`CC=gcc-5 CXX=g++-5 cmake -DCMAKE_INSTALL_PREFIX=$ANACONDA_ROOT/ ../`
+

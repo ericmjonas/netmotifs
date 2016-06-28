@@ -12,7 +12,7 @@ if(CMAKE_CONFIGURATION_TYPES)
 PROJECT(irm)
 set(PACKAGE_NAME irm)
 
-set( CMAKE_CXX_FLAGS "-Wall -m64 -g -O3 -std=c++11 -lpthread" )
+set( CMAKE_CXX_FLAGS " -m64 -g -O3 -std=c++11 -lpthread" )
 
 # boost requirements
 if(APPLE)

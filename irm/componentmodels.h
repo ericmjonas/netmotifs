@@ -216,7 +216,16 @@ struct BetaBernoulliNonConj {
 
     static float sample_from_prior(hypers_t * hps, rng_t & rng) {
         float alpha = hps->alpha; 
-        float beta = hps->beta; 
+        float beta = hps->beta;
+        
+        if(alpha <= 0) { 
+            throw std::runtime_error("Cannot sample with alpha <= 0"); 
+        }
+
+        if(beta <= 0) { 
+            throw std::runtime_error("Cannot sample with alpha <= 0"); 
+        }
+
         boost::math::beta_distribution<> dist(alpha, beta);
         double p = quantile(dist, uniform_01(rng)); 
 
@@ -253,6 +262,10 @@ struct BetaBernoulliNonConj {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float alpha = hps->alpha; 
         float beta = hps->beta; 
+
+        if((alpha <= 0) || (beta <= 0)) { 
+            return -std::numeric_limits<float>::infinity();
+        }
 
         boost::math::beta_distribution<> dist(alpha, beta);
         if((ss->p >= 1.0) || (ss->p < 0.0)) { 
