@@ -1,15 +1,16 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <boost/random.hpp>
 
 #include "componentcontainer.h"
 #include "componentmodels.h"
 #include "relation.h"
 #include "parrelation.h"
 
-using namespace irm; 
-
-int main()
+using namespace irm;
+ 
+int main2()
 {
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -83,5 +84,41 @@ int main()
     }
     std::cout << "done" << std::endl; 
     
+
+}
+int main()
+{
+
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+
+    rng_t rng; 
+    BetaBernoulliNonConj::hypers_t hp;
+    hp.alpha = 1.0;
+    hp.beta = 0.3; 
+       
+    BetaBernoulliNonConj::suffstats_t ss;
+
+        
+
+    //boost::random::variate_generator<rng_t, boost::random::gamma_distribution<> > var_g1( rng, g1 );
+        
+    //boost::random::variate_generator<rng_t, boost::random::gamma_distribution<> > var_g2( rng, g2 );
+        
+    int N = 1000000; 
+    for(int i = 0; i < N; ++i) {
+
+        float res = BetaBernoulliNonConj::sample_from_prior(&hp, rng);
+
+        boost::random::gamma_distribution<> g1(hp.alpha, 1.0);
+        boost::random::gamma_distribution<> g2(hp.beta, 1.0);
+        
+        float g1val = g1(rng); 
+        float g2val = g2(rng); 
+        float c = g1val / (g1val + g2val);
+        std::cout << res << " " << c << " " << g1val << " " << g2val << std::endl;
+                    
+    }
+
+        
 
 }

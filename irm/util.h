@@ -216,6 +216,17 @@ inline float chi2_sample(float v, rng_t & rng) {
     return dist(rng); 
 
 }
+inline float beta_sample(float alpha, float beta, rng_t & rng) {
+
+    boost::random::gamma_distribution<> g1(alpha, 1.0);
+    boost::random::gamma_distribution<> g2(beta, 1.0);
+        
+    float g1val = g1(rng); 
+    float g2val = g2(rng); 
+    float c = g1val / (g1val + g2val);
+    return c; 
+}
+
 
 
 inline float log_symmetric_dir_dist(const std::vector<float> pi, 

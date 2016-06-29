@@ -226,8 +226,10 @@ struct BetaBernoulliNonConj {
             throw std::runtime_error("Cannot sample with alpha <= 0"); 
         }
 
-        boost::math::beta_distribution<> dist(alpha, beta);
-        double p = quantile(dist, uniform_01(rng)); 
+        double p = beta_sample(alpha, beta, rng); 
+            
+        //boost::math::beta_distribution<> dist(alpha, beta);
+        //double p = quantile(dist, uniform_01(rng)); 
 
         return p; 
     }
@@ -590,9 +592,7 @@ struct LogisticDistanceFixedLambda {
             boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
             float mu = quantile(mu_dist, r1); 
 
-
-            boost::math::beta_distribution<> dist(alpha, beta);
-            double p = quantile(dist, uniform_01(rng)); 
+            double p = beta_sample(alpha, beta, rng); 
             if (p < 0.0001) 
                 p = 0.0001; 
             if (p > 0.9999)
@@ -970,10 +970,7 @@ struct LinearDistance {
         try { 
             boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
             float mu = quantile(mu_dist, r1); 
-
-            
-            boost::math::beta_distribution<> beta_dist(p_alpha, p_beta);
-            float p = quantile(beta_dist, r2); 
+            float p = beta_sample(p_alpha, p_beta, rng); 
             
             return std::make_pair(mu, p); 
 
@@ -1276,9 +1273,7 @@ struct NormalDistanceFixedWidth {
             boost::math::exponential_distribution<> mu_dist(1.0/mu_hp);
             float mu = quantile(mu_dist, r1); 
 
-            
-            boost::math::beta_distribution<> beta_dist(p_alpha, p_beta);
-            float p = quantile(beta_dist, r2); 
+            float p = beta_sample(p_alpha, p_beta, rng); 
             if (p < 0.0001) 
                 p = 0.0001; 
             if (p > 0.9999)
@@ -1480,9 +1475,7 @@ struct SquareDistanceBump {
             if (r2 < param_weight) { 
                 mu = param_max_distance; 
             }
-            
-            boost::math::beta_distribution<> beta_dist(p_alpha, p_beta);
-            float p = quantile(beta_dist, r3); 
+            float p = beta_sample(p_alpha, p_beta, rng); 
             
             return std::make_pair(mu, p); 
 
