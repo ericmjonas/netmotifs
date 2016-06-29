@@ -226,6 +226,8 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float c = g1val / (g1val + g2val);
     if(c <= 0) {
         return 1e-10;
+    } else if (c > 1.0) {
+        return 1.0 - 1e-8; 
     }
     return c; 
 }
