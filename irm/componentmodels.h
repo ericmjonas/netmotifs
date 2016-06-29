@@ -277,12 +277,13 @@ struct BetaBernoulliNonConj {
             }
             
             boost::math::beta_distribution<> dist(alpha, beta);
-            if((ss->p >= 1.0) || (ss->p < 0.0)) { 
+            if((ss->p >= 1.0) || (ss->p <= 0.0)) { 
                 return -std::numeric_limits<float>::infinity();
             }
         
             return MYLOG(boost::math::pdf(dist, ss->p));
         } catch (std::exception & e) {
+            std::cerr << "ss->p= " << ss->p << " alpha=" << alpha << " beta=" << beta << std::endl; 
             std::cerr << "Error in score_prior " << e.what() << std::endl;
             throw; 
         }

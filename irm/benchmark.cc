@@ -103,7 +103,11 @@ int main()
     //boost::random::variate_generator<rng_t, boost::random::gamma_distribution<> > var_g1( rng, g1 );
         
     //boost::random::variate_generator<rng_t, boost::random::gamma_distribution<> > var_g2( rng, g2 );
-        
+
+    boost::math::beta_distribution<> dist(0.1, 5);
+    boost::math::pdf(dist, 0.00000001); 
+
+    
     int N = 1000000; 
     for(int i = 0; i < N; ++i) {
 
