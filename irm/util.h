@@ -216,6 +216,12 @@ inline float chi2_sample(float v, rng_t & rng) {
     return dist(rng); 
 
 }
+
+template <typename T>
+inline T clip(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
 inline float beta_sample(float alpha, float beta, rng_t & rng) {
 
     boost::random::gamma_distribution<> g1(alpha, 1.0);
@@ -224,12 +230,9 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float g1val = g1(rng); 
     float g2val = g2(rng); 
     float c = g1val / (g1val + g2val);
-    if(c <= 0) {
-        return 1e-10;
-    } else if (c > 1.0) {
-        return 1.0 - 1e-8; 
-    }
-    return c; 
+
+    float eps = 1e-10; 
+    return clip(c, eps, 1-eps); 
 }
 
 
