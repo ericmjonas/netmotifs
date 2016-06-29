@@ -237,14 +237,20 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float clipped = clip(c, eps, 1-eps);
 
     /// DEBUG DEBUG DEBUG
-    boost::math::beta_distribution<> dist(alpha, beta);
-    auto p = boost::math::pdf(dist, clipped); // NOTE THIS IS A DENSITY NOT A PROB
-    auto score = MYLOG(p); 
+    try { 
+        boost::math::beta_distribution<> dist(alpha, beta);
+        auto p = boost::math::pdf(dist, clipped); // NOTE THIS IS A DENSITY NOT A PROB
+        auto score = MYLOG(p); 
 
-    if (!std::isfinite(score) ) {
-        auto s = boost::format("invalid sample, val=%1% prob=%2% score=%3% alpha=%4% beta=%5%") % clipped % p % score % alpha % beta;
+        if (!std::isfinite(score) ) {
+             auto s = boost::format("invalid sample, val=%1% prob=%2% score=%3% alpha=%4% beta=%5%") % clipped % p % score % alpha % beta;
         
-        throw std::runtime_error(s.str());
+             throw std::runtime_error(s.str());
+         }
+    } catch(std::exception & e) {
+        std::cerr << "exception in beta_sample attempt to score with the beta distribution. alpha = " << alpha << " beta=" << beta << " clipped=" << clipped << std::endl; 
+        
+        throw; 
     }
 
     return clipped; 
