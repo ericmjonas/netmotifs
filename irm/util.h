@@ -240,7 +240,7 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     boost::math::beta_distribution<> dist(alpha, beta);
     auto p = boost::math::pdf(dist, clipped);
     if ((p <= 0)  || (p >= 1)) {
-        auto s = boost::format("invalid sample, val=%1% prob=%2%") % clipped % p;
+        auto s = boost::format("invalid sample, val=%1% prob=%2% alpha=%3% beta=%4%") % clipped % p % alpha % beta;
         
         throw std::runtime_error(s.str());
     }
