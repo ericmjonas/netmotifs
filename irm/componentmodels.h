@@ -229,7 +229,7 @@ struct BetaBernoulliNonConj {
             
             float p = beta_sample(alpha, beta, rng);
             if ((p <= 0) || (p >= 1.0)) {
-                std::cerr << "p sampled outside range p=" << p << std::endl 
+                std::cerr << "p sampled outside range p=" << p << std::endl; 
             }
             
             //boost::math::beta_distribution<> dist(alpha, beta);
