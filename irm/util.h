@@ -10,6 +10,8 @@
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/chi_squared_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <boost/math/distributions.hpp>
+
 #include <stdlib.h>
 #include "fastonebigheader.h"
 
@@ -232,7 +234,18 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float c = g1val / (g1val + g2val);
 
     float eps = 1e-10; 
-    return clip(c, eps, 1-eps); 
+    float clipped = clip(c, eps, 1-eps);
+
+    /// DEBUG DEBUG DEBUG
+    boost::math::beta_distribution<> dist(alpha, beta);
+    auto p = boost::math::pdf(dist, clipped);
+    if ((p <= 0)  || (p >= 1)) {
+        auto s = boost::format("invalid sample, val=%1% prob=%2%") % clipped % p;
+        
+        throw std::runtime_error(s.str());
+    }
+
+    return clipped; 
 }
 
 
