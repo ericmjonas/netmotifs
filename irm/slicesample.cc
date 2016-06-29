@@ -1,3 +1,4 @@
+#include <boost/format.hpp>
 #include "slicesample.h"
 
 namespace irm { 
@@ -148,11 +149,12 @@ float slice_sample2(std::function<float(float)> f, float x_0,
 
 
 float slice_sample2_double(std::function<float(float)> f, float x_0, 
-                          float w, rng_t &  rng) 
+                               float w, rng_t &  rng) 
 {
     float y = logf(uniform_01(rng)) + f(x_0); 
-    if(std::isinf(y)) { 
-        throw std::runtime_error("Beginning slice sampling from impossible x_0"); 
+    if(std::isinf(y)) {
+        auto err_str = boost::format("Beginning slice sampling from impossible x_0=%1%") % x_0; 
+        throw std::runtime_error(err_str.str()); 
     }
     auto interval = create_interval_double(f, x_0, y, w, SLICE_P, rng); 
     return shrink(interval, f, x_0, y, w, true, rng); 
