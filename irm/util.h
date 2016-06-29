@@ -224,6 +224,9 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float g1val = g1(rng); 
     float g2val = g2(rng); 
     float c = g1val / (g1val + g2val);
+    if(c <= 0) {
+        return 1e-10;
+    }
     return c; 
 }
 
