@@ -50,14 +50,23 @@ void slice_sample_exec<BetaBernoulliNonConj>
     if (width == 0.0) { 
         width = 0.1; 
     }
-
-    auto p = slice_sample2_double(
-                                 [&ss, &hps, data, &observed, &dppos, temp](float x) -> float{
-                                     ss->p = x; 
-                                     return BetaBernoulliNonConj::score(ss, hps, data, observed, dppos)/temp;
-                                 }, ss->p, width, rng); 
-    
-    ss->p = p; 
+    try { 
+        auto p = slice_sample2_double(
+                                      [&ss, &hps, data, &observed, &dppos, temp](float x) -> float{
+                                          ss->p = x; 
+                                          return BetaBernoulliNonConj::score(ss, hps, data, observed, dppos)/temp;
+                                      }, ss->p, width, rng); 
+        
+        ss->p = p;
+    } catch (std::exception & e) {
+        std::cerr << "attempted slice_sample2_double and an exception was thrown " << e.what() << std::endl;
+        std::cerr << "hps.alpha = " << hps->alpha << " hps.beta=" << hps->beta << std::endl;
+        
+        std::cerr << "ss.p = " << ss->p << std::endl;
+        
+        
+        throw; 
+    }
 
 }
 

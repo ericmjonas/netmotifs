@@ -215,23 +215,30 @@ struct BetaBernoulliNonConj {
     }; 
 
     static float sample_from_prior(hypers_t * hps, rng_t & rng) {
-        float alpha = hps->alpha; 
-        float beta = hps->beta;
-        
-        if(alpha <= 0) { 
-            throw std::runtime_error("Cannot sample with alpha <= 0"); 
-        }
-
-        if(beta <= 0) { 
-            throw std::runtime_error("Cannot sample with alpha <= 0"); 
-        }
-
-        double p = beta_sample(alpha, beta, rng); 
+        try { 
+            float alpha = hps->alpha; 
+            float beta = hps->beta;
             
-        //boost::math::beta_distribution<> dist(alpha, beta);
-        //double p = quantile(dist, uniform_01(rng)); 
+            if(alpha <= 0) { 
+                throw std::runtime_error("Cannot sample with alpha <= 0"); 
+            }
+            
+            if(beta <= 0) { 
+                throw std::runtime_error("Cannot sample with alpha <= 0"); 
+            }
+            
+            double p = beta_sample(alpha, beta, rng); 
+            
+            //boost::math::beta_distribution<> dist(alpha, beta);
+            //double p = quantile(dist, uniform_01(rng)); 
+            
+            return p;
+        } catch (std::exception & e) {
+            std::cerr << "Error in sample_from_prior " <<  e.what() << std::endl;
+            throw; 
 
-        return p; 
+        }
+        
     }
     
     static void ss_sample_new(suffstats_t * ss, hypers_t * hps, 
@@ -264,17 +271,21 @@ struct BetaBernoulliNonConj {
     static float score_prior(suffstats_t * ss, hypers_t * hps) { 
         float alpha = hps->alpha; 
         float beta = hps->beta; 
-
-        if((alpha <= 0) || (beta <= 0)) { 
-            return -std::numeric_limits<float>::infinity();
+        try { 
+            if((alpha <= 0) || (beta <= 0)) { 
+                return -std::numeric_limits<float>::infinity();
+            }
+            
+            boost::math::beta_distribution<> dist(alpha, beta);
+            if((ss->p >= 1.0) || (ss->p < 0.0)) { 
+                return -std::numeric_limits<float>::infinity();
+            }
+        
+            return MYLOG(boost::math::pdf(dist, ss->p));
+        } catch (std::exception & e) {
+            std::cerr << "Error in score_prior " << e.what() << std::endl;
+            throw; 
         }
-
-        boost::math::beta_distribution<> dist(alpha, beta);
-        if((ss->p >= 1.0) || (ss->p < 0.0)) { 
-            return -std::numeric_limits<float>::infinity();
-        }
-
-        return MYLOG(boost::math::pdf(dist, ss->p)); 
     }
     
     template<typename RandomAccessIterator, typename RandomAccessIterator2> 
