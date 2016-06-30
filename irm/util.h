@@ -234,7 +234,7 @@ inline float beta_sample(float alpha, float beta, rng_t & rng) {
     float c = g1val / (g1val + g2val);
 
     float eps = 1e-5; 
-    float clipped = clip(c, eps, 1.0-eps);
+    float clipped = clip(c, eps, 1.0f-eps);
 
     /// DEBUG DEBUG DEBUG
     try { 
