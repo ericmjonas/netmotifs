@@ -35,7 +35,7 @@ def benchmark():
               'data' : {'R1' : data}}
 
 
-    irm_model = irmio.model_from_config(config, relation_class=relation.FastRelation)
+    irm_model = irmio.model_from_config(config)
     t1_obj = irm_model.types['t1']
     t2_obj = irm_model.types['t2']
 
