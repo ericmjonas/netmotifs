@@ -14,7 +14,7 @@ DEFAULT_CORES = 8
 DEFAULT_RELATION = "ParRelation"
 
 def create_cv_pure(data, meta, 
-                   cv_i, cv_config_name, cv_config):
+                   cv_i, cv_config_name, cv_config, seed=seed):
     """ 
     Creates a single cross-validated data set for all relations
     with 2d data
@@ -37,7 +37,7 @@ def create_cv_pure(data, meta,
 
             N =  shape[0] * shape[1]
             if cv_config['type'] == 'nfold':
-                np.random.seed(0) # set the seed
+                np.random.seed(seed) # set the seed
 
                 perm = np.random.permutation(N)
                 subset_size = N / cv_config['N']
@@ -121,7 +121,7 @@ def inference_run(data, latent,
                   fixed_k = False, 
                   latent_samp_freq=20, 
                   relation_class = "Relation", 
-                  cores = 1):
+                  cores = 1, custom_logger = None):
 
 
     if relation_class == "Relation":
@@ -155,12 +155,17 @@ def inference_run(data, latent,
 
         if iter % latent_samp_freq == 0:
             latents[iter] = chain_runner.get_state(include_ss=False)
+
+        if custom_logger is not None:
+            custom_logger(iter, model, res_data)
+
     chain_runner.run_iters(ITERS, logger)
         
     return scores, chain_runner.get_state(), times, latents
 
 
-def run_exp_pure(data, init, kernel_config_name, seed, kc):
+def run_exp_pure(data, init, kernel_config_name, seed, kc, 
+                 custom_logger = None):
     # put the filenames in the data
 
     ITERS = kc['ITERS']
@@ -176,7 +181,8 @@ def run_exp_pure(data, init, kernel_config_name, seed, kc):
                         seed,
                         fixed_k,
                         relation_class=relation_class,
-                        cores = cores)
+                        cores = cores, 
+                        custom_logger = custom_logger)
     
 
 
