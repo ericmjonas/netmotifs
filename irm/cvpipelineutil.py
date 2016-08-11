@@ -14,7 +14,7 @@ DEFAULT_CORES = 8
 DEFAULT_RELATION = "ParRelation"
 
 def create_cv_pure(data, meta, 
-                   cv_i, cv_config_name, cv_config, seed=seed):
+                   cv_i, cv_config_name, cv_config, seed):
     """ 
     Creates a single cross-validated data set for all relations
     with 2d data
